@@ -80,6 +80,9 @@ dependencies {
     // DataStore (small local prefs, equivalent to UserDefaults)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // Background release-day check (equivalent to the iOS nightly BGTask)
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.03"))

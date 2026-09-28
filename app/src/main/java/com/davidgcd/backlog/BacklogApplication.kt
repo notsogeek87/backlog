@@ -8,6 +8,7 @@ import com.davidgcd.backlog.data.remote.IgdbTokenProvider
 import com.davidgcd.backlog.data.remote.TwitchAuthApi
 import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.data.repository.IgdbService
+import com.davidgcd.backlog.notifications.ReleaseReminderScheduler
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
@@ -60,5 +61,7 @@ class BacklogApplication : Application() {
             igdbService = IgdbService(igdbApi),
             moshi = moshi,
         )
+
+        ReleaseReminderScheduler.schedule(this)
     }
 }

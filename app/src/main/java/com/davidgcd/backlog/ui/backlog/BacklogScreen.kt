@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.ui.backlog
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,7 +43,7 @@ import com.davidgcd.backlog.util.IgdbImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BacklogScreen(viewModel: BacklogViewModel) {
+fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSettingsClick: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
 
@@ -56,6 +58,9 @@ fun BacklogScreen(viewModel: BacklogViewModel) {
                 actions = {
                     IconButton(onClick = { showSearch = !showSearch }) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
             )
@@ -78,12 +83,14 @@ fun BacklogScreen(viewModel: BacklogViewModel) {
                 SearchResultsList(
                     results = searchResults,
                     onAdd = { viewModel.addToBacklog(it) },
+                    onClick = { onGameClick(it.id) },
                 )
             } else {
                 BacklogList(
                     games = backlog,
                     onArchiveToggle = { viewModel.setArchived(it, !it.isArchived) },
                     onRemove = { viewModel.remove(it) },
+                    onClick = { onGameClick(it.igdbId) },
                 )
             }
         }
@@ -95,6 +102,7 @@ private fun BacklogList(
     games: List<GameEntity>,
     onArchiveToggle: (GameEntity) -> Unit,
     onRemove: (GameEntity) -> Unit,
+    onClick: (GameEntity) -> Unit,
 ) {
     if (games.isEmpty()) {
         Column(
@@ -112,6 +120,7 @@ private fun BacklogList(
     LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
         items(games, key = { it.igdbId }) { game ->
             ListItem(
+                modifier = Modifier.clickable { onClick(game) },
                 headlineContent = { Text(game.name) },
                 supportingContent = { if (game.isArchived) Text("Archived") },
                 leadingContent = {
@@ -138,10 +147,11 @@ private fun BacklogList(
 }
 
 @Composable
-private fun SearchResultsList(results: List<Game>, onAdd: (Game) -> Unit) {
+private fun SearchResultsList(results: List<Game>, onAdd: (Game) -> Unit, onClick: (Game) -> Unit) {
     LazyColumn {
         items(results, key = { it.id }) { game ->
             ListItem(
+                modifier = Modifier.clickable { onClick(game) },
                 headlineContent = { Text(game.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 leadingContent = {
                     game.cover?.imageId?.let { imageId ->

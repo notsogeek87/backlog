@@ -43,18 +43,35 @@ sur Android avec des briques Android natives.
   chaque appel, échappe les guillemets Apicalypse), `BacklogRepository`
   (unique source de vérité entre Room et IGDB — équivalent du rôle de
   `BacklogViewModel`/`GameSyncApplier` sur iOS).
-- `ui/` — écrans Compose + ViewModels (`BacklogViewModel`), un package par
-  écran (`ui/backlog/`, à étendre avec `ui/gamedetail/`, `ui/settings/`…).
+- `ui/nav/` — `BacklogNavHost`, le seul `NavHost` de l'app (Backlog → détail
+  d'un jeu, Backlog → Réglages).
+- `ui/` — écrans Compose + ViewModels, un package par écran : `ui/backlog/`
+  (liste + recherche IGDB), `ui/gamedetail/` (un jeu du backlog **ou** un
+  résultat de recherche pas encore ajouté — `GameDetailState` distingue les
+  deux, comme `HomeRoute.game(id:)` sur iOS qui peut viser un jeu absent du
+  backlog), `ui/settings/` (réglages de notifications).
+- `notifications/` — `NotificationPreferences` (DataStore, équivalent
+  `UserDefaults`/`NotificationPolicyStore`), `ReleaseReminderWorker` +
+  `ReleaseReminderScheduler` (WorkManager périodique quotidien, équivalent
+  simplifié du `NightlySyncService`/`BGTaskScheduler` iOS — un seul cas géré
+  pour l'instant : "sort aujourd'hui", pas encore de choix d'heure/délai ni
+  d'alertes de changement de date/plateforme), `NotificationIds` (fabrique
+  d'identifiants, jamais construits à la main ailleurs — même règle que
+  `NotificationIdentifier` côté iOS).
 - `util/` — `RateLimiter` (fenêtre glissante, 4 req/s sur IGDB, slot réservé
   avant l'appel — même règle que l'app iOS), `IgdbImage` (seul constructeur
-  d'URL d'images IGDB, jamais construit à la main ailleurs).
+  d'URL d'images IGDB, jamais construit à la main ailleurs),
+  `ReleaseDateFormatting` (seule conversion du timestamp IGDB — pas encore
+  de gestion de précision de date comme `ReleaseDateCategory` côté iOS).
 - `config/Secrets.kt` — clés API, gitignored.
 
 ## Ce qui manque encore (prochaines étapes suggérées)
 
-- Écran de détail d'un jeu (`ui/gamedetail/`)
-- Notifications de sortie (WorkManager + AlarmManager, équivalent des
-  notifications iOS)
+- Décodage des `genresJson`/`platformsJson` de `GameEntity` pour les
+  afficher sur un jeu déjà dans le backlog (actuellement affichés seulement
+  pour un jeu venant d'IGDB, voir le commentaire dans `GameDetailScreen`)
+- Choix du délai de notification (à la sortie / veille / semaine avant),
+  alertes de changement de date ou de plateformes
 - Notes Metacritic / Steam (nouveau service réseau, même schéma que
   `IgdbService`)
 - Widget Home Screen (Glance, équivalent App Group/WidgetKit)

@@ -19,7 +19,14 @@ class BacklogRepository(
 ) {
     fun observeBacklog(): Flow<List<GameEntity>> = gameDao.observeAll()
 
+    fun observeGame(igdbId: Long): Flow<GameEntity?> = gameDao.observeById(igdbId)
+
+    suspend fun activeGamesWithReleaseDate(): List<GameEntity> = gameDao.activeGamesWithReleaseDate()
+
     suspend fun searchGames(query: String): List<Game> = igdbService.searchGames(query)
+
+    /** Falls back to IGDB when the game isn't (or isn't yet) in the backlog. */
+    suspend fun fetchRemoteGame(igdbId: Long): Game? = igdbService.getGame(igdbId)
 
     suspend fun addToBacklog(game: Game) {
         if (gameDao.findById(game.id) != null) return

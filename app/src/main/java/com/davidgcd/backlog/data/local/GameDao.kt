@@ -16,6 +16,12 @@ interface GameDao {
     @Query("SELECT * FROM games WHERE igdbId = :igdbId LIMIT 1")
     suspend fun findById(igdbId: Long): GameEntity?
 
+    @Query("SELECT * FROM games WHERE igdbId = :igdbId LIMIT 1")
+    fun observeById(igdbId: Long): Flow<GameEntity?>
+
+    @Query("SELECT * FROM games WHERE isArchived = 0 AND firstReleaseDate IS NOT NULL")
+    suspend fun activeGamesWithReleaseDate(): List<GameEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(game: GameEntity)
 
