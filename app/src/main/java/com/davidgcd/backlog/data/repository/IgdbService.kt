@@ -18,7 +18,9 @@ class IgdbService(private val api: IgdbApi) {
             fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
             limit $limit;
         """.trimIndent()
-        return api.search(apicalypse)
+        // IGDB's fuzzy search endpoint can return several matches (e.g. alternative names)
+        // sharing the same game id, which breaks Compose's LazyColumn key requirement.
+        return api.search(apicalypse).distinctBy { it.id }
     }
 
     /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */
