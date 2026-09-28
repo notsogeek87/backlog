@@ -3,8 +3,10 @@ package com.davidgcd.backlog.data.repository
 import com.davidgcd.backlog.data.local.GameDao
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.Genre
+import com.davidgcd.backlog.model.Platform
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
+import com.squareup.moshi.Types
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -41,9 +43,12 @@ class BacklogRepository(
         gameDao.delete(entity)
     }
 
+    private val genresListType = Types.newParameterizedType(List::class.java, Genre::class.java)
+    private val platformsListType = Types.newParameterizedType(List::class.java, Platform::class.java)
+
     private fun Game.toEntity(moshi: Moshi): GameEntity {
-        val genresJson = genres?.let { moshi.adapter<List<com.davidgcd.backlog.model.Genre>>().toJson(it) }
-        val platformsJson = platforms?.let { moshi.adapter<List<com.davidgcd.backlog.model.Platform>>().toJson(it) }
+        val genresJson = genres?.let { moshi.adapter<List<Genre>>(genresListType).toJson(it) }
+        val platformsJson = platforms?.let { moshi.adapter<List<Platform>>(platformsListType).toJson(it) }
         return GameEntity(
             igdbId = id,
             name = name,
