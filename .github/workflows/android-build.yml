@@ -20,9 +20,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # ubuntu-latest GitHub-hosted runners ship with the Android SDK
+      # (cmdline-tools, platform-tools, the needed platform/build-tools)
+      # already installed under ANDROID_HOME with licenses pre-accepted —
+      # android-actions/setup-android tried to (re)install the legacy
+      # "tools" package, which Google removed from the repository, and
+      # failed the whole job. Nothing else to install here.
       - name: Provide placeholder API secrets (CI has none — Twitch calls are not exercised at build time)
         run: |
           mkdir -p app/src/main/java/com/davidgcd/backlog/config
