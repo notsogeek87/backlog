@@ -70,6 +70,7 @@ fun BacklogScreen(
     val isBacklogEmpty by viewModel.isBacklogEmpty.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
+    val searchError by viewModel.searchError.collectAsState()
 
     Scaffold(
         topBar = {
@@ -111,6 +112,13 @@ fun BacklogScreen(
                 )
                 if (isSearching) {
                     CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                }
+                searchError?.let { message ->
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp),
+                    )
                 }
                 SearchResultsList(
                     results = searchResults,

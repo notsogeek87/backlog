@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -70,16 +73,23 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
     private val _searchError = MutableStateFlow<String?>(null)
     val searchError: StateFlow<String?> = _searchError
 
+    private var searchJob: Job? = null
+
     fun search(query: String) {
+        searchJob?.cancel()
         if (query.isBlank()) {
             _searchResults.value = emptyList()
+            _isSearching.value = false
             return
         }
-        viewModelScope.launch {
+        searchJob = viewModelScope.launch {
+            delay(300)
             _isSearching.value = true
             _searchError.value = null
             try {
                 _searchResults.value = repository.searchGames(query)
+            } catch (t: CancellationException) {
+                throw t
             } catch (t: Throwable) {
                 _searchError.value = t.message ?: "Search failed"
             } finally {
