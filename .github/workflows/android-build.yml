@@ -7,6 +7,9 @@ on:
     branches: ["**"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,15 +46,88 @@ jobs:
       - name: Lint
         run: gradle lintDebug --no-daemon
 
-      - name: Assemble debug APK
-        run: gradle assembleDebug --no-daemon
-
       - name: Run unit tests
         run: gradle testDebugUnitTest --no-daemon
+
+      # versionCode/versionName ne sont plus figés dans app/build.gradle.kts :
+      # ce run de CI leur donne une valeur unique et strictement croissante
+      # (run_number), nécessaire pour que les vraies releases (voir plus bas)
+      # portent chacune une version distincte au lieu de rester bloquées en "0.1.0".
+      - name: Déterminer la version
+        id: version
+        run: |
+          echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "name=0.1.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble debug APK
+        run: |
+          gradle assembleDebug --no-daemon \
+            -PbacklogVersionCode=${{ steps.version.outputs.code }} \
+            -PbacklogVersionName=${{ steps.version.outputs.name }}
+
+      # Gradle nomme toujours sa sortie "app-debug.apk" (nom fixe lié au
+      # buildType), quelle que soit la version : on la renomme pour que le
+      # fichier téléchargé (artifact ou asset de release) porte la version
+      # au lieu d'un nom générique identique à chaque run.
+      - name: Renommer l'APK avec sa version
+        id: apk
+        run: |
+          NAME="Backlog-${{ steps.version.outputs.name }}.apk"
+          SRC="app/build/outputs/apk/debug/app-debug.apk"
+          DEST="app/build/outputs/apk/debug/$NAME"
+          mv "$SRC" "$DEST"
+          echo "path=$DEST" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: backlog-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: backlog-debug-${{ github.run_number }}
+          path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
+
+      # Vraie release GitHub, versionnée et permanente : seulement pour main,
+      # jamais écrasée (chaque run a une version unique), pas marquée
+      # "Pre-release". Toujours signée avec la clé debug committée (pas de
+      # clé de production configurée) : à faire évoluer le jour où on distribue
+      # via le Play Store ou en dehors des testeurs internes.
+      - name: Publier la release GitHub (main)
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version.outputs.name }}"
+          gh release create "$TAG" \
+            "${{ steps.apk.outputs.path }}" \
+            --title "Backlog $TAG" \
+            --notes "Run #${{ github.run_number }} (${{ github.sha }}). Signé avec la clé debug (pas de clé de production configurée)." \
+            --target "${{ github.sha }}"
+
+      # Les artifacts d'Actions sont hébergés sur Azure Blob Storage, souvent
+      # bloqué par des politiques réseau restrictives. Une release GitHub
+      # (objects.githubusercontent.com) reste accessible dans ces cas et sert
+      # de lien stable pour installer le dernier APK debug. Un tag par branche
+      # évite qu'un build staging n'écrase le dernier build main (ou l'inverse).
+      # Réservé à staging/PR/dispatch : main a sa vraie release ci-dessus.
+      - name: Déterminer le tag de release debug
+        id: reltag
+        if: "!(github.event_name == 'push' && github.ref_name == 'main')"
+        run: |
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          SAFE_BRANCH=$(echo "$BRANCH" | tr '/' '-')
+          echo "tag=debug-$SAFE_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Publier l'APK debug en release GitHub
+        if: "!(github.event_name == 'push' && github.ref_name == 'main')"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.reltag.outputs.tag }}"
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" \
+            "${{ steps.apk.outputs.path }}" \
+            --title "Backlog — APK debug (${{ steps.reltag.outputs.branch }})" \
+            --notes "Build automatique non signé, run #${{ github.run_number }} (${{ github.sha }})." \
+            --prerelease \
+            --target "${{ github.sha }}"

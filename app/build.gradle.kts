@@ -5,6 +5,12 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Clé d'upload Play Store fournie par la CI depuis les secrets du dépôt.
+// Absente en local : Gradle retombe sur la signature debug (même logique que
+// trusti/swipernews, voir play-store-bundle.yml).
+val releaseKeystore = System.getenv("ANDROID_KEYSTORE_FILE")
+val hasReleaseKeystore = releaseKeystore != null && file(releaseKeystore).exists()
+
 android {
     namespace = "com.davidgcd.backlog"
     compileSdk = 35
@@ -13,16 +19,58 @@ android {
         applicationId = "com.davidgcd.backlog"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // Surchargeable en CI via -PbacklogVersionCode=N -PbacklogVersionName=X.Y.N
+        // (android.yml) pour que chaque release GitHub porte une version unique et
+        // croissante, ou -PversionCode/-PversionName (play-store-bundle.yml).
+        versionCode = when {
+            project.hasProperty("versionCode") -> (project.property("versionCode") as String).toInt()
+            project.hasProperty("backlogVersionCode") -> (project.property("backlogVersionCode") as String).toInt()
+            else -> 1
+        }
+        versionName = when {
+            project.hasProperty("versionName") -> project.property("versionName") as String
+            project.hasProperty("backlogVersionName") -> project.property("backlogVersionName") as String
+            else -> "0.1.0"
+        }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Clé debug FIXE, committée dans le repo (app/debug.keystore). Sans ça,
+    // chaque runner CI neuf régénère sa propre clé debug aléatoire
+    // (~/.android/debug.keystore n'existe pas encore) : deux builds
+    // successifs sont alors signés différemment, et Android refuse
+    // d'installer la mise à jour par-dessus l'ancienne ("app non installée")
+    // tant qu'on n'a pas désinstallé à la main. Une clé debug n'a rien de
+    // secret (mot de passe "android" documenté par Google) — la committer
+    // est la pratique standard pour des builds CI reproductibles.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = file(releaseKeystore!!)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
