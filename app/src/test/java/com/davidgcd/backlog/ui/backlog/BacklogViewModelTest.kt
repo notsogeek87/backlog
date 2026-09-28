@@ -40,7 +40,7 @@ class BacklogViewModelTest {
     }
 
     @Test
-    fun `sort by name orders alphabetically`() = runTest {
+    fun `sort by name orders alphabetically`() = runTest(testDispatcher) {
         val viewModel = viewModel(
             GameEntity(igdbId = 1, name = "Zelda", addedAt = 1),
             GameEntity(igdbId = 2, name = "Apex", addedAt = 2),
@@ -54,7 +54,7 @@ class BacklogViewModelTest {
     }
 
     @Test
-    fun `sort by recently added is most recent first`() = runTest {
+    fun `sort by recently added is most recent first`() = runTest(testDispatcher) {
         val viewModel = viewModel(
             GameEntity(igdbId = 1, name = "Old", addedAt = 1),
             GameEntity(igdbId = 2, name = "New", addedAt = 2),
@@ -68,7 +68,7 @@ class BacklogViewModelTest {
     }
 
     @Test
-    fun `sort by release date puts games with no date last`() = runTest {
+    fun `sort by release date puts games with no date last`() = runTest(testDispatcher) {
         val viewModel = viewModel(
             GameEntity(igdbId = 1, name = "Undated", addedAt = 1, firstReleaseDate = null),
             GameEntity(igdbId = 2, name = "Dated", addedAt = 2, firstReleaseDate = 100L),
@@ -82,7 +82,7 @@ class BacklogViewModelTest {
     }
 
     @Test
-    fun `archived games are hidden until the filter shows them`() = runTest {
+    fun `archived games are hidden until the filter shows them`() = runTest(testDispatcher) {
         val viewModel = viewModel(
             GameEntity(igdbId = 1, name = "Active", addedAt = 1, isArchived = false),
             GameEntity(igdbId = 2, name = "Archived", addedAt = 2, isArchived = true),
@@ -98,7 +98,7 @@ class BacklogViewModelTest {
     }
 
     @Test
-    fun `genre filter only keeps matching games`() = runTest {
+    fun `genre filter only keeps matching games`() = runTest(testDispatcher) {
         val viewModel = viewModel(
             GameEntity(igdbId = 1, name = "RPG", addedAt = 1, genresJson = """[{"id":1,"name":"RPG"}]"""),
             GameEntity(igdbId = 2, name = "Shooter", addedAt = 2, genresJson = """[{"id":2,"name":"Shooter"}]"""),
@@ -112,7 +112,7 @@ class BacklogViewModelTest {
     }
 
     @Test
-    fun `isBacklogEmpty reflects the unfiltered backlog, not the current filter`() = runTest {
+    fun `isBacklogEmpty reflects the unfiltered backlog, not the current filter`() = runTest(testDispatcher) {
         val viewModel = viewModel(
             GameEntity(igdbId = 1, name = "Archived", addedAt = 1, isArchived = true),
         )
