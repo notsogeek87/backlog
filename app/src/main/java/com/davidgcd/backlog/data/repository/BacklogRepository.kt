@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.repository
 
 import com.davidgcd.backlog.data.local.GameDao
 import com.davidgcd.backlog.data.local.GameEntity
+import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.Genre
 import com.davidgcd.backlog.model.Platform
@@ -21,11 +22,19 @@ class BacklogRepository(
 ) {
     fun observeBacklog(): Flow<List<GameEntity>> = gameDao.observeAll()
 
+    suspend fun allGames(): List<GameEntity> = gameDao.allGames()
+
     fun observeGame(igdbId: Long): Flow<GameEntity?> = gameDao.observeById(igdbId)
 
     suspend fun activeGamesWithReleaseDate(): List<GameEntity> = gameDao.activeGamesWithReleaseDate()
 
+    suspend fun activeGames(): List<GameEntity> = gameDao.activeGames()
+
+    suspend fun findEntity(igdbId: Long): GameEntity? = gameDao.findById(igdbId)
+
     suspend fun searchGames(query: String): List<Game> = igdbService.searchGames(query)
+
+    suspend fun getPopularGames(limit: Int = 20): List<Game> = igdbService.getPopularGames(limit)
 
     /** Falls back to IGDB when the game isn't (or isn't yet) in the backlog. */
     suspend fun fetchRemoteGame(igdbId: Long): Game? = igdbService.getGame(igdbId)
@@ -67,4 +76,36 @@ class BacklogRepository(
         if (entity.steamAppId == steamAppId) return
         gameDao.update(entity.copy(steamAppId = steamAppId))
     }
+
+    /**
+     * Re-fetches one backlog entry from IGDB, persists whatever changed, and
+     * reports a date change / newly-seen platforms — the data half of the
+     * iOS app's SyncDriftDispatcher (notification dispatch is the caller's
+     * job, same separation as `reconcileDateChange`/`reconcilePlatforms`
+     * there). The baseline is always the entity as it stood *before* this
+     * call, so a repeated run never re-reports the same change twice.
+     */
+    suspend fun refreshAndDetectDrift(entity: GameEntity): DriftResult? {
+        val fresh = igdbService.getGame(entity.igdbId) ?: return null
+
+        val oldPlatformNames = GameJsonCache.platformNames(entity).toSet()
+        val newPlatformNames = fresh.platforms?.map { it.name }?.toSet() ?: emptySet()
+        val addedPlatforms = (newPlatformNames - oldPlatformNames).toList()
+        val dateChanged = entity.firstReleaseDate != null && entity.firstReleaseDate != fresh.firstReleaseDate
+
+        val updated = fresh.toEntity(moshi).copy(
+            isArchived = entity.isArchived,
+            addedAt = entity.addedAt,
+            steamAppId = fresh.steamAppId ?: entity.steamAppId,
+        )
+        if (updated != entity) gameDao.update(updated)
+
+        return if (dateChanged || addedPlatforms.isNotEmpty()) {
+            DriftResult(dateChanged = dateChanged, newPlatforms = addedPlatforms)
+        } else {
+            null
+        }
+    }
 }
+
+data class DriftResult(val dateChanged: Boolean, val newPlatforms: List<String>)

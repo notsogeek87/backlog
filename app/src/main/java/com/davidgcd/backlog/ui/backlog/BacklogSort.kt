@@ -1,11 +1,16 @@
 package com.davidgcd.backlog.ui.backlog
 
-/** Mirrors the iOS app's SortOption: a stable name, never a translated/positional value. */
-enum class BacklogSort(val label: String) {
-    RECENTLY_ADDED("Recently added"),
-    NAME("Name (A-Z)"),
-    RELEASE_DATE("Release date"),
-    RATING("Rating"),
+/**
+ * Mirrors the iOS app's SortOption: a stable name, never a translated or
+ * positional value. The display label lives at the UI layer (see
+ * `BacklogSort.label()` in BacklogScreen.kt) so it can be localized —
+ * never stored or compared on.
+ */
+enum class BacklogSort {
+    RECENTLY_ADDED,
+    NAME,
+    RELEASE_DATE,
+    RATING,
 }
 
 /**

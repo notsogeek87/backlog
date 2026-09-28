@@ -29,8 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.repository.MetacriticScore
@@ -51,7 +53,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                 title = { Text("") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -60,7 +62,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             when (val current = state) {
                 is GameDetailState.Loading -> Centered { CircularProgressIndicator() }
-                is GameDetailState.NotFound -> Centered { Text("Game not found") }
+                is GameDetailState.NotFound -> Centered { Text(stringResource(R.string.game_not_found)) }
                 is GameDetailState.InBacklog -> GameDetailContent(
                     display = current.entity.toDisplay(),
                     ratings = ratings,
@@ -150,7 +152,7 @@ private fun GameDetailContent(
 
         if (display.platforms.isNotEmpty()) {
             Text(
-                text = "Platforms: " + display.platforms.joinToString(", "),
+                text = stringResource(R.string.details_platforms_prefix, display.platforms.joinToString(", ")),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 16.dp),
             )
@@ -159,14 +161,14 @@ private fun GameDetailContent(
         Column(modifier = Modifier.padding(top = 24.dp)) {
             if (inBacklog) {
                 Button(onClick = onArchiveToggle) {
-                    Text(if (isArchived) "Unarchive" else "Archive")
+                    Text(stringResource(if (isArchived) R.string.action_unarchive else R.string.action_archive))
                 }
                 Button(onClick = onRemove, modifier = Modifier.padding(top = 8.dp)) {
-                    Text("Remove from backlog")
+                    Text(stringResource(R.string.action_remove_from_backlog))
                 }
             } else {
                 Button(onClick = onAdd) {
-                    Text("Add to backlog")
+                    Text(stringResource(R.string.action_add_to_backlog))
                 }
             }
         }
@@ -176,7 +178,7 @@ private fun GameDetailContent(
 @Composable
 private fun RatingsSection(ratings: RatingsState, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(text = "Ratings", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(R.string.ratings_title), style = MaterialTheme.typography.titleMedium)
         if (ratings.isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp).size(20.dp))
         } else {
@@ -192,7 +194,7 @@ private fun RatingsSection(ratings: RatingsState, modifier: Modifier = Modifier)
 private fun MetacriticCard(score: MetacriticScore, modifier: Modifier = Modifier) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(text = "Metacritic", style = MaterialTheme.typography.labelMedium)
+            Text(text = stringResource(R.string.ratings_metacritic), style = MaterialTheme.typography.labelMedium)
             Text(text = score.score.toString(), style = MaterialTheme.typography.headlineSmall)
         }
     }
@@ -202,11 +204,12 @@ private fun MetacriticCard(score: MetacriticScore, modifier: Modifier = Modifier
 private fun SteamCard(summary: SteamReviewSummary, modifier: Modifier = Modifier) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(text = "Steam", style = MaterialTheme.typography.labelMedium)
+            Text(text = stringResource(R.string.ratings_steam), style = MaterialTheme.typography.labelMedium)
             Text(text = "${summary.percentPositive}%", style = MaterialTheme.typography.headlineSmall)
+            // Steam's own verdict wording ("Overwhelmingly Positive"…) — API content, never translated.
             summary.verdict?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
             Text(
-                text = "${summary.totalReviews} reviews",
+                text = stringResource(R.string.ratings_steam_review_count, summary.totalReviews),
                 style = MaterialTheme.typography.labelSmall,
             )
         }

@@ -21,6 +21,18 @@ class IgdbService(private val api: IgdbApi) {
         return api.search(apicalypse)
     }
 
+    /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */
+    suspend fun getPopularGames(limit: Int = 20): List<Game> {
+        RateLimiter.igdb.acquire()
+        val apicalypse = """
+            fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
+            where total_rating_count > 10 & cover != null;
+            sort total_rating_count desc;
+            limit $limit;
+        """.trimIndent()
+        return api.games(apicalypse)
+    }
+
     suspend fun getGame(id: Long): Game? {
         RateLimiter.igdb.acquire()
         // websites.category/url is only requested here, never in searchGames — the iOS app's rule of

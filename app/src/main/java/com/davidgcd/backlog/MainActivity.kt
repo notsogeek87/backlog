@@ -43,6 +43,8 @@ class MainActivity : ComponentActivity() {
                         notificationPreferences = notificationPreferences,
                         steamService = app.steamService,
                         metacriticService = app.metacriticService,
+                        csvExportService = app.csvExportService,
+                        csvImportService = app.csvImportService,
                     )
                 }
             }

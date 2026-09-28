@@ -63,14 +63,29 @@ sur Android avec des briques Android natives.
   `HomeRoute.game(id:)` sur iOS ; section Notes = `RatingsState`, jamais de
   "note indisponible" affiché, comme la section Notes de l'app iOS),
   `ui/settings/` (réglages de notifications).
+- `ui/discover/` — jeux populaires IGDB (`getPopularGames`, tri par
+  `total_rating_count`), équivalent simplifié de Découvertes/
+  `PopularGamesLoader` sur iOS (pas de cache disque ni de stale-while-
+  revalidate pour l'instant) ; les jeux déjà dans le backlog sont filtrés
+  côté client.
+- `data/csv/` — `CsvColumn` (en-têtes machine, `yyyy-MM-dd`, jamais
+  traduits — même règle que `CSVColumn` sur iOS), `CsvFormat` (lecture/
+  écriture RFC 4180 minimale), `CsvExportService`, `CsvImportService`
+  (une ligne avec `igdbId` résout directement, une ligne nom-seul passe par
+  une recherche classée avec `TitleSimilarity`, une ligne non résolue est
+  ignorée sans jamais annuler tout l'import).
 - `notifications/` — `NotificationPreferences` (DataStore, équivalent
-  `UserDefaults`/`NotificationPolicyStore`), `ReleaseReminderWorker` +
-  `ReleaseReminderScheduler` (WorkManager périodique quotidien, équivalent
-  simplifié du `NightlySyncService`/`BGTaskScheduler` iOS — un seul cas géré
-  pour l'instant : "sort aujourd'hui", pas encore de choix d'heure/délai ni
-  d'alertes de changement de date/plateforme), `NotificationIds` (fabrique
-  d'identifiants, jamais construits à la main ailleurs — même règle que
-  `NotificationIdentifier` côté iOS).
+  `UserDefaults`/`NotificationPolicyStore` — délai configurable via
+  `ReleaseReminderSchedule`, heure, et les deux alertes de dérive),
+  `ReleaseReminderWorker` + `ReleaseReminderScheduler` (WorkManager
+  périodique quotidien réancré à l'heure choisie, équivalent simplifié du
+  `NightlySyncService`/`BGTaskScheduler` iOS — trois choses vérifiées à
+  chaque passage : le rappel de sortie au délai choisi, un changement de
+  date, une nouvelle plateforme ; `BacklogRepository.refreshAndDetectDrift`
+  fait le travail de données, le worker celui de la notification, même
+  séparation que `SyncDriftDispatcher` côté iOS), `NotificationIds`
+  (fabrique d'identifiants, jamais construits à la main ailleurs — même
+  règle que `NotificationIdentifier` côté iOS).
 - `util/` — `RateLimiter` (fenêtre glissante, 4 req/s sur IGDB, slot réservé
   avant l'appel — même règle que l'app iOS), `IgdbImage` (seul constructeur
   d'URL d'images IGDB, jamais construit à la main ailleurs),
@@ -101,17 +116,39 @@ Le lien Steam (`GameEntity.steamAppId`) est extrait automatiquement du
 champ IGDB `websites` (catégorie 13) au premier chargement d'un jeu, et
 persisté — pas besoin de le renseigner à la main.
 
+## Localisation FR/EN
+
+Anglais dans le code (`strings.xml`), français dans `values-fr/strings.xml`
+— suit la langue de l'appareil, comme l'app iOS. Les noms de genres/
+plateformes IGDB, le nom des jeux et le verdict Steam ("Overwhelmingly
+Positive"…) restent tels que l'API les renvoie, jamais traduits — même
+règle que l'app iOS sur le contenu API. `BacklogSort`/`ReleaseReminderSchedule`
+stockent un nom d'enum stable ; leur libellé affiché est résolu à l'écran
+via `stringResource`, jamais stocké traduit. Limite connue : les messages
+d'erreur de recherche (`BacklogViewModel.searchError`) et les noms de jeu
+non résolus lors d'un import CSV restent en anglais pour l'instant — les
+traduire demanderait de faire circuler un `Context`/`Resources` jusque
+dans les ViewModels, non fait dans ce premier passage.
+
+## Tests
+
+`app/src/test/` — tourne dans `testDebugUnitTest` (celui que la CI exécute),
+sans émulateur :
+- `TitleSimilarityTest`, `ReleaseDateFormattingTest` — logique pure.
+- `GameDaoTest` — Room en mémoire **sous Robolectric**, pour avoir un vrai
+  test de DAO sans matériel connecté.
+- `BacklogViewModelTest` — `FakeGameDao`/`FakeIgdbApi` (interfaces, donc
+  fakables sans mock ni Room), couvre le tri, le filtre archivés/genre et
+  la distinction "backlog vide" vs "résultats filtrés vides".
+
 ## Ce qui manque encore (prochaines étapes suggérées)
 
-- Un vrai fournisseur Metacritic branché sur `MetacriticApi` (voir ci-dessus)
-- Choix du délai de notification (à la sortie / veille / semaine avant),
-  alertes de changement de date ou de plateformes
+- Un vrai fournisseur Metacritic branché sur `MetacriticApi` (voir plus haut)
 - Widget Home Screen (Glance, équivalent App Group/WidgetKit)
-- Tests (Room in-memory pour les DAO, tests de ViewModel avec un
-  repository fake — `BacklogViewModelTest` sur le tri/filtre serait le
-  premier candidat naturel)
-- Localisation FR/EN (`strings.xml` par langue, comme les catalogues
-  `.xcstrings` de l'app iOS)
-- Une vraie migration Room quand l'app aura un premier utilisateur
-  installé (`AppDatabase` utilise `fallbackToDestructiveMigration()` pour
-  l'instant, acceptable seulement avant toute sortie)
+- Sync cloud multi-appareils (Firebase ou backend perso)
+- Traduire les messages d'erreur/résultats qui restent en anglais (voir
+  "Localisation FR/EN" ci-dessus)
+- Cache disque + stale-while-revalidate pour Découvertes (actuellement un
+  fetch à chaque ouverture de l'écran)
+- Tests instrumentés (androidTest) pour la navigation et les permissions,
+  au-delà de ce que Robolectric peut couvrir en JVM

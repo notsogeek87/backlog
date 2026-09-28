@@ -1,4 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Backlog</string>
+
+    <!-- Backlog screen -->
+    <string name="backlog_title">Backlog</string>
+    <string name="action_search">Search</string>
+    <string name="action_discover">Discover</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_sort">Sort</string>
+    <string name="action_filter">Filter</string>
+    <string name="search_placeholder">Search IGDB…</string>
+    <string name="filter_show_archived">Show archived</string>
+    <string name="filter_genre">Genre</string>
+    <string name="filter_platform">Platform</string>
+    <string name="filter_any">Any</string>
+    <string name="backlog_empty">Your backlog is empty. Search a game to add it.</string>
+    <string name="backlog_filtered_empty">No games match your filters.</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_unarchive">Unarchive</string>
+    <string name="action_add_to_backlog">Add to backlog</string>
+    <string name="label_archived">Archived</string>
+
+    <string name="sort_recently_added">Recently added</string>
+    <string name="sort_name">Name (A-Z)</string>
+    <string name="sort_release_date">Release date</string>
+    <string name="sort_rating">Rating</string>
+
+    <!-- Game detail screen -->
+    <string name="action_back">Back</string>
+    <string name="game_not_found">Game not found</string>
+    <string name="ratings_title">Ratings</string>
+    <string name="ratings_metacritic">Metacritic</string>
+    <string name="ratings_steam">Steam</string>
+    <string name="ratings_steam_review_count">%1$d reviews</string>
+    <string name="details_platforms_prefix">Platforms: %1$s</string>
+    <string name="action_remove_from_backlog">Remove from backlog</string>
+
+    <!-- Discover screen -->
+    <string name="discover_title">Discover</string>
+    <string name="discover_error">Couldn\'t load popular games.</string>
+    <string name="action_retry">Retry</string>
+    <string name="discover_already_in_backlog">Already in backlog</string>
+    <string name="action_add">Add</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_games">Games</string>
+    <string name="settings_release_reminders_title">Release day reminders</string>
+    <string name="settings_release_reminders_subtitle">Notify me when a backlog game is out</string>
+    <string name="settings_remind_me">Remind me</string>
+    <string name="settings_time">Time</string>
+    <string name="settings_section_changes">Changes</string>
+    <string name="settings_date_change_title">Release date changes</string>
+    <string name="settings_date_change_subtitle">Notify me if a game\'s release date moves</string>
+    <string name="settings_platform_change_title">New platforms</string>
+    <string name="settings_platform_change_subtitle">Notify me if a game ships on a new platform</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_export_csv">Export CSV</string>
+    <string name="settings_import_csv">Import CSV</string>
+    <string name="settings_import_done_title">Import finished</string>
+    <string name="settings_import_done_summary">%1$d added, %2$d skipped.</string>
+    <string name="settings_import_done_failed_prefix">Couldn\'t match: %1$s</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_ok">OK</string>
+
+    <string name="schedule_release_day">On release day</string>
+    <string name="schedule_day_before">The day before</string>
+    <string name="schedule_week_before">A week before</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_release">Release reminders</string>
+    <string name="notification_channel_drift">Date &amp; platform changes</string>
+    <string name="notification_out_today">Out today</string>
+    <string name="notification_out_tomorrow">Out tomorrow</string>
+    <string name="notification_out_in_days">Out in %1$d days</string>
+    <string name="notification_date_changed">Release date changed</string>
+    <string name="notification_new_platforms">Now on %1$s</string>
 </resources>

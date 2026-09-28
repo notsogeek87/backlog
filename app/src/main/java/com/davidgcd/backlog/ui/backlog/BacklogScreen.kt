@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -41,16 +42,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.IgdbImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSettingsClick: () -> Unit) {
+fun BacklogScreen(
+    viewModel: BacklogViewModel,
+    onGameClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit,
+    onDiscoverClick: () -> Unit,
+) {
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
 
@@ -66,7 +74,7 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Backlog") },
+                title = { Text(stringResource(R.string.backlog_title)) },
                 actions = {
                     if (!showSearch) {
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
@@ -78,10 +86,13 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
                         )
                     }
                     IconButton(onClick = { showSearch = !showSearch }) {
-                        Icon(Icons.Filled.Search, contentDescription = "Search")
+                        Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.action_search))
+                    }
+                    IconButton(onClick = onDiscoverClick) {
+                        Icon(Icons.Filled.Explore, contentDescription = stringResource(R.string.action_discover))
                     }
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.action_settings))
                     }
                 },
             )
@@ -96,7 +107,7 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
                         viewModel.search(it)
                     },
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    placeholder = { Text("Search IGDB…") },
+                    placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 )
                 if (isSearching) {
                     CircularProgressIndicator(modifier = Modifier.padding(16.dp))
@@ -108,7 +119,9 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
                 )
             } else {
                 if (isBacklogEmpty) {
-                    EmptyBacklog()
+                    EmptyState(stringResource(R.string.backlog_empty))
+                } else if (visibleBacklog.isEmpty()) {
+                    EmptyState(stringResource(R.string.backlog_filtered_empty))
                 } else {
                     BacklogList(
                         games = visibleBacklog,
@@ -123,15 +136,12 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
 }
 
 @Composable
-private fun EmptyBacklog() {
+private fun EmptyState(message: String) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = "Your backlog is empty. Search a game to add it.",
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
-        )
+        Text(text = message, modifier = Modifier.fillMaxWidth().padding(24.dp))
     }
 }
 
@@ -140,12 +150,12 @@ private fun EmptyBacklog() {
 private fun SortMenuButton(current: BacklogSort, onSelect: (BacklogSort) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     IconButton(onClick = { expanded = true }) {
-        Icon(Icons.Filled.Sort, contentDescription = "Sort")
+        Icon(Icons.Filled.Sort, contentDescription = stringResource(R.string.action_sort))
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         BacklogSort.entries.forEach { option ->
             DropdownMenuItem(
-                text = { Text(option.label) },
+                text = { Text(option.label()) },
                 leadingIcon = { RadioButton(selected = option == current, onClick = null) },
                 onClick = {
                     onSelect(option)
@@ -155,6 +165,16 @@ private fun SortMenuButton(current: BacklogSort, onSelect: (BacklogSort) -> Unit
         }
     }
 }
+
+@Composable
+private fun BacklogSort.label(): String = stringResource(
+    when (this) {
+        BacklogSort.RECENTLY_ADDED -> R.string.sort_recently_added
+        BacklogSort.NAME -> R.string.sort_name
+        BacklogSort.RELEASE_DATE -> R.string.sort_release_date
+        BacklogSort.RATING -> R.string.sort_rating
+    },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,13 +188,13 @@ private fun FilterMenuButton(
     IconButton(onClick = { expanded = true }) {
         Icon(
             Icons.Filled.FilterList,
-            contentDescription = "Filter",
+            contentDescription = stringResource(R.string.action_filter),
             tint = if (current.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(
-            text = { Text("Show archived") },
+            text = { Text(stringResource(R.string.filter_show_archived)) },
             trailingIcon = {
                 Switch(
                     checked = current.showArchived,
@@ -184,7 +204,11 @@ private fun FilterMenuButton(
             onClick = { onChange(current.copy(showArchived = !current.showArchived)) },
         )
         if (availableGenres.isNotEmpty()) {
-            Text("Genre", modifier = Modifier.padding(start = 12.dp, top = 8.dp), style = MaterialTheme.typography.labelMedium)
+            Text(
+                stringResource(R.string.filter_genre),
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+            )
             FilterOptionRow(
                 options = availableGenres,
                 selected = current.genre,
@@ -192,7 +216,11 @@ private fun FilterMenuButton(
             )
         }
         if (availablePlatforms.isNotEmpty()) {
-            Text("Platform", modifier = Modifier.padding(start = 12.dp, top = 8.dp), style = MaterialTheme.typography.labelMedium)
+            Text(
+                stringResource(R.string.filter_platform),
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+            )
             FilterOptionRow(
                 options = availablePlatforms,
                 selected = current.platform,
@@ -209,9 +237,11 @@ private fun FilterOptionRow(options: List<String>, selected: String?, onSelect: 
         FilterChip(
             selected = selected == null,
             onClick = { onSelect(null) },
-            label = { Text("Any") },
+            label = { Text(stringResource(R.string.filter_any)) },
             modifier = Modifier.padding(end = 4.dp),
         )
+        // Genre/platform names come straight from IGDB and are never translated,
+        // same rule as the iOS app leaving API content (genres, statuses) as sent.
         options.take(6).forEach { option ->
             FilterChip(
                 selected = selected == option,
@@ -230,25 +260,12 @@ private fun BacklogList(
     onRemove: (GameEntity) -> Unit,
     onClick: (GameEntity) -> Unit,
 ) {
-    if (games.isEmpty()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = "Your backlog is empty. Search a game to add it.",
-                modifier = Modifier.fillMaxWidth().padding(24.dp),
-            )
-        }
-        return
-    }
-
     LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
         items(games, key = { it.igdbId }) { game ->
             ListItem(
                 modifier = Modifier.clickable { onClick(game) },
                 headlineContent = { Text(game.name) },
-                supportingContent = { if (game.isArchived) Text("Archived") },
+                supportingContent = { if (game.isArchived) Text(stringResource(R.string.label_archived)) },
                 leadingContent = {
                     game.coverImageId?.let { imageId ->
                         AsyncImage(
@@ -263,7 +280,11 @@ private fun BacklogList(
                 trailingContent = {
                     Row {
                         IconButton(onClick = { onArchiveToggle(game) }) {
-                            Text(if (game.isArchived) "Unarchive" else "Archive")
+                            Text(
+                                stringResource(
+                                    if (game.isArchived) R.string.action_unarchive else R.string.action_archive,
+                                ),
+                            )
                         }
                     }
                 },
@@ -292,7 +313,7 @@ private fun SearchResultsList(results: List<Game>, onAdd: (Game) -> Unit, onClic
                 },
                 trailingContent = {
                     IconButton(onClick = { onAdd(game) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add to backlog")
+                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_to_backlog))
                     }
                 },
             )

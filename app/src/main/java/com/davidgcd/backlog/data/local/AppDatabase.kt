@@ -19,9 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "backlog.db",
                 )
-                    // No installed base yet at this pre-release stage — a real migration
-                    // replaces this the moment the app ships to a first user (see README).
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(*Migrations.ALL)
                     .build().also { instance = it }
             }
     }

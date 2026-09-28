@@ -26,4 +26,12 @@ object ReleaseDateFormatting {
         val today = now.atZone(ZoneOffset.UTC).toLocalDate()
         return releaseDay == today
     }
+
+    /** True on the calendar day exactly [leadDays] before the release — the moment a lead-time reminder fires. */
+    fun isReminderDueToday(epochSeconds: Long?, leadDays: Int, now: Instant = Instant.now()): Boolean {
+        if (epochSeconds == null) return false
+        val releaseDay = Instant.ofEpochSecond(epochSeconds).atZone(ZoneOffset.UTC).toLocalDate()
+        val today = now.atZone(ZoneOffset.UTC).toLocalDate()
+        return releaseDay.minusDays(leadDays.toLong()) == today
+    }
 }

@@ -16,11 +16,13 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 import kotlinx.coroutines.flow.first
 
 /**
- * Daily check: any active backlog game releasing today gets a local
- * notification. Equivalent role to the iOS app's release-day reminder
- * (NotificationService + SyncDriftDispatcher), trimmed to a single
- * "releases today" case for this first pass — no lead-time choice, no
- * drift/platform-change alerts yet (see README).
+ * Daily check, equivalent role to the iOS app's release-day reminder
+ * (NotificationService) plus its drift alerts (SyncDriftDispatcher):
+ * 1. any active backlog game whose release date is exactly the user's
+ *    chosen lead time away gets a local notification;
+ * 2. if enabled, a bounded slice of the backlog is refreshed from IGDB and
+ *    a date change / new platform posts its own alert — the entity is
+ *    updated in the same pass, so a repeat run never re-reports it.
  */
 class ReleaseReminderWorker(
     context: Context,
@@ -30,45 +32,110 @@ class ReleaseReminderWorker(
     override suspend fun doWork(): Result {
         val app = applicationContext as BacklogApplication
         val preferences = NotificationPreferences(applicationContext)
-        if (!preferences.releaseRemindersEnabled.first()) return Result.success()
+        ensureChannels()
 
-        ensureChannel()
+        val notificationsAllowed = ActivityCompat.checkSelfPermission(
+            applicationContext,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
 
-        val releasingToday = app.repository.activeGamesWithReleaseDate()
-            .filter { ReleaseDateFormatting.isToday(it.firstReleaseDate) }
-
-        if (releasingToday.isEmpty()) return Result.success()
-
-        if (ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Permission not granted (or pre-Android 13, where none is needed but we still
-            // guard defensively): nothing more to do until the user grants it.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return Result.success()
+        if (preferences.releaseRemindersEnabled.first()) {
+            checkReleaseReminders(app, preferences, notificationsAllowed)
         }
 
-        val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
-        releasingToday.forEach { game ->
-            val notification = NotificationCompat.Builder(applicationContext, NotificationIds.RELEASE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(game.name)
-                .setContentText("Out today")
-                .setAutoCancel(true)
-                .build()
-            notificationManager.notify(NotificationIds.releaseNotificationId(game.igdbId), notification)
+        if (preferences.dateChangeAlertsEnabled.first() || preferences.platformChangeAlertsEnabled.first()) {
+            checkDrift(app, preferences, notificationsAllowed)
         }
 
         return Result.success()
     }
 
-    private fun ensureChannel() {
+    private suspend fun checkReleaseReminders(
+        app: BacklogApplication,
+        preferences: NotificationPreferences,
+        notificationsAllowed: Boolean,
+    ) {
+        val leadDays = preferences.schedule.first().leadDays
+        val due = app.repository.activeGamesWithReleaseDate()
+            .filter { ReleaseDateFormatting.isReminderDueToday(it.firstReleaseDate, leadDays) }
+
+        if (due.isEmpty() || !notificationsAllowed) return
+
+        val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
+        val body = when (leadDays) {
+            0 -> applicationContext.getString(R.string.notification_out_today)
+            1 -> applicationContext.getString(R.string.notification_out_tomorrow)
+            else -> applicationContext.getString(R.string.notification_out_in_days, leadDays)
+        }
+        due.forEach { game ->
+            val notification = NotificationCompat.Builder(applicationContext, NotificationIds.RELEASE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(game.name)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .build()
+            notificationManager.notify(NotificationIds.releaseNotificationId(game.igdbId), notification)
+        }
+    }
+
+    private suspend fun checkDrift(
+        app: BacklogApplication,
+        preferences: NotificationPreferences,
+        notificationsAllowed: Boolean,
+    ) {
+        val dateAlertsEnabled = preferences.dateChangeAlertsEnabled.first()
+        val platformAlertsEnabled = preferences.platformChangeAlertsEnabled.first()
+        val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
+
+        app.repository.activeGames().take(DRIFT_CHECK_BATCH_SIZE).forEach { entity ->
+            val drift = app.repository.refreshAndDetectDrift(entity) ?: return@forEach
+            if (!notificationsAllowed) return@forEach
+
+            if (drift.dateChanged && dateAlertsEnabled) {
+                notificationManager.notify(
+                    NotificationIds.dateChangeNotificationId(entity.igdbId),
+                    driftNotification(entity.name, applicationContext.getString(R.string.notification_date_changed)),
+                )
+            }
+            if (drift.newPlatforms.isNotEmpty() && platformAlertsEnabled) {
+                val platforms = drift.newPlatforms.joinToString(", ")
+                notificationManager.notify(
+                    NotificationIds.newPlatformNotificationId(entity.igdbId),
+                    driftNotification(entity.name, applicationContext.getString(R.string.notification_new_platforms, platforms)),
+                )
+            }
+        }
+    }
+
+    private fun driftNotification(title: String, body: String) =
+        NotificationCompat.Builder(applicationContext, NotificationIds.DRIFT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .build()
+
+    private fun ensureChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = applicationContext.getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(
-            NotificationIds.RELEASE_CHANNEL_ID,
-            "Release reminders",
-            NotificationManager.IMPORTANCE_DEFAULT,
+        manager.createNotificationChannel(
+            NotificationChannel(
+                NotificationIds.RELEASE_CHANNEL_ID,
+                applicationContext.getString(R.string.notification_channel_release),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ),
         )
-        manager.createNotificationChannel(channel)
+        manager.createNotificationChannel(
+            NotificationChannel(
+                NotificationIds.DRIFT_CHANNEL_ID,
+                applicationContext.getString(R.string.notification_channel_drift),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ),
+        )
+    }
+
+    private companion object {
+        /** Bounds how many games get an IGDB refresh per run — a large backlog shouldn't hammer the API daily. */
+        const val DRIFT_CHECK_BATCH_SIZE = 30
     }
 }

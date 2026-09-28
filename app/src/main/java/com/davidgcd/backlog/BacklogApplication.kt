@@ -2,6 +2,8 @@ package com.davidgcd.backlog
 
 import android.app.Application
 import com.davidgcd.backlog.config.Secrets
+import com.davidgcd.backlog.data.csv.CsvExportService
+import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.local.AppDatabase
 import com.davidgcd.backlog.data.remote.IgdbApi
 import com.davidgcd.backlog.data.remote.IgdbAuthInterceptor
@@ -35,6 +37,12 @@ class BacklogApplication : Application() {
         private set
 
     lateinit var metacriticService: MetacriticService
+        private set
+
+    lateinit var csvExportService: CsvExportService
+        private set
+
+    lateinit var csvImportService: CsvImportService
         private set
 
     override fun onCreate() {
@@ -94,6 +102,8 @@ class BacklogApplication : Application() {
         )
         steamService = SteamService(steamApi)
         metacriticService = MetacriticService(metacriticApi)
+        csvExportService = CsvExportService(this)
+        csvImportService = CsvImportService(this, repository)
 
         ReleaseReminderScheduler.schedule(this)
     }

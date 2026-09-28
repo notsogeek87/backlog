@@ -13,6 +13,9 @@ interface GameDao {
     @Query("SELECT * FROM games ORDER BY addedAt DESC")
     fun observeAll(): Flow<List<GameEntity>>
 
+    @Query("SELECT * FROM games ORDER BY addedAt DESC")
+    suspend fun allGames(): List<GameEntity>
+
     @Query("SELECT * FROM games WHERE igdbId = :igdbId LIMIT 1")
     suspend fun findById(igdbId: Long): GameEntity?
 
@@ -21,6 +24,9 @@ interface GameDao {
 
     @Query("SELECT * FROM games WHERE isArchived = 0 AND firstReleaseDate IS NOT NULL")
     suspend fun activeGamesWithReleaseDate(): List<GameEntity>
+
+    @Query("SELECT * FROM games WHERE isArchived = 0 ORDER BY addedAt ASC")
+    suspend fun activeGames(): List<GameEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(game: GameEntity)
