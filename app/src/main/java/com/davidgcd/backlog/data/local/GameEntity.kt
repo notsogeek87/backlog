@@ -19,6 +19,7 @@ data class GameEntity(
     val platformsJson: String? = null,
     val summary: String? = null,
     val totalRating: Double? = null,
+    val steamAppId: Long? = null,
     val isArchived: Boolean = false,
     val addedAt: Long = System.currentTimeMillis(),
 )

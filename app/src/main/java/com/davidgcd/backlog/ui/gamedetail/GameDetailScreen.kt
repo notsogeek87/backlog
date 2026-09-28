@@ -2,15 +2,18 @@ package com.davidgcd.backlog.ui.gamedetail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,6 +32,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.davidgcd.backlog.data.local.GameEntity
+import com.davidgcd.backlog.data.local.GameJsonCache
+import com.davidgcd.backlog.data.repository.MetacriticScore
+import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.IgdbImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
@@ -37,6 +43,7 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 @Composable
 fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    val ratings by viewModel.ratings.collectAsState()
 
     Scaffold(
         topBar = {
@@ -56,6 +63,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                 is GameDetailState.NotFound -> Centered { Text("Game not found") }
                 is GameDetailState.InBacklog -> GameDetailContent(
                     display = current.entity.toDisplay(),
+                    ratings = ratings,
                     inBacklog = true,
                     isArchived = current.entity.isArchived,
                     onArchiveToggle = { viewModel.setArchived(current.entity, !current.entity.isArchived) },
@@ -64,6 +72,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                 )
                 is GameDetailState.Remote -> GameDetailContent(
                     display = current.game.toDisplay(),
+                    ratings = ratings,
                     inBacklog = false,
                     isArchived = false,
                     onArchiveToggle = {},
@@ -87,6 +96,7 @@ private fun Centered(content: @Composable () -> Unit) {
 @Composable
 private fun GameDetailContent(
     display: GameDisplay,
+    ratings: RatingsState,
     inBacklog: Boolean,
     isArchived: Boolean,
     onArchiveToggle: () -> Unit,
@@ -132,6 +142,12 @@ private fun GameDetailContent(
             Text(text = summary, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 16.dp))
         }
 
+        // Never renders "No score available" — a game with neither score just has no section here,
+        // same rule as the iOS app's Notes (GameRatingsSection): missing is not an error.
+        if (!ratings.isEmpty) {
+            RatingsSection(ratings, modifier = Modifier.padding(top = 16.dp))
+        }
+
         if (display.platforms.isNotEmpty()) {
             Text(
                 text = "Platforms: " + display.platforms.joinToString(", "),
@@ -157,6 +173,46 @@ private fun GameDetailContent(
     }
 }
 
+@Composable
+private fun RatingsSection(ratings: RatingsState, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(text = "Ratings", style = MaterialTheme.typography.titleMedium)
+        if (ratings.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp).size(20.dp))
+        } else {
+            Row(modifier = Modifier.padding(top = 8.dp)) {
+                ratings.metacritic?.let { MetacriticCard(it, modifier = Modifier.padding(end = 8.dp)) }
+                ratings.steam?.let { SteamCard(it) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetacriticCard(score: MetacriticScore, modifier: Modifier = Modifier) {
+    Card(modifier = modifier) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(text = "Metacritic", style = MaterialTheme.typography.labelMedium)
+            Text(text = score.score.toString(), style = MaterialTheme.typography.headlineSmall)
+        }
+    }
+}
+
+@Composable
+private fun SteamCard(summary: SteamReviewSummary, modifier: Modifier = Modifier) {
+    Card(modifier = modifier) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(text = "Steam", style = MaterialTheme.typography.labelMedium)
+            Text(text = "${summary.percentPositive}%", style = MaterialTheme.typography.headlineSmall)
+            summary.verdict?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+            Text(
+                text = "${summary.totalReviews} reviews",
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
+}
+
 /** Unifies GameEntity (persisted) and Game (IGDB response) for the detail screen's rendering. */
 private data class GameDisplay(
     val name: String,
@@ -171,8 +227,8 @@ private fun GameEntity.toDisplay() = GameDisplay(
     name = name,
     coverImageId = coverImageId,
     firstReleaseDate = firstReleaseDate,
-    genres = emptyList(), // decoded from genresJson once a JSON-cache reader lands, see README
-    platforms = emptyList(),
+    genres = GameJsonCache.genreNames(this),
+    platforms = GameJsonCache.platformNames(this),
     summary = summary,
 )
 

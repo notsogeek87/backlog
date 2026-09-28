@@ -21,7 +21,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val repository = (application as BacklogApplication).repository
+        val app = application as BacklogApplication
+        val repository = app.repository
         val notificationPreferences = NotificationPreferences(applicationContext)
 
         setContent {
@@ -37,7 +38,12 @@ class MainActivity : ComponentActivity() {
 
             BacklogTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    BacklogNavHost(repository = repository, notificationPreferences = notificationPreferences)
+                    BacklogNavHost(
+                        repository = repository,
+                        notificationPreferences = notificationPreferences,
+                        steamService = app.steamService,
+                        metacriticService = app.metacriticService,
+                    )
                 }
             }
         }

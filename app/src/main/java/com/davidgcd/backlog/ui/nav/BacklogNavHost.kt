@@ -9,6 +9,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.repository.MetacriticService
+import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.notifications.NotificationPreferences
 import com.davidgcd.backlog.ui.backlog.BacklogScreen
 import com.davidgcd.backlog.ui.backlog.BacklogViewModel
@@ -34,7 +36,12 @@ private object Routes {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BacklogNavHost(repository: BacklogRepository, notificationPreferences: NotificationPreferences) {
+fun BacklogNavHost(
+    repository: BacklogRepository,
+    notificationPreferences: NotificationPreferences,
+    steamService: SteamService,
+    metacriticService: MetacriticService,
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.BACKLOG) {
@@ -52,7 +59,7 @@ fun BacklogNavHost(repository: BacklogRepository, notificationPreferences: Notif
         ) { backStackEntry ->
             val gameId = backStackEntry.arguments?.getLong("gameId") ?: return@composable
             val viewModel: GameDetailViewModel = viewModel(
-                factory = GameDetailViewModelFactory(gameId, repository),
+                factory = GameDetailViewModelFactory(gameId, repository, steamService, metacriticService),
                 key = "game_detail_$gameId",
             )
             GameDetailScreen(viewModel = viewModel, onBack = { navController.popBackStack() })

@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [GameEntity::class], version = 1, exportSchema = false)
+@Database(entities = [GameEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
 
@@ -18,7 +18,11 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "backlog.db",
-                ).build().also { instance = it }
+                )
+                    // No installed base yet at this pre-release stage — a real migration
+                    // replaces this the moment the app ships to a first user (see README).
+                    .fallbackToDestructiveMigration()
+                    .build().also { instance = it }
             }
     }
 }

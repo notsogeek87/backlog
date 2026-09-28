@@ -14,15 +14,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -47,7 +54,12 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
 
-    val backlog by viewModel.backlog.collectAsState()
+    val visibleBacklog by viewModel.visibleBacklog.collectAsState()
+    val sort by viewModel.sort.collectAsState()
+    val filter by viewModel.filter.collectAsState()
+    val availableGenres by viewModel.availableGenres.collectAsState()
+    val availablePlatforms by viewModel.availablePlatforms.collectAsState()
+    val isBacklogEmpty by viewModel.isBacklogEmpty.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
 
@@ -56,6 +68,15 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
             TopAppBar(
                 title = { Text("Backlog") },
                 actions = {
+                    if (!showSearch) {
+                        SortMenuButton(current = sort, onSelect = viewModel::setSort)
+                        FilterMenuButton(
+                            current = filter,
+                            availableGenres = availableGenres,
+                            availablePlatforms = availablePlatforms,
+                            onChange = viewModel::setFilter,
+                        )
+                    }
                     IconButton(onClick = { showSearch = !showSearch }) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")
                     }
@@ -86,13 +107,118 @@ fun BacklogScreen(viewModel: BacklogViewModel, onGameClick: (Long) -> Unit, onSe
                     onClick = { onGameClick(it.id) },
                 )
             } else {
-                BacklogList(
-                    games = backlog,
-                    onArchiveToggle = { viewModel.setArchived(it, !it.isArchived) },
-                    onRemove = { viewModel.remove(it) },
-                    onClick = { onGameClick(it.igdbId) },
-                )
+                if (isBacklogEmpty) {
+                    EmptyBacklog()
+                } else {
+                    BacklogList(
+                        games = visibleBacklog,
+                        onArchiveToggle = { viewModel.setArchived(it, !it.isArchived) },
+                        onRemove = { viewModel.remove(it) },
+                        onClick = { onGameClick(it.igdbId) },
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyBacklog() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Your backlog is empty. Search a game to add it.",
+            modifier = Modifier.fillMaxWidth().padding(24.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SortMenuButton(current: BacklogSort, onSelect: (BacklogSort) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    IconButton(onClick = { expanded = true }) {
+        Icon(Icons.Filled.Sort, contentDescription = "Sort")
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        BacklogSort.entries.forEach { option ->
+            DropdownMenuItem(
+                text = { Text(option.label) },
+                leadingIcon = { RadioButton(selected = option == current, onClick = null) },
+                onClick = {
+                    onSelect(option)
+                    expanded = false
+                },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterMenuButton(
+    current: BacklogFilter,
+    availableGenres: List<String>,
+    availablePlatforms: List<String>,
+    onChange: (BacklogFilter) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    IconButton(onClick = { expanded = true }) {
+        Icon(
+            Icons.Filled.FilterList,
+            contentDescription = "Filter",
+            tint = if (current.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(
+            text = { Text("Show archived") },
+            trailingIcon = {
+                Switch(
+                    checked = current.showArchived,
+                    onCheckedChange = { onChange(current.copy(showArchived = it)) },
+                )
+            },
+            onClick = { onChange(current.copy(showArchived = !current.showArchived)) },
+        )
+        if (availableGenres.isNotEmpty()) {
+            Text("Genre", modifier = Modifier.padding(start = 12.dp, top = 8.dp), style = MaterialTheme.typography.labelMedium)
+            FilterOptionRow(
+                options = availableGenres,
+                selected = current.genre,
+                onSelect = { onChange(current.copy(genre = it)) },
+            )
+        }
+        if (availablePlatforms.isNotEmpty()) {
+            Text("Platform", modifier = Modifier.padding(start = 12.dp, top = 8.dp), style = MaterialTheme.typography.labelMedium)
+            FilterOptionRow(
+                options = availablePlatforms,
+                selected = current.platform,
+                onSelect = { onChange(current.copy(platform = it)) },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterOptionRow(options: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+    Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+        FilterChip(
+            selected = selected == null,
+            onClick = { onSelect(null) },
+            label = { Text("Any") },
+            modifier = Modifier.padding(end = 4.dp),
+        )
+        options.take(6).forEach { option ->
+            FilterChip(
+                selected = selected == option,
+                onClick = { onSelect(if (selected == option) null else option) },
+                label = { Text(option) },
+                modifier = Modifier.padding(end = 4.dp),
+            )
         }
     }
 }

@@ -58,6 +58,13 @@ class BacklogRepository(
             platformsJson = platformsJson,
             summary = summary,
             totalRating = totalRating,
+            steamAppId = steamAppId,
         )
+    }
+
+    /** Backfills steamAppId on an entity added before the Steam link was extracted, or if IGDB added one since. */
+    suspend fun updateSteamAppId(entity: GameEntity, steamAppId: Long) {
+        if (entity.steamAppId == steamAppId) return
+        gameDao.update(entity.copy(steamAppId = steamAppId))
     }
 }
