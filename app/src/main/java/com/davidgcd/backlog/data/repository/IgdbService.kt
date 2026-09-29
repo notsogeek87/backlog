@@ -15,9 +15,11 @@ class IgdbService(private val api: IgdbApi) {
 
     suspend fun searchGames(query: String, limit: Int = 20): List<Game> {
         RateLimiter.igdb.acquire()
+        // Unlike /games, IGDB's /search endpoint rejects relation expansions (cover.image_id,
+        // genres.name, platforms.name — "Invalid field name") — scalars only here.
         val apicalypse = """
             search "${apicalypseEscaped(query)}";
-            fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
+            fields id,name,first_release_date,summary,total_rating;
             limit $limit;
         """.trimIndent()
         // IGDB's fuzzy search endpoint can return several matches (e.g. alternative names)
