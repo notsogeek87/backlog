@@ -3,6 +3,8 @@ package com.davidgcd.backlog.data.repository
 import com.davidgcd.backlog.data.remote.IgdbApi
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.RateLimiter
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 /**
  * Thin wrapper over [IgdbApi] that reserves the shared rate-limit slot before
@@ -21,14 +23,7 @@ class IgdbService(private val api: IgdbApi) {
         // IGDB's fuzzy search endpoint can return several matches (e.g. alternative names)
         // sharing the same game id, which breaks Compose's LazyColumn key requirement, and
         // occasionally a malformed entry with no name at all (parsed as "" — not worth showing).
-        val raw = api.search(apicalypse)
-        val filtered = raw.distinctBy { it.id }.filter { it.name.isNotBlank() }
-        if (filtered.isEmpty()) {
-            // TEMPORARY diagnostic: dump the raw, unparsed JSON IGDB actually returned.
-            val rawJson = api.searchRaw(apicalypse).string().take(800)
-            throw IllegalStateException("DEBUG raw=${raw.size} json=[$rawJson]")
-        }
-        return filtered
+        return api.search(apicalypse.toRequestBody()).distinctBy { it.id }.filter { it.name.isNotBlank() }
     }
 
     /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */
@@ -40,7 +35,7 @@ class IgdbService(private val api: IgdbApi) {
             sort total_rating_count desc;
             limit $limit;
         """.trimIndent()
-        return api.games(apicalypse)
+        return api.games(apicalypse.toRequestBody())
     }
 
     suspend fun getGame(id: Long): Game? {
@@ -51,10 +46,12 @@ class IgdbService(private val api: IgdbApi) {
             fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating,websites.url,websites.category;
             where id = $id;
         """.trimIndent()
-        return api.games(apicalypse).firstOrNull()
+        return api.games(apicalypse.toRequestBody()).firstOrNull()
     }
 
     /** Escapes a value going into an Apicalypse double-quoted string: backslash before quote. */
     private fun apicalypseEscaped(value: String): String =
         value.replace("\\", "\\\\").replace("\"", "\\\"")
+
+    private fun String.toRequestBody() = toRequestBody("text/plain".toMediaType())
 }
