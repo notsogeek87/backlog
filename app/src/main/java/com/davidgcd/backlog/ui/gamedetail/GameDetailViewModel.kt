@@ -10,6 +10,8 @@ import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.util.DebugLog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -75,7 +77,14 @@ class GameDetailViewModel(
         if (remoteLoadStarted) return
         remoteLoadStarted = true
         viewModelScope.launch {
-            val remote = repository.fetchRemoteGame(gameId)
+            val remote = try {
+                repository.fetchRemoteGame(gameId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                DebugLog.log("GameDetailViewModel: fetchRemoteGame($gameId) failed: ${t::class.simpleName}: ${t.message}")
+                null
+            }
             if (remote != null) {
                 _state.value = GameDetailState.Remote(remote)
                 loadRatings(name = remote.name, knownSteamAppId = remote.steamAppId, backfillEntity = null)
@@ -95,7 +104,14 @@ class GameDetailViewModel(
             // A backlog entity added before the Steam link was extracted has no steamAppId yet —
             // backfill it from a fresh IGDB fetch, mirroring the iOS app's dual-write on this path.
             val steamAppId = knownSteamAppId ?: backfillEntity?.let { entity ->
-                repository.fetchRemoteGame(gameId)?.steamAppId?.also { repository.updateSteamAppId(entity, it) }
+                try {
+                    repository.fetchRemoteGame(gameId)?.steamAppId?.also { repository.updateSteamAppId(entity, it) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (t: Throwable) {
+                    DebugLog.log("GameDetailViewModel: steamAppId backfill($gameId) failed: ${t::class.simpleName}: ${t.message}")
+                    null
+                }
             }
 
             val steamDeferred = async { steamAppId?.let { steamService.reviewSummary(it) } }
