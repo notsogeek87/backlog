@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -77,7 +78,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
         // The game's own artwork tints the screen: blurred, dimmed, faded into the night canvas.
         // (Blur is API 31+; older devices just get the dimmed, unblurred image.)
         if (backdropId != null) {
-            Box(modifier = Modifier.fillMaxWidth().height(460.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(460.dp).clipToBounds()) {
                 AsyncImage(
                     model = IgdbImage.url(backdropId, IgdbImage.Size.CoverBig),
                     contentDescription = null,

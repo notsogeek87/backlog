@@ -331,7 +331,10 @@ private fun BacklogGrid(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionHeader(stringResource(R.string.section_recent))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(vertical = 10.dp, horizontal = 4.dp),
+                    ) {
                         items(recentlyAdded, key = { it.igdbId }) { game ->
                             GameCover(
                                 imageId = game.coverImageId,

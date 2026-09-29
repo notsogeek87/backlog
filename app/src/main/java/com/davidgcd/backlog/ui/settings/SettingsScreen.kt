@@ -21,7 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -181,9 +181,13 @@ fun SettingsScreen(
                     },
                     modifier = Modifier.weight(1f),
                 )
-                if (isImporting) {
-                    CircularProgressIndicator(color = Glass.Cyan, modifier = Modifier.size(24.dp))
-                }
+            }
+            if (isImporting) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Glass.Cyan,
+                    trackColor = Glass.GlassTop,
+                )
             }
 
             SectionTitle(stringResource(R.string.settings_section_debug), topPadding = 8.dp)

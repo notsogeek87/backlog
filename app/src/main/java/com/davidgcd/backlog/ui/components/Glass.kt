@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -117,13 +120,16 @@ fun GameCover(imageId: String?, width: Dp, modifier: Modifier = Modifier, size: 
     }
 }
 
+/** Accent colours like violet / blue are too dark as text on the night canvas: mix them toward white. */
+fun readableOnDark(tint: Color): Color = lerp(tint, Color.White, 0.45f)
+
 /** Small glass pill for platforms / genres / status. */
 @Composable
 fun GlassBadge(text: String, modifier: Modifier = Modifier, tint: Color = Color.White) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,
-        color = if (tint == Color.White) Glass.Text else tint,
+        color = if (tint == Color.White) Glass.Text else readableOnDark(tint),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
@@ -191,25 +197,27 @@ fun GlassButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
-/** 0–100 score as a gradient bar with a soft cyan glow. */
+/** 0–100 score as a gradient bar; the glow is drawn inside the rounded track so nothing spills out. */
 @Composable
 fun GradientProgressBar(fraction: Float, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(999.dp)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 7.dp, max = 7.dp)
+            .height(7.dp)
             .clip(shape)
             .background(Color.White.copy(alpha = 0.08f)),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(fraction.coerceIn(0f, 1f))
-                .heightIn(min = 7.dp, max = 7.dp)
-                .shadow(6.dp, shape, ambientColor = Glass.Cyan, spotColor = Glass.Cyan)
-                .clip(shape)
-                .background(Glass.AccentHorizontal),
-        )
+        val clamped = fraction.coerceIn(0f, 1f)
+        if (clamped > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(clamped)
+                    .fillMaxHeight()
+                    .clip(shape)
+                    .background(Glass.AccentHorizontal),
+            )
+        }
     }
 }
 
@@ -218,7 +226,7 @@ fun GradientProgressBar(fraction: Float, modifier: Modifier = Modifier) {
 fun StatCard(value: String, label: String, modifier: Modifier = Modifier, accent: Color = Glass.Cyan) {
     GlassCard(modifier = modifier) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = accent)
+            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = readableOnDark(accent))
             Text(label, style = MaterialTheme.typography.labelMedium, color = Glass.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
