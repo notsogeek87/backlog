@@ -90,6 +90,11 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
                 _searchResults.value = repository.searchGames(query)
             } catch (t: CancellationException) {
                 throw t
+            } catch (t: retrofit2.HttpException) {
+                // IGDB puts the actual syntax/validation complaint in the error body, not t.message
+                // (which is just "HTTP 400 Bad Request").
+                val body = try { t.response()?.errorBody()?.string() } catch (_: Throwable) { null }
+                _searchError.value = "HTTP ${t.code()}: ${body ?: t.message()}"
             } catch (t: Throwable) {
                 _searchError.value = t.message ?: "Search failed"
             } finally {
