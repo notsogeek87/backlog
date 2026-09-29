@@ -10,7 +10,9 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class Game(
     val id: Long,
-    val name: String,
+    // IGDB occasionally omits `name` entirely on malformed/placeholder entries even when explicitly
+    // requested — default instead of failing the whole response's parse for one bad entry.
+    val name: String = "",
     @Json(name = "cover") val cover: Cover? = null,
     @Json(name = "first_release_date") val firstReleaseDate: Long? = null,
     @Json(name = "genres") val genres: List<Genre>? = null,

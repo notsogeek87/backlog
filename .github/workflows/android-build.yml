@@ -34,8 +34,6 @@ jobs:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
         run: |
-          echo "TWITCH_CLIENT_ID length: ${#TWITCH_CLIENT_ID}"
-          echo "TWITCH_CLIENT_SECRET length: ${#TWITCH_CLIENT_SECRET}"
           mkdir -p app/src/main/java/com/davidgcd/backlog/config
           if [ ! -f app/src/main/java/com/davidgcd/backlog/config/Secrets.kt ]; then
             sed \

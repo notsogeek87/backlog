@@ -19,8 +19,9 @@ class IgdbService(private val api: IgdbApi) {
             limit $limit;
         """.trimIndent()
         // IGDB's fuzzy search endpoint can return several matches (e.g. alternative names)
-        // sharing the same game id, which breaks Compose's LazyColumn key requirement.
-        return api.search(apicalypse).distinctBy { it.id }
+        // sharing the same game id, which breaks Compose's LazyColumn key requirement, and
+        // occasionally a malformed entry with no name at all (parsed as "" — not worth showing).
+        return api.search(apicalypse).distinctBy { it.id }.filter { it.name.isNotBlank() }
     }
 
     /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */
