@@ -2,6 +2,9 @@ package com.davidgcd.backlog.ui.backlog
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,7 +32,6 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Unarchive
@@ -133,11 +135,19 @@ fun BacklogScreen(
             TopAppBar(
                 colors = glassTopAppBarColors(),
                 title = {
-                    Text(
-                        stringResource(R.string.backlog_title),
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.headlineSmall,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_logo_mark),
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            stringResource(R.string.backlog_title),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+                    }
                 },
                 actions = {
                     if (!showSearch) {
@@ -430,11 +440,10 @@ private fun EmptyState(message: String, actionLabel: String, onAction: () -> Uni
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
-            Icons.Filled.LibraryAdd,
+        Image(
+            painter = painterResource(R.drawable.ic_logo_mark),
             contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = Glass.Cyan,
+            modifier = Modifier.size(72.dp),
         )
         Text(
             text = message,
