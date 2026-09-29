@@ -14,7 +14,38 @@ import okhttp3.RequestBody.Companion.toRequestBody
  */
 class IgdbService(private val api: IgdbApi) : GameCatalog {
 
-    override suspend fun searchGames(query: String, limit: Int): List<Game> {
+    override suspend fun searchGames(query: String, limit: Int): List<Game> =
+        searchGames(query, limit, partial = false)
+
+    /**
+     * [partial] also matches titles containing every word of the query as a fragment (IGDB's
+     * `search` only matches whole words, so "link awak" never finds "Link's Awakening"). Half of
+     * the slots keep IGDB's relevance order; the contains-hits fill in right after them.
+     */
+    suspend fun searchGames(query: String, limit: Int = 20, partial: Boolean): List<Game> {
+        val ranked = searchByRelevance(query, limit)
+        if (!partial) return ranked
+        val tokens = query.split(Regex("[\\s'’:\\-]+")).filter { it.length >= 2 }
+        if (tokens.isEmpty()) return ranked
+        val contained = searchByNameContains(tokens, limit)
+        val head = limit / 2
+        return (ranked.take(head) + contained + ranked.drop(head)).distinctBy { it.id }.take(limit)
+    }
+
+    private suspend fun searchByNameContains(tokens: List<String>, limit: Int): List<Game> {
+        RateLimiter.igdb.acquire()
+        // `~ *"x"*` is IGDB's case-insensitive "contains"; version_parent = null hides DLC-ish editions.
+        val conditions = tokens.joinToString(" & ") { "name ~ *\"${apicalypseEscaped(it)}\"*" }
+        val apicalypse = """
+            fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
+            where $conditions & version_parent = null;
+            sort total_rating_count desc;
+            limit $limit;
+        """.trimIndent()
+        return api.games(apicalypse.toRequestBody()).filter { it.name.isNotBlank() }
+    }
+
+    private suspend fun searchByRelevance(query: String, limit: Int): List<Game> {
         RateLimiter.igdb.acquire()
         // IGDB's /search endpoint only accepts id/name/game — every other field, even scalars
         // like first_release_date, comes back "Invalid field name". Its `id` is the *search
