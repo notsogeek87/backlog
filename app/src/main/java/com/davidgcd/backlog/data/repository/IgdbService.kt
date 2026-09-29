@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.data.repository
 
+import com.davidgcd.backlog.data.library.GameCatalog
 import com.davidgcd.backlog.data.remote.IgdbApi
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.RateLimiter
@@ -11,9 +12,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
  * every request, the same rule the iOS app's IGDBService.performRequest
  * follows.
  */
-class IgdbService(private val api: IgdbApi) {
+class IgdbService(private val api: IgdbApi) : GameCatalog {
 
-    suspend fun searchGames(query: String, limit: Int = 20): List<Game> {
+    override suspend fun searchGames(query: String, limit: Int): List<Game> {
         RateLimiter.igdb.acquire()
         // IGDB's /search endpoint only accepts id/name/game — every other field, even scalars
         // like first_release_date, comes back "Invalid field name". Its `id` is the *search
@@ -63,6 +64,43 @@ class IgdbService(private val api: IgdbApi) {
             where id = $id;
         """.trimIndent()
         return api.games(apicalypse.toRequestBody()).firstOrNull()
+    }
+
+    override suspend fun resolveExternalIds(externalSourceId: Int, externalIds: List<String>): Map<String, Long> {
+        val resolved = LinkedHashMap<String, Long>()
+        externalIds.chunked(BATCH_SIZE).forEach { chunk ->
+            RateLimiter.igdb.acquire()
+            val uids = chunk.joinToString(",") { "\"${apicalypseEscaped(it)}\"" }
+            val apicalypse = """
+                fields uid,game;
+                where external_game_source = $externalSourceId & uid = ($uids) & game != null;
+                limit ${BATCH_LIMIT};
+            """.trimIndent()
+            api.externalGames(apicalypse.toRequestBody()).forEach { row ->
+                val game = row.game ?: return@forEach
+                resolved.putIfAbsent(row.uid, game)
+            }
+        }
+        return resolved
+    }
+
+    override suspend fun getGamesByIds(ids: List<Long>): List<Game> {
+        val games = mutableListOf<Game>()
+        ids.distinct().chunked(BATCH_SIZE).forEach { chunk ->
+            RateLimiter.igdb.acquire()
+            val apicalypse = """
+                fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating,websites.url,websites.category;
+                where id = (${chunk.joinToString(",")});
+                limit ${BATCH_LIMIT};
+            """.trimIndent()
+            games += api.games(apicalypse.toRequestBody()).filter { it.name.isNotBlank() }
+        }
+        return games
+    }
+
+    private companion object {
+        const val BATCH_SIZE = 100
+        const val BATCH_LIMIT = 500
     }
 
     /** Escapes a value going into an Apicalypse double-quoted string: backslash before quote. */

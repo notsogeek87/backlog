@@ -64,7 +64,12 @@ import com.davidgcd.backlog.util.DebugLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onBack: (() -> Unit)? = null,
+    /** "My platforms" block, supplied by the nav host so Settings doesn't know about providers. */
+    platformsContent: @Composable () -> Unit = {},
+) {
     val snackbarHostState = remember { SnackbarHostState() }
     val exportSucceeded by viewModel.exportSucceeded.collectAsState()
     val exportDoneMsg = stringResource(R.string.settings_export_done)
@@ -119,7 +124,9 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SectionTitle(stringResource(R.string.settings_section_games))
+            platformsContent()
+
+            SectionTitle(stringResource(R.string.settings_section_games), topPadding = 8.dp)
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
                     SettingsSwitchRow(

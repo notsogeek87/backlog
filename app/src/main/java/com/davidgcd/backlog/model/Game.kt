@@ -50,6 +50,13 @@ data class SearchHit(
     val game: Long? = null,
 )
 
+/** IGDB `external_games` row: [uid] is the store's own id (a Steam AppID as text), [game] the IGDB game id. */
+@JsonClass(generateAdapter = true)
+data class ExternalGame(
+    val uid: String = "",
+    val game: Long? = null,
+)
+
 @JsonClass(generateAdapter = true)
 data class Website(
     val id: Long,

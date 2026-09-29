@@ -34,6 +34,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.csv.CsvImportService
+import com.davidgcd.backlog.data.library.LibraryAccountStore
+import com.davidgcd.backlog.data.library.LibraryProviders
+import com.davidgcd.backlog.data.library.LibrarySyncService
+import com.davidgcd.backlog.data.library.steam.SteamAuthService
+import com.davidgcd.backlog.data.local.GameSourceDao
 import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.SteamService
@@ -47,6 +52,15 @@ import com.davidgcd.backlog.ui.discover.DiscoverViewModelFactory
 import com.davidgcd.backlog.ui.gamedetail.GameDetailScreen
 import com.davidgcd.backlog.ui.gamedetail.GameDetailViewModel
 import com.davidgcd.backlog.ui.gamedetail.GameDetailViewModelFactory
+import com.davidgcd.backlog.ui.platforms.LibraryImportScreen
+import com.davidgcd.backlog.ui.platforms.LibraryImportViewModel
+import com.davidgcd.backlog.ui.platforms.LibraryImportViewModelFactory
+import com.davidgcd.backlog.ui.platforms.PlatformsSection
+import com.davidgcd.backlog.ui.platforms.PlatformsViewModel
+import com.davidgcd.backlog.ui.platforms.PlatformsViewModelFactory
+import com.davidgcd.backlog.ui.platforms.SteamLoginScreen
+import com.davidgcd.backlog.ui.platforms.SteamLoginViewModel
+import com.davidgcd.backlog.ui.platforms.SteamLoginViewModelFactory
 import com.davidgcd.backlog.ui.settings.SettingsScreen
 import com.davidgcd.backlog.ui.settings.SettingsViewModel
 import com.davidgcd.backlog.ui.settings.SettingsViewModelFactory
@@ -55,6 +69,9 @@ private object Routes {
     const val BACKLOG = "backlog"
     const val SETTINGS = "settings"
     const val DISCOVER = "discover"
+    const val STEAM_LOGIN = "platforms/steam/login"
+    const val LIBRARY_IMPORT = "platforms/{provider}/import"
+    fun libraryImport(provider: String) = "platforms/$provider/import"
     const val GAME_DETAIL = "game/{gameId}"
     fun gameDetail(gameId: Long) = "game/$gameId"
 }
@@ -81,6 +98,10 @@ fun BacklogNavHost(
     metacriticService: MetacriticService,
     csvExportService: CsvExportService,
     csvImportService: CsvImportService,
+    libraryAccountStore: LibraryAccountStore,
+    librarySyncService: LibrarySyncService,
+    steamAuthService: SteamAuthService,
+    gameSourceDao: GameSourceDao,
 ) {
     val navController = rememberNavController()
     val navEntry by navController.currentBackStackEntryAsState()
@@ -155,7 +176,45 @@ fun BacklogNavHost(
                     csvImportService,
                 ),
             )
-            SettingsScreen(viewModel = viewModel)
+            val platformsViewModel: PlatformsViewModel = viewModel(
+                factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao),
+            )
+            SettingsScreen(
+                viewModel = viewModel,
+                platformsContent = {
+                    PlatformsSection(
+                        viewModel = platformsViewModel,
+                        onConnectSteam = { navController.navigate(Routes.STEAM_LOGIN) },
+                        onSyncSteam = { navController.navigate(Routes.libraryImport(LibraryProviders.STEAM)) },
+                    )
+                },
+            )
+        }
+        composable(Routes.STEAM_LOGIN) {
+            val viewModel: SteamLoginViewModel = viewModel(
+                factory = SteamLoginViewModelFactory(steamAuthService, libraryAccountStore),
+            )
+            SteamLoginScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                // Connected: replace the login screen with the import screen (back returns to Settings).
+                onConnected = {
+                    navController.navigate(Routes.libraryImport(LibraryProviders.STEAM)) {
+                        popUpTo(Routes.STEAM_LOGIN) { inclusive = true }
+                    }
+                },
+            )
+        }
+        composable(
+            route = Routes.LIBRARY_IMPORT,
+            arguments = listOf(navArgument("provider") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val provider = backStackEntry.arguments?.getString("provider") ?: return@composable
+            val viewModel: LibraryImportViewModel = viewModel(
+                factory = LibraryImportViewModelFactory(provider, librarySyncService),
+                key = "library_import_$provider",
+            )
+            LibraryImportScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
     }
     }

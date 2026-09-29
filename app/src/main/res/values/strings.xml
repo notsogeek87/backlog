@@ -106,4 +106,76 @@
     <string name="section_recent">Recently added</string>
     <string name="section_my_games">My games</string>
     <string name="ratings_igdb">IGDB</string>
+
+    <!-- Platforms / library import -->
+    <string name="platforms_title">My platforms</string>
+    <string name="platform_steam">Steam</string>
+    <string name="platform_not_connected">Not connected</string>
+    <string name="platform_connected">Connected</string>
+    <string name="platform_connected_as">Connected as %1$s</string>
+    <plurals name="platform_games_detected">
+        <item quantity="one">%1$d game detected</item>
+        <item quantity="other">%1$d games detected</item>
+    </plurals>
+    <string name="platform_last_sync">Last sync: %1$s</string>
+    <string name="platform_never_synced">Not synced yet</string>
+    <string name="platform_connect_steam">Connect Steam</string>
+    <string name="platform_sync">Sync</string>
+    <string name="platform_disconnect">Disconnect</string>
+    <string name="platform_disconnect_title">Disconnect Steam?</string>
+    <string name="platform_disconnect_message">Your games stay in your backlog. Only the link with your Steam account is removed.</string>
+    <string name="platform_stats_owned">%1$d games owned</string>
+    <string name="platform_stats_present">%1$d already in Backlog</string>
+    <string name="platform_stats_new">%1$d new games detected</string>
+
+    <string name="steam_login_title">Connect Steam</string>
+    <string name="steam_login_hint">You sign in on Steam\'s own page. Backlog never sees your password.</string>
+    <string name="steam_login_verifying">Verifying with Steam…</string>
+
+    <string name="library_import_title">Import my Steam library</string>
+    <plurals name="library_games_found">
+        <item quantity="one">%1$d game found</item>
+        <item quantity="other">%1$d games found</item>
+    </plurals>
+    <string name="library_stage_fetching">Fetching your library…</string>
+    <string name="library_stage_matching">Matching your games… %1$d / %2$d</string>
+    <string name="library_stage_importing">Importing… %1$d / %2$d</string>
+    <string name="library_section_new">New games</string>
+    <string name="library_section_present">Already in your backlog</string>
+    <string name="library_section_uncertain">Uncertain matches</string>
+    <string name="library_section_uncertain_hint">Tick a game to confirm it is the one suggested.</string>
+    <string name="library_section_unmatched">Not found in IGDB</string>
+    <string name="library_unmatched_hint">These can\'t be added to your backlog: %1$s</string>
+    <string name="library_status_new">New</string>
+    <string name="library_status_present">Already in your backlog</string>
+    <string name="library_status_looks_like">Looks like %1$s</string>
+    <string name="library_status_removed_earlier">Removed earlier</string>
+    <string name="library_never_played">Never played</string>
+    <string name="library_select_all">Select all</string>
+    <string name="library_select_none">Deselect all</string>
+    <plurals name="library_import_action">
+        <item quantity="one">Import %1$d game</item>
+        <item quantity="other">Import %1$d games</item>
+    </plurals>
+    <string name="library_up_to_date">Your backlog is up to date with Steam.</string>
+    <plurals name="library_done_added">
+        <item quantity="one">✓ %1$d game added to your backlog</item>
+        <item quantity="other">✓ %1$d games added to your backlog</item>
+    </plurals>
+    <plurals name="library_done_present">
+        <item quantity="one">%1$d game was already there</item>
+        <item quantity="other">%1$d games were already there</item>
+    </plurals>
+    <string name="library_done_no_duplicates">0 duplicates created</string>
+    <string name="library_done_failed">Couldn\'t import: %1$s</string>
+    <string name="library_done_close">Done</string>
+    <string name="library_last_sync_at">Last sync: %1$s</string>
+
+    <string name="library_error_private">Can\'t access your Steam library. Check that your game details are public on Steam.</string>
+    <string name="library_error_unavailable">Steam is temporarily unavailable. Try again in a moment.</string>
+    <string name="library_error_no_games">No games were found in your Steam library.</string>
+    <string name="library_error_not_connected">Connect your Steam account to import your library.</string>
+    <string name="library_error_account_not_found">This Steam account couldn\'t be found.</string>
+    <string name="library_error_rate_limited">Too many requests. Wait a minute, then try again.</string>
+    <string name="library_error_unknown">Something went wrong. Try again.</string>
 </resources>

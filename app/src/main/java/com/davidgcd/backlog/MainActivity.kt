@@ -49,6 +49,10 @@ class MainActivity : ComponentActivity() {
                         metacriticService = app.metacriticService,
                         csvExportService = app.csvExportService,
                         csvImportService = app.csvImportService,
+                        libraryAccountStore = app.libraryAccountStore,
+                        librarySyncService = app.librarySyncService,
+                        steamAuthService = app.steamAuthService,
+                        gameSourceDao = app.gameSourceDao,
                     )
                 }
             }

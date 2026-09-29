@@ -98,6 +98,12 @@ sur Android avec des briques Android natives.
   (seul point de logging — jamais de `Log.*` en direct ailleurs).
 - `config/Secrets.kt` — clés API, gitignored.
 
+## Import de bibliothèque Steam
+
+Réglages → *Mes plateformes*. Voir [ADR](docs/architecture/2026-09-29-library-providers.md),
+[API providers](docs/api/library-providers.md) et [guide](docs/guides/steam-import.md).
+Nécessite `STEAM_API_KEY` dans `Secrets.kt` (voir `Secrets.kt.example`).
+
 ## Notes Metacritic : scaffold, pas branché
 
 Metacritic n'a pas d'API officielle gratuite (l'app iOS passe par un proxy
