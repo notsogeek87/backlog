@@ -29,6 +29,7 @@ class SteamAuthService(
             AppLogger.network.warn("Steam OpenID verification failed: ${t.message}")
             throw LibraryException(LibraryError.UNAVAILABLE, "OpenID verification", t)
         }
+        AppLogger.network.warn("Steam OpenID check_authentication: valid=$verified")
         if (!verified) throw LibraryException(LibraryError.UNKNOWN, "Steam rejected the OpenID assertion")
 
         // Persona name is cosmetic: a hiccup there must not undo a verified login.

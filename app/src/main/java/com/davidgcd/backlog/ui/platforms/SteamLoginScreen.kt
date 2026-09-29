@@ -75,7 +75,9 @@ class SteamLoginViewModel(
                 throw e
             } catch (t: Throwable) {
                 val error = t.toLibraryException()
-                if (error.error != LibraryError.CANCELLED) AppLogger.network.warn("Steam login failed: ${error.message}")
+                if (error.error != LibraryError.CANCELLED) {
+                    AppLogger.network.warn("Steam login failed: ${error.error} — ${error.message}; cause=${error.cause?.let { "${it::class.simpleName}: ${it.message}" }}")
+                }
                 _state.value = SteamLoginState(error = error.error)
             }
         }
@@ -173,10 +175,15 @@ private fun SteamWebView(onCallback: (String) -> Unit) {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         val url = request.url.toString()
                         if (SteamOpenId.isCallback(url)) {
+                            AppLogger.network.warn("Steam login: callback intercepted (mode=${SteamOpenId.parseCallback(url)["openid.mode"]})")
                             onCallback(url)
                             return true // never actually load the return address
                         }
                         return false
+                    }
+
+                    override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
+                        if (request.isForMainFrame) AppLogger.network.warn("Steam login page failed to load: ${error.errorCode} ${error.description}")
                     }
                 }
                 loadUrl(SteamOpenId.loginUrl())

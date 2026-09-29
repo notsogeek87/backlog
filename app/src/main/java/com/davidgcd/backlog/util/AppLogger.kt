@@ -12,10 +12,12 @@ object AppLogger {
     class Category(private val tag: String) {
         fun warn(message: String) {
             Log.w(tag, message)
+            DebugLog.log("W $message")
         }
 
         fun error(message: String, throwable: Throwable? = null) {
             Log.e(tag, message, throwable)
+            DebugLog.log("E $message" + (throwable?.let { " (${it::class.simpleName}: ${it.message})" } ?: ""))
         }
     }
 }
