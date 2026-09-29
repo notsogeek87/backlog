@@ -122,10 +122,10 @@ Le lien Steam (`GameEntity.steamAppId`) est extrait automatiquement du
 champ IGDB `websites` (catégorie 13) au premier chargement d'un jeu, et
 persisté — pas besoin de le renseigner à la main.
 
-## Localisation FR/EN
+## Localisation (français uniquement)
 
-Anglais dans le code (`strings.xml`), français dans `values-fr/strings.xml`
-— suit la langue de l'appareil, comme l'app iOS. Les noms de genres/
+L'app est en français uniquement : `values/strings.xml` est en français et la
+locale est forcée à `fr` (`MainActivity`, `BacklogApplication`). Les noms de genres/
 plateformes IGDB, le nom des jeux et le verdict Steam ("Overwhelmingly
 Positive"…) restent tels que l'API les renvoie, jamais traduits — même
 règle que l'app iOS sur le contenu API. `BacklogSort`/`ReleaseReminderSchedule`

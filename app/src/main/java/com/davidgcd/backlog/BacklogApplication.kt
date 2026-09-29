@@ -70,6 +70,7 @@ class BacklogApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        java.util.Locale.setDefault(java.util.Locale.FRENCH)
 
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
