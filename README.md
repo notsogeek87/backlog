@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/logo-512.png" width="128" alt="Logo Backlog" /></p>
+
 # Backlog (Android)
 
 App Android de gestion de bibliothèque de jeux vidéo, inspirée de l'app iOS
