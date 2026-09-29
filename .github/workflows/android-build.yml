@@ -29,11 +29,16 @@ jobs:
       # android-actions/setup-android tried to (re)install the legacy
       # "tools" package, which Google removed from the repository, and
       # failed the whole job. Nothing else to install here.
-      - name: Provide placeholder API secrets (CI has none — Twitch calls are not exercised at build time)
+      - name: Provide API secrets (real ones from repo secrets when configured, placeholder otherwise)
+        env:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
         run: |
           mkdir -p app/src/main/java/com/davidgcd/backlog/config
           if [ ! -f app/src/main/java/com/davidgcd/backlog/config/Secrets.kt ]; then
-            sed 's/YOUR_TWITCH_CLIENT_ID/ci-placeholder/; s/YOUR_TWITCH_CLIENT_SECRET/ci-placeholder/' \
+            sed \
+              -e "s/YOUR_TWITCH_CLIENT_ID/${TWITCH_CLIENT_ID:-ci-placeholder}/" \
+              -e "s/YOUR_TWITCH_CLIENT_SECRET/${TWITCH_CLIENT_SECRET:-ci-placeholder}/" \
               app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example \
               > app/src/main/java/com/davidgcd/backlog/config/Secrets.kt
           fi
