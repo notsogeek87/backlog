@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -12,7 +14,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +31,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,6 +114,7 @@ private fun GameDetailContent(
     onRemove: () -> Unit,
     onAdd: () -> Unit,
 ) {
+    var confirmRemove by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -112,12 +122,17 @@ private fun GameDetailContent(
             .padding(16.dp),
     ) {
         display.coverImageId?.let { imageId ->
+            // IGDB covers are 3:4 portrait; full-width they'd fill the whole screen on phones,
+            // so cap the width and centre it to keep the title and actions above the fold.
             AsyncImage(
                 model = IgdbImage.url(imageId, IgdbImage.Size.CoverBig),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .widthIn(max = 220.dp)
                     .fillMaxWidth()
+                    .aspectRatio(3f / 4f)
                     .clip(RoundedCornerShape(12.dp)),
             )
         }
@@ -129,13 +144,19 @@ private fun GameDetailContent(
         )
 
         ReleaseDateFormatting.format(display.firstReleaseDate)?.let { date ->
-            Text(text = date, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+            Text(
+                text = date,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
 
         if (display.genres.isNotEmpty()) {
             Text(
                 text = display.genres.joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
@@ -154,23 +175,49 @@ private fun GameDetailContent(
             Text(
                 text = stringResource(R.string.details_platforms_prefix, display.platforms.joinToString(", ")),
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
 
-        Column(modifier = Modifier.padding(top = 24.dp)) {
+        // One clear primary action; the destructive one is visually demoted and confirmed.
+        Column(modifier = Modifier.padding(top = 24.dp).fillMaxWidth()) {
             if (inBacklog) {
-                Button(onClick = onArchiveToggle) {
+                FilledTonalButton(onClick = onArchiveToggle, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(if (isArchived) R.string.action_unarchive else R.string.action_archive))
                 }
-                Button(onClick = onRemove, modifier = Modifier.padding(top = 8.dp)) {
+                TextButton(
+                    onClick = { confirmRemove = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
                     Text(stringResource(R.string.action_remove_from_backlog))
                 }
             } else {
-                Button(onClick = onAdd) {
+                Button(onClick = onAdd, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.action_add_to_backlog))
                 }
             }
+        }
+
+        if (confirmRemove) {
+            AlertDialog(
+                onDismissRequest = { confirmRemove = false },
+                title = { Text(stringResource(R.string.remove_confirm_title)) },
+                text = { Text(stringResource(R.string.remove_confirm_message, display.name)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            confirmRemove = false
+                            onRemove()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    ) { Text(stringResource(R.string.action_remove)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
+                },
+            )
         }
     }
 }

@@ -85,4 +85,11 @@
     <string name="notification_out_in_days">Sort dans %1$d jours</string>
     <string name="notification_date_changed">La date de sortie a changé</string>
     <string name="notification_new_platforms">Désormais sur %1$s</string>
+
+    <string name="action_close_search">Fermer la recherche</string>
+    <string name="backlog_empty_cta">Rechercher un jeu</string>
+    <string name="filter_reset">Réinitialiser les filtres</string>
+    <string name="remove_confirm_title">Retirer du backlog ?</string>
+    <string name="remove_confirm_message">%1$s sera retiré de ton backlog.</string>
+    <string name="action_remove">Retirer</string>
 </resources>

@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -83,7 +87,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        Column(modifier = Modifier.padding(padding).verticalScroll(rememberScrollState())) {
             SectionTitle(stringResource(R.string.settings_section_games), topPadding = 16.dp)
 
             SettingsSwitchRow(
@@ -119,7 +123,11 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
 
             SectionTitle(stringResource(R.string.settings_section_data))
 
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 TextButton(onClick = { exportLauncher.launch("backlog.csv") }) {
                     Text(stringResource(R.string.settings_export_csv))
                 }
@@ -137,7 +145,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             SectionTitle(stringResource(R.string.settings_section_debug))
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
                 TextButton(onClick = { showDebugLog = true }) {
                     Text(stringResource(R.string.settings_view_debug_log))
                 }
@@ -177,17 +185,23 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
     if (showTimePicker) {
         val timePickerState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
         Dialog(onDismissRequest = { showTimePicker = false }) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                TimePicker(state = timePickerState)
-                Row(modifier = Modifier.padding(top = 16.dp)) {
-                    TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
-                    TextButton(onClick = {
-                        viewModel.setTime(timePickerState.hour, timePickerState.minute)
-                        showTimePicker = false
-                    }) { Text(stringResource(R.string.action_save)) }
+            // Dialog has no background of its own: without a Surface the picker floats transparent over the list.
+            Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    TimePicker(state = timePickerState)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
+                        TextButton(onClick = {
+                            viewModel.setTime(timePickerState.hour, timePickerState.minute)
+                            showTimePicker = false
+                        }) { Text(stringResource(R.string.action_save)) }
+                    }
                 }
             }
         }
@@ -199,21 +213,30 @@ private fun SectionTitle(text: String, topPadding: androidx.compose.ui.unit.Dp =
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, top = topPadding, bottom = 4.dp),
     )
 }
 
 @Composable
 private fun SettingsSwitchRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    // The whole row is the touch target (and one TalkBack node), not just the small switch.
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall)
+        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -275,6 +298,7 @@ private fun DebugLogDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
+      Surface(modifier = Modifier.fillMaxSize(), shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -304,6 +328,7 @@ private fun DebugLogDialog(onDismiss: () -> Unit) {
                 }
             }
         }
+      }
     }
 }
 

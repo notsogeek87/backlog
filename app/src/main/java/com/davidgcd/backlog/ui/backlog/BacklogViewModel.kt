@@ -34,6 +34,11 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
     private val _filter = MutableStateFlow(BacklogFilter())
     val filter: StateFlow<BacklogFilter> = _filter
 
+    /** IGDB ids already saved, so search results can show "already added" instead of a dead Add button. */
+    val backlogIds: StateFlow<Set<Long>> = backlog
+        .map { list -> list.map { it.igdbId }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
     /** The unfiltered count backs the empty-library check, same rule as the iOS app's `games.isEmpty`. */
     val isBacklogEmpty: StateFlow<Boolean> = backlog
         .map { it.isEmpty() }
