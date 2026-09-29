@@ -50,6 +50,7 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.repository.MetacriticScore
 import com.davidgcd.backlog.data.repository.SteamReviewSummary
+import com.davidgcd.backlog.util.FrenchLabels
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
@@ -67,6 +68,7 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val ratings by viewModel.ratings.collectAsState()
+    val frenchSummary by viewModel.frenchSummary.collectAsState()
 
     val backdropId = when (val s = state) {
         is GameDetailState.InBacklog -> s.entity.coverImageId
@@ -113,7 +115,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     is GameDetailState.Loading -> Centered { CircularProgressIndicator(color = Glass.Cyan) }
                     is GameDetailState.NotFound -> Centered { Text(stringResource(R.string.game_not_found)) }
                     is GameDetailState.InBacklog -> GameDetailContent(
-                        display = current.entity.toDisplay(),
+                        display = current.entity.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
                         inBacklog = true,
                         isArchived = current.entity.isArchived,
@@ -122,7 +124,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         onAdd = {},
                     )
                     is GameDetailState.Remote -> GameDetailContent(
-                        display = current.game.toDisplay(),
+                        display = current.game.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
                         inBacklog = false,
                         isArchived = false,
@@ -187,12 +189,12 @@ private fun GameDetailContent(
 
             if (display.platforms.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    display.platforms.forEach { GlassBadge(it, tint = Glass.Cyan) }
+                    display.platforms.forEach { GlassBadge(FrenchLabels.platform(it), tint = Glass.Cyan) }
                 }
             }
             if (display.genres.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    display.genres.forEach { GlassBadge(it, tint = Glass.Purple) }
+                    display.genres.forEach { GlassBadge(FrenchLabels.genre(it), tint = Glass.Purple) }
                 }
             }
 
@@ -317,6 +319,8 @@ private data class GameDisplay(
     val summary: String?,
     val totalRating: Double?,
 )
+
+private fun GameDisplay.withSummary(french: String?) = if (french != null) copy(summary = french) else this
 
 private fun GameEntity.toDisplay() = GameDisplay(
     name = name,

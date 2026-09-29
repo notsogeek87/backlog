@@ -41,6 +41,7 @@ import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.ReleaseDateFormatting
+import com.davidgcd.backlog.util.FrenchLabels
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +106,7 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
                         GameListItem(
                             name = game.name,
                             coverImageId = game.cover?.imageId,
-                            platforms = game.platforms?.map { it.name } ?: emptyList(),
+                            platforms = game.platforms?.map { FrenchLabels.platform(it.name) } ?: emptyList(),
                             meta = ReleaseDateFormatting.format(game.firstReleaseDate),
                             onClick = { onGameClick(game.id) },
                             trailing = {

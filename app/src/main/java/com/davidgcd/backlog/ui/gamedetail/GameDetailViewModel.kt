@@ -58,6 +58,10 @@ class GameDetailViewModel(
     private val _ratings = MutableStateFlow(RatingsState())
     val ratings: StateFlow<RatingsState> = _ratings
 
+    /** French Steam blurb replacing IGDB's English-only summary; null keeps the IGDB one. */
+    private val _frenchSummary = MutableStateFlow<String?>(null)
+    val frenchSummary: StateFlow<String?> = _frenchSummary
+
     init {
         repository.observeGame(gameId)
             .onEach { entity ->
@@ -115,6 +119,7 @@ class GameDetailViewModel(
             }
 
             val steamDeferred = async { steamAppId?.let { steamService.reviewSummary(it) } }
+            launch { steamAppId?.let { _frenchSummary.value = steamService.frenchDescription(it) } }
             val metacriticDeferred = async { metacriticService.scoreFor(name) }
 
             _ratings.value = RatingsState(

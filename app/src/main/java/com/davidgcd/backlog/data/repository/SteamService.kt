@@ -6,7 +6,7 @@ import com.davidgcd.backlog.util.AppLogger
 data class SteamReviewSummary(
     val percentPositive: Int,
     val totalReviews: Int,
-    /** Steam's own wording ("Overwhelmingly Positive", "Mixed"…), never re-derived — the API already localizes it. */
+    /** Steam's own wording ("Extrêmement positives", "Mitigées"…), never re-derived — the API localizes it (`l=french`). */
     val verdict: String?,
 )
 
@@ -34,6 +34,31 @@ class SteamService(private val api: SteamApi) {
             null
         }
     }
+
+    /** French store-page blurb, or null (no Steam page / no French text / service down) — the caller keeps IGDB's summary then. */
+    suspend fun frenchDescription(appId: Long): String? {
+        return try {
+            api.appDetails(appId)[appId.toString()]
+                ?.takeIf { it.success }
+                ?.data?.shortDescription
+                ?.let { unescapeHtml(it) }
+                ?.takeIf { it.isNotBlank() }
+        } catch (t: Throwable) {
+            AppLogger.network.warn("Steam description fetch failed for appId=$appId: ${t.message}")
+            null
+        }
+    }
+
+    // Steam's short_description carries a few HTML entities/tags; the UI shows plain text.
+    private fun unescapeHtml(text: String): String =
+        text.replace(Regex("<[^>]*>"), "")
+            .replace("&quot;", "\"")
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&#39;", "'")
+            .replace("&nbsp;", " ")
+            .trim()
 
     companion object {
         fun storePageUrl(appId: Long): String = "https://store.steampowered.com/app/$appId"

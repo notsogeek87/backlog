@@ -22,8 +22,29 @@ interface SteamApi {
         @Query("purchase_type") purchaseType: String = "all",
         @Query("language") language: String = "all",
         @Query("num_per_page") numPerPage: Int = 1,
+        // `language` filters the reviews' own language; `l` is the UI language of Steam's wording
+        // (review_score_desc: "Extrêmement positives"…). The app is French-only, so ask for it.
+        @Query("l") uiLanguage: String = "french",
     ): SteamReviewsResponse
+
+    /** Store-page data localized by `l` — only used for the French `short_description` (IGDB's summary is English-only). */
+    @GET("api/appdetails")
+    suspend fun appDetails(
+        @Query("appids") appId: Long,
+        @Query("l") uiLanguage: String = "french",
+    ): Map<String, SteamAppDetailsEntry>
 }
+
+@JsonClass(generateAdapter = true)
+data class SteamAppDetailsEntry(
+    val success: Boolean = false,
+    val data: SteamAppDetailsData? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class SteamAppDetailsData(
+    @Json(name = "short_description") val shortDescription: String? = null,
+)
 
 @JsonClass(generateAdapter = true)
 data class SteamReviewsResponse(

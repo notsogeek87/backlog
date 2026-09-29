@@ -76,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
+import com.davidgcd.backlog.util.FrenchLabels
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GameListItem
@@ -383,7 +384,7 @@ private fun BacklogGrid(
             GameListItem(
                 name = game.name,
                 coverImageId = game.coverImageId,
-                platforms = GameJsonCache.platformNames(game),
+                platforms = GameJsonCache.platformNames(game).map(FrenchLabels::platform),
                 meta = supporting,
                 rating = game.totalRating,
                 dimmed = game.isArchived,
@@ -412,8 +413,8 @@ private fun ActiveFilterChips(filter: BacklogFilter, onChange: (BacklogFilter) -
         modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        filter.genre?.let { RemovableChip(it) { onChange(filter.copy(genre = null)) } }
-        filter.platform?.let { RemovableChip(it) { onChange(filter.copy(platform = null)) } }
+        filter.genre?.let { RemovableChip(FrenchLabels.genre(it)) { onChange(filter.copy(genre = null)) } }
+        filter.platform?.let { RemovableChip(FrenchLabels.platform(it)) { onChange(filter.copy(platform = null)) } }
         if (filter.showArchived) {
             RemovableChip(stringResource(R.string.filter_show_archived)) { onChange(filter.copy(showArchived = false)) }
         }
@@ -517,13 +518,13 @@ private fun FilterMenuButton(
             },
             onClick = { onChange(current.copy(showArchived = !current.showArchived)) },
         )
-        // Genre/platform names come straight from IGDB and are never translated,
-        // same rule as the iOS app leaving API content (genres, statuses) as sent.
+        // Genre/platform values stay IGDB's raw names (filter identity); only the label is French.
         // Every option is listed (the menu scrolls) rather than truncated to a few chips.
         if (availableGenres.isNotEmpty()) {
             FilterSection(
                 title = stringResource(R.string.filter_genre),
                 options = availableGenres,
+                label = FrenchLabels::genre,
                 selected = current.genre,
                 onSelect = { onChange(current.copy(genre = it)) },
             )
@@ -532,6 +533,7 @@ private fun FilterMenuButton(
             FilterSection(
                 title = stringResource(R.string.filter_platform),
                 options = availablePlatforms,
+                label = FrenchLabels::platform,
                 selected = current.platform,
                 onSelect = { onChange(current.copy(platform = it)) },
             )
@@ -550,7 +552,7 @@ private fun FilterMenuButton(
 }
 
 @Composable
-private fun FilterSection(title: String, options: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+private fun FilterSection(title: String, options: List<String>, label: (String) -> String, selected: String?, onSelect: (String?) -> Unit) {
     HorizontalDivider()
     Text(
         title,
@@ -560,7 +562,7 @@ private fun FilterSection(title: String, options: List<String>, selected: String
     )
     (listOf<String?>(null) + options).forEach { option ->
         DropdownMenuItem(
-            text = { Text(option ?: stringResource(R.string.filter_any)) },
+            text = { Text(option?.let(label) ?: stringResource(R.string.filter_any)) },
             leadingIcon = { RadioButton(selected = selected == option, onClick = null) },
             onClick = { onSelect(option) },
         )
@@ -582,7 +584,7 @@ private fun SearchResultsList(
             GameListItem(
                 name = game.name,
                 coverImageId = game.cover?.imageId,
-                platforms = game.platforms?.map { it.name } ?: emptyList(),
+                platforms = game.platforms?.map { FrenchLabels.platform(it.name) } ?: emptyList(),
                 meta = ReleaseDateFormatting.format(game.firstReleaseDate),
                 onClick = { onClick(game) },
                 trailing = {
