@@ -92,4 +92,13 @@
     <string name="remove_confirm_title">Retirer du backlog ?</string>
     <string name="remove_confirm_message">%1$s sera retiré de ton backlog.</string>
     <string name="action_remove">Retirer</string>
+    <string name="action_undo">Annuler</string>
+    <string name="snackbar_archived">%1$s archivé</string>
+    <string name="snackbar_unarchived">%1$s restauré</string>
+    <string name="snackbar_added">%1$s ajouté à ton backlog</string>
+    <string name="search_error_network">Impossible de joindre IGDB. Vérifie ta connexion et réessaie.</string>
+    <string name="search_error_server">IGDB a renvoyé une erreur. Réessaie dans un instant.</string>
+    <string name="search_error_unknown">La recherche a échoué. Réessaie.</string>
+    <string name="settings_export_done">Backlog exporté</string>
+    <string name="settings_export_failed">Échec de l\'export</string>
 </resources>

@@ -28,6 +28,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -36,6 +38,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +57,17 @@ import com.davidgcd.backlog.util.DebugLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val exportSucceeded by viewModel.exportSucceeded.collectAsState()
+    val exportDoneMsg = stringResource(R.string.settings_export_done)
+    val exportFailedMsg = stringResource(R.string.settings_export_failed)
+    LaunchedEffect(exportSucceeded) {
+        exportSucceeded?.let {
+            snackbarHostState.showSnackbar(if (it) exportDoneMsg else exportFailedMsg)
+            viewModel.consumeExportResult()
+        }
+    }
     val releaseRemindersEnabled by viewModel.releaseRemindersEnabled.collectAsState()
     val schedule by viewModel.schedule.collectAsState()
     val hour by viewModel.hour.collectAsState()
@@ -80,12 +93,15 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                        }
                     }
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).verticalScroll(rememberScrollState())) {
             SectionTitle(stringResource(R.string.settings_section_games), topPadding = 16.dp)

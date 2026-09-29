@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
  * BacklogViewModel.releasePartition/filterStateToken drive the iOS grid),
  * a search query against IGDB, and add/archive/remove.
  */
+/** Coarse search failure kinds; the screen maps them to localized copy. */
+enum class SearchError { Network, Server, Unknown }
+
 class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() {
 
     private val backlog: StateFlow<List<GameEntity>> = repository.observeBacklog()
@@ -75,8 +78,8 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching
 
-    private val _searchError = MutableStateFlow<String?>(null)
-    val searchError: StateFlow<String?> = _searchError
+    private val _searchError = MutableStateFlow<SearchError?>(null)
+    val searchError: StateFlow<SearchError?> = _searchError
 
     private var searchJob: Job? = null
 
@@ -96,12 +99,12 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
             } catch (t: CancellationException) {
                 throw t
             } catch (t: retrofit2.HttpException) {
-                // IGDB puts the actual syntax/validation complaint in the error body, not t.message
-                // (which is just "HTTP 400 Bad Request").
-                val body = try { t.response()?.errorBody()?.string() } catch (_: Throwable) { null }
-                _searchError.value = "HTTP ${t.code()}: ${body ?: t.message()}"
+                // The raw IGDB body stays in the debug log; the UI shows a readable message.
+                _searchError.value = SearchError.Server
+            } catch (t: java.io.IOException) {
+                _searchError.value = SearchError.Network
             } catch (t: Throwable) {
-                _searchError.value = t.message ?: "Search failed"
+                _searchError.value = SearchError.Unknown
             } finally {
                 _isSearching.value = false
             }

@@ -92,4 +92,13 @@
     <string name="remove_confirm_title">Remove from backlog?</string>
     <string name="remove_confirm_message">%1$s will be removed from your backlog.</string>
     <string name="action_remove">Remove</string>
+    <string name="action_undo">Undo</string>
+    <string name="snackbar_archived">%1$s archived</string>
+    <string name="snackbar_unarchived">%1$s restored</string>
+    <string name="snackbar_added">%1$s added to your backlog</string>
+    <string name="search_error_network">Can\'t reach IGDB. Check your connection and try again.</string>
+    <string name="search_error_server">IGDB returned an error. Try again in a moment.</string>
+    <string name="search_error_unknown">Search failed. Try again.</string>
+    <string name="settings_export_done">Backlog exported</string>
+    <string name="settings_export_failed">Export failed</string>
 </resources>

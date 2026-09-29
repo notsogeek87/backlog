@@ -133,8 +133,12 @@ class GameDetailViewModel(
         viewModelScope.launch { repository.setArchived(entity, archived) }
     }
 
-    fun remove(entity: GameEntity) {
-        viewModelScope.launch { repository.remove(entity) }
+    /** [onDone] runs once the row is deleted, so leaving the screen can't cancel the delete mid-flight. */
+    fun remove(entity: GameEntity, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.remove(entity)
+            onDone()
+        }
     }
 }
 

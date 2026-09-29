@@ -72,11 +72,26 @@ class SettingsViewModel(
         viewModelScope.launch { preferences.setPlatformChangeAlertsEnabled(enabled) }
     }
 
+    /** One-shot outcome of the last export (true = ok); the screen shows it once then calls [consumeExportResult]. */
+    private val _exportSucceeded = MutableStateFlow<Boolean?>(null)
+    val exportSucceeded: StateFlow<Boolean?> = _exportSucceeded
+
     fun exportCsv(uri: Uri) {
         viewModelScope.launch {
-            val games = repository.allGames()
-            csvExportService.export(uri, games)
+            _exportSucceeded.value = try {
+                val games = repository.allGames()
+                csvExportService.export(uri, games)
+                true
+            } catch (t: kotlinx.coroutines.CancellationException) {
+                throw t
+            } catch (t: Throwable) {
+                false
+            }
         }
+    }
+
+    fun consumeExportResult() {
+        _exportSucceeded.value = null
     }
 
     fun importCsv(uri: Uri) {

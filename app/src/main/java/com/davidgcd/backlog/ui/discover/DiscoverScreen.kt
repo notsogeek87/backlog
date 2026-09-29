@@ -20,6 +20,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -27,22 +29,29 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.IgdbImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, onBack: () -> Unit) {
+fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, onBack: (() -> Unit)? = null) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val backlogIds by viewModel.backlogIds.collectAsState()
 
@@ -51,12 +60,15 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
             TopAppBar(
                 title = { Text(stringResource(R.string.discover_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                        }
                     }
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             when (val current = state) {
@@ -106,7 +118,13 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
                                     )
                                 } else {
                                     // Same icon action as search results: consistent add affordance app-wide.
-                                    IconButton(onClick = { viewModel.addToBacklog(game) }) {
+                                    IconButton(onClick = {
+                                        viewModel.addToBacklog(game)
+                                        scope.launch {
+                                            snackbarHostState.currentSnackbarData?.dismiss()
+                                            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, game.name))
+                                        }
+                                    }) {
                                         Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_to_backlog))
                                     }
                                 }

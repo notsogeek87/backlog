@@ -17,11 +17,18 @@ Périmètre : Backlog, Recherche, Filtres/Tri, Détail d'un jeu, Découvrir, Ré
 | 11 | Basse | Loader de recherche décale les résultats ; liste sans date de sortie ; jaquettes manquantes = trou. | Barre linéaire, date en sous-titre, placeholder de jaquette. |
 | 12 | Basse | Ajout dans Découvrir = bouton texte, différent de la recherche. | Icône « + » homogène. |
 
-## Reste à traiter (non fait ici)
-- Barre du haut chargée (5 actions) : envisager une `NavigationBar` Backlog / Découvrir / Réglages.
-- Suppression/archivage avec Snackbar « Annuler » ; retour visuel à l'ajout (Snackbar).
-- Retour d'export CSV (succès/échec) ; message d'erreur de recherche brut (« HTTP 400… ») à humaniser.
-- Titre vide dans la barre du détail ; support tablette (grille).
-- Couleur des chips genres dans le détail ; contraste à valider avec un outil (Accessibility Scanner).
+## Second passage (également traité)
+| # | Correctif |
+|---|-----------|
+| 13 | Barre du haut surchargée → `NavigationBar` Backlog / Découvrir / Réglages (visible uniquement sur les 3 écrans racine, état sauvegardé par onglet). |
+| 14 | Archivage : Snackbar avec « Annuler ». Ajout (recherche, Découvrir) : Snackbar de confirmation. |
+| 15 | Erreur de recherche « HTTP 400… » → messages localisés (réseau / serveur / inconnu). |
+| 16 | Export CSV : Snackbar succès / échec. |
+| 17 | Détail : nom du jeu dans la barre ; retour automatique après suppression (une fois la ligne supprimée). |
+
+## Reste à traiter
+- Grille adaptative sur tablette / paysage.
+- Annulation d'une suppression (aujourd'hui : confirmation préalable uniquement).
+- Contraste et taille de police à valider avec Accessibility Scanner.
 
 ⚠️ Modifications non compilées dans cet environnement (pas de SDK Android) : à valider via la CI `android-build`.

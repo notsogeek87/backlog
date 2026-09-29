@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.davidgcd.backlog.R
@@ -59,7 +60,14 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("") },
+                title = {
+                    val name = when (val s = state) {
+                        is GameDetailState.InBacklog -> s.entity.name
+                        is GameDetailState.Remote -> s.game.name
+                        else -> ""
+                    }
+                    Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
@@ -78,7 +86,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     inBacklog = true,
                     isArchived = current.entity.isArchived,
                     onArchiveToggle = { viewModel.setArchived(current.entity, !current.entity.isArchived) },
-                    onRemove = { viewModel.remove(current.entity) },
+                    onRemove = { viewModel.remove(current.entity, onDone = onBack) },
                     onAdd = {},
                 )
                 is GameDetailState.Remote -> GameDetailContent(

@@ -28,10 +28,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Unarchive
-import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -46,6 +44,10 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -56,6 +58,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +67,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -74,6 +78,7 @@ import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.IgdbImage
+import kotlinx.coroutines.launch
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,9 +86,12 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 fun BacklogScreen(
     viewModel: BacklogViewModel,
     onGameClick: (Long) -> Unit,
-    onSettingsClick: () -> Unit,
-    onDiscoverClick: () -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val undoLabel = stringResource(R.string.action_undo)
+
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
@@ -134,17 +142,10 @@ fun BacklogScreen(
                             ),
                         )
                     }
-                    if (!showSearch) {
-                        IconButton(onClick = onDiscoverClick) {
-                            Icon(Icons.Filled.Explore, contentDescription = stringResource(R.string.action_discover))
-                        }
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.action_settings))
-                        }
-                    }
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             if (showSearch) {
@@ -178,9 +179,15 @@ fun BacklogScreen(
                 } else {
                     Spacer(Modifier.height(4.dp))
                 }
-                searchError?.let { message ->
+                searchError?.let { error ->
                     Text(
-                        text = message,
+                        text = stringResource(
+                            when (error) {
+                                SearchError.Network -> R.string.search_error_network
+                                SearchError.Server -> R.string.search_error_server
+                                SearchError.Unknown -> R.string.search_error_unknown
+                            },
+                        ),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(16.dp),
                     )
@@ -197,7 +204,13 @@ fun BacklogScreen(
                 SearchResultsList(
                     results = searchResults,
                     backlogIds = backlogIds,
-                    onAdd = { viewModel.addToBacklog(it) },
+                    onAdd = { game ->
+                        viewModel.addToBacklog(game)
+                        scope.launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, game.name), duration = SnackbarDuration.Short)
+                        }
+                    },
                     onClick = { onGameClick(it.id) },
                 )
             } else {
@@ -219,7 +232,22 @@ fun BacklogScreen(
                 } else {
                     BacklogList(
                         games = visibleBacklog,
-                        onArchiveToggle = { viewModel.setArchived(it, !it.isArchived) },
+                        onArchiveToggle = { game ->
+                            val archive = !game.isArchived
+                            viewModel.setArchived(game, archive)
+                            scope.launch {
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                                val result = snackbarHostState.showSnackbar(
+                                    message = context.getString(
+                                        if (archive) R.string.snackbar_archived else R.string.snackbar_unarchived,
+                                        game.name,
+                                    ),
+                                    actionLabel = undoLabel,
+                                    duration = SnackbarDuration.Short,
+                                )
+                                if (result == SnackbarResult.ActionPerformed) viewModel.setArchived(game, !archive)
+                            }
+                        },
                         onClick = { onGameClick(it.igdbId) },
                     )
                 }

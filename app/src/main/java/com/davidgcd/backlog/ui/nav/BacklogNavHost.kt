@@ -1,6 +1,26 @@
 package com.davidgcd.backlog.ui.nav
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.davidgcd.backlog.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,6 +56,14 @@ private object Routes {
     fun gameDetail(gameId: Long) = "game/$gameId"
 }
 
+private data class TopLevelDestination(val route: String, val icon: ImageVector, val labelRes: Int)
+
+private val topLevelDestinations = listOf(
+    TopLevelDestination(Routes.BACKLOG, Icons.Filled.Bookmarks, R.string.backlog_title),
+    TopLevelDestination(Routes.DISCOVER, Icons.Filled.Explore, R.string.discover_title),
+    TopLevelDestination(Routes.SETTINGS, Icons.Filled.Settings, R.string.settings_title),
+)
+
 /**
  * The app's one NavHost — mirrors the iOS app's rule of a single navigation
  * stack per top-level surface, kept as one stack here since there is a
@@ -52,15 +80,45 @@ fun BacklogNavHost(
     csvImportService: CsvImportService,
 ) {
     val navController = rememberNavController()
+    val navEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navEntry?.destination
+    // The bar only shows on the three top-level surfaces; game detail is a pushed screen with a back arrow.
+    val showBottomBar = topLevelDestinations.any { top -> currentDestination?.hierarchy?.any { it.route == top.route } == true }
 
-    NavHost(navController = navController, startDestination = Routes.BACKLOG) {
+    Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            if (showBottomBar) {
+                NavigationBar {
+                    topLevelDestinations.forEach { top ->
+                        val label = stringResource(top.labelRes)
+                        NavigationBarItem(
+                            selected = currentDestination?.hierarchy?.any { it.route == top.route } == true,
+                            onClick = {
+                                navController.navigate(top.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(top.icon, contentDescription = null) },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            }
+        },
+    ) { outerPadding ->
+    NavHost(
+        navController = navController,
+        startDestination = Routes.BACKLOG,
+        modifier = Modifier.padding(outerPadding).consumeWindowInsets(outerPadding),
+    ) {
         composable(Routes.BACKLOG) {
             val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository))
             BacklogScreen(
                 viewModel = viewModel,
                 onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
-                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
-                onDiscoverClick = { navController.navigate(Routes.DISCOVER) },
             )
         }
         composable(Routes.DISCOVER) {
@@ -68,7 +126,6 @@ fun BacklogNavHost(
             DiscoverScreen(
                 viewModel = viewModel,
                 onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
-                onBack = { navController.popBackStack() },
             )
         }
         composable(
@@ -93,7 +150,8 @@ fun BacklogNavHost(
                     csvImportService,
                 ),
             )
-            SettingsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            SettingsScreen(viewModel = viewModel)
         }
+    }
     }
 }
