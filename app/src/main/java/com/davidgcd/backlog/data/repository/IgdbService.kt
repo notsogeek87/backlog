@@ -15,31 +15,31 @@ class IgdbService(private val api: IgdbApi) {
 
     suspend fun searchGames(query: String, limit: Int = 20): List<Game> {
         RateLimiter.igdb.acquire()
-        // IGDB's /search endpoint only accepts id/name — every other field, even scalars like
-        // first_release_date, comes back "Invalid field name". Get matching ids/names here, then
-        // enrich them with a normal /games lookup (which supports the full field set).
+        // IGDB's /search endpoint only accepts id/name/game — every other field, even scalars
+        // like first_release_date, comes back "Invalid field name". Its `id` is the *search
+        // result's* id, not the game's (a hit can even match a character/company with no game at
+        // all) — the actual game id is the `game` field. Get that here, then enrich with a normal
+        // /games lookup (which supports the full field set) keyed by the real game ids.
         val searchApicalypse = """
             search "${apicalypseEscaped(query)}";
-            fields id,name;
+            fields id,name,game;
             limit $limit;
         """.trimIndent()
-        // IGDB's fuzzy search endpoint can return several matches (e.g. alternative names)
-        // sharing the same game id, which breaks Compose's LazyColumn key requirement, and
-        // occasionally a malformed entry with no name at all (parsed as "" — not worth showing).
-        val hits = api.search(searchApicalypse.toRequestBody())
-            .distinctBy { it.id }
-            .filter { it.name.isNotBlank() }
-        if (hits.isEmpty()) return hits
+        val gameIds = api.search(searchApicalypse.toRequestBody())
+            .mapNotNull { it.game }
+            .distinct()
+        if (gameIds.isEmpty()) return emptyList()
 
         RateLimiter.igdb.acquire()
         val idsApicalypse = """
             fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
-            where id = (${hits.joinToString(",") { it.id.toString() }});
-            limit ${hits.size};
+            where id = (${gameIds.joinToString(",")});
+            limit ${gameIds.size};
         """.trimIndent()
         val detailsById = api.games(idsApicalypse.toRequestBody()).associateBy { it.id }
-        // /games doesn't preserve /search's relevance order, so re-sort to match the search hits.
-        return hits.mapNotNull { detailsById[it.id] }
+        // /games doesn't preserve /search's relevance order, so re-sort to match the search hits,
+        // and drop the rare malformed entry with no name at all (parsed as "" — not worth showing).
+        return gameIds.mapNotNull { detailsById[it] }.filter { it.name.isNotBlank() }
     }
 
     /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */

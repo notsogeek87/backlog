@@ -38,6 +38,18 @@ data class Game(
     }
 }
 
+/**
+ * IGDB's /search endpoint returns its own result objects, not [Game]s directly: `id` here is the
+ * search *result's* id, and `game` is the actual game's id (the one /games expects) — a distinct
+ * result can even have no `game` at all (a match on a character/company/collection instead).
+ */
+@JsonClass(generateAdapter = true)
+data class SearchHit(
+    val id: Long,
+    val name: String = "",
+    val game: Long? = null,
+)
+
 @JsonClass(generateAdapter = true)
 data class Website(
     val id: Long,

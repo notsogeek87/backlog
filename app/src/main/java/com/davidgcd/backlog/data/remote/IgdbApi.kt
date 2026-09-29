@@ -1,6 +1,7 @@
 package com.davidgcd.backlog.data.remote
 
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.SearchHit
 import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -21,5 +22,5 @@ interface IgdbApi {
     suspend fun games(@Body apicalypseQuery: RequestBody): List<Game>
 
     @POST("v4/search")
-    suspend fun search(@Body apicalypseQuery: RequestBody): List<Game>
+    suspend fun search(@Body apicalypseQuery: RequestBody): List<SearchHit>
 }
