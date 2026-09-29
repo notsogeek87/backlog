@@ -64,6 +64,7 @@ class BacklogApplication : Application() {
 
         val igdbHttpClient = OkHttpClient.Builder()
             .addInterceptor(IgdbAuthInterceptor(tokenProvider))
+            .addInterceptor(com.davidgcd.backlog.data.remote.DebugLogInterceptor())
             .addInterceptor(loggingInterceptor)
             .build()
 

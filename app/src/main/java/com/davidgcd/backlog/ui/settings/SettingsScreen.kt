@@ -1,12 +1,19 @@
 package com.davidgcd.backlog.ui.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -33,11 +40,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.notifications.ReleaseReminderSchedule
+import com.davidgcd.backlog.util.DebugLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +61,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val importResult by viewModel.importResult.collectAsState()
 
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDebugLog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv"),
@@ -123,7 +133,20 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     CircularProgressIndicator(modifier = Modifier.padding(start = 8.dp).size(20.dp))
                 }
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            SectionTitle(stringResource(R.string.settings_section_debug))
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                TextButton(onClick = { showDebugLog = true }) {
+                    Text(stringResource(R.string.settings_view_debug_log))
+                }
+            }
         }
+    }
+
+    if (showDebugLog) {
+        DebugLogDialog(onDismiss = { showDebugLog = false })
     }
 
     importResult?.let { result ->
@@ -244,4 +267,47 @@ private fun TimeRow(hour: Int, minute: Int, onClick: () -> Unit) {
             Text("%02d:%02d".format(hour, minute))
         }
     }
+}
+
+@Composable
+private fun DebugLogDialog(onDismiss: () -> Unit) {
+    val entries by DebugLog.entries.collectAsState()
+    val context = LocalContext.current
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.settings_view_debug_log),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { DebugLog.clear() }) { Text(stringResource(R.string.action_clear)) }
+                TextButton(onClick = { copyToClipboard(context, entries.joinToString("\n")) }) {
+                    Text(stringResource(R.string.action_copy))
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
+            }
+            SelectionContainer(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    if (entries.isEmpty()) {
+                        Text(stringResource(R.string.settings_debug_log_empty))
+                    } else {
+                        entries.forEach { line ->
+                            Text(line, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.setPrimaryClip(ClipData.newPlainText("Backlog debug log", text))
 }

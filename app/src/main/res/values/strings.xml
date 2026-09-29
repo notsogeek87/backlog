@@ -65,6 +65,13 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>
     <string name="action_ok">OK</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_close">Close</string>
+
+    <string name="settings_section_debug">Debug</string>
+    <string name="settings_view_debug_log">View debug log</string>
+    <string name="settings_debug_log_empty">No log entries yet. Try a search first.</string>
 
     <string name="schedule_release_day">On release day</string>
     <string name="schedule_day_before">The day before</string>

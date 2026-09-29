@@ -65,6 +65,13 @@
     <string name="action_cancel">Annuler</string>
     <string name="action_save">Enregistrer</string>
     <string name="action_ok">OK</string>
+    <string name="action_clear">Effacer</string>
+    <string name="action_copy">Copier</string>
+    <string name="action_close">Fermer</string>
+
+    <string name="settings_section_debug">Debug</string>
+    <string name="settings_view_debug_log">Voir le journal de debug</string>
+    <string name="settings_debug_log_empty">Pas encore d\'entrées. Essaie une recherche d\'abord.</string>
 
     <string name="schedule_release_day">Le jour de la sortie</string>
     <string name="schedule_day_before">La veille</string>
