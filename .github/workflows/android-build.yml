@@ -33,12 +33,14 @@ jobs:
         env:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
         run: |
           mkdir -p app/src/main/java/com/davidgcd/backlog/config
           if [ ! -f app/src/main/java/com/davidgcd/backlog/config/Secrets.kt ]; then
             sed \
               -e "s/YOUR_TWITCH_CLIENT_ID/${TWITCH_CLIENT_ID:-ci-placeholder}/" \
               -e "s/YOUR_TWITCH_CLIENT_SECRET/${TWITCH_CLIENT_SECRET:-ci-placeholder}/" \
+              -e "s/YOUR_STEAM_WEB_API_KEY/${STEAM_API_KEY:-YOUR_STEAM_WEB_API_KEY}/" \
               app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example \
               > app/src/main/java/com/davidgcd/backlog/config/Secrets.kt
           fi
