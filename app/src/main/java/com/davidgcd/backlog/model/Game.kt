@@ -53,8 +53,10 @@ data class SearchHit(
 @JsonClass(generateAdapter = true)
 data class Website(
     val id: Long,
-    val url: String,
-    val category: Int,
+    // IGDB occasionally omits url/category on a website entry — default rather than fail the
+    // whole game's parse for one bad entry (mirrors Game.name/SearchHit.name above).
+    val url: String = "",
+    val category: Int? = null,
 )
 
 @JsonClass(generateAdapter = true)
