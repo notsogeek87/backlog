@@ -1,15 +1,13 @@
 package com.davidgcd.backlog.ui.discover
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -18,13 +16,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,18 +29,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.model.Game
-import com.davidgcd.backlog.util.IgdbImage
+import com.davidgcd.backlog.ui.components.GameListItem
+import com.davidgcd.backlog.ui.components.GlassButton
+import com.davidgcd.backlog.ui.components.glassTopAppBarColors
+import com.davidgcd.backlog.ui.theme.Glass
+import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,8 +52,10 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
     val backlogIds by viewModel.backlogIds.collectAsState()
 
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = glassTopAppBarColors(),
                 title = { Text(stringResource(R.string.discover_title)) },
                 navigationIcon = {
                     if (onBack != null) {
@@ -76,7 +74,7 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
-                ) { CircularProgressIndicator() }
+                ) { CircularProgressIndicator(color = Glass.Cyan) }
 
                 is DiscoverState.Error -> Column(
                     modifier = Modifier.fillMaxSize(),
@@ -88,33 +86,34 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 32.dp),
                     )
-                    OutlinedButton(onClick = viewModel::refresh, modifier = Modifier.padding(top = 16.dp)) {
-                        Text(stringResource(R.string.action_retry))
-                    }
+                    GlassButton(
+                        text = stringResource(R.string.action_retry),
+                        onClick = viewModel::refresh,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
                 }
 
-                is DiscoverState.Loaded -> LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+                is DiscoverState.Loaded -> LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 340.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     items(current.games, key = { it.id }) { game ->
                         val inBacklog = backlogIds.contains(game.id)
-                        ListItem(
-                            modifier = Modifier.clickable { onGameClick(game.id) },
-                            headlineContent = { Text(game.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            leadingContent = {
-                                game.cover?.imageId?.let { imageId ->
-                                    AsyncImage(
-                                        model = IgdbImage.url(imageId, IgdbImage.Size.CoverSmall),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.size(48.dp, 64.dp).clip(RoundedCornerShape(6.dp)),
-                                    )
-                                }
-                            },
-                            trailingContent = {
+                        GameListItem(
+                            name = game.name,
+                            coverImageId = game.cover?.imageId,
+                            platforms = game.platforms?.map { it.name } ?: emptyList(),
+                            meta = ReleaseDateFormatting.format(game.firstReleaseDate),
+                            onClick = { onGameClick(game.id) },
+                            trailing = {
                                 if (inBacklog) {
                                     Icon(
                                         Icons.Filled.Check,
                                         contentDescription = stringResource(R.string.discover_already_in_backlog),
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = Glass.Green,
+                                        modifier = Modifier.padding(12.dp),
                                     )
                                 } else {
                                     // Same icon action as search results: consistent add affordance app-wide.
@@ -125,7 +124,11 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
                                             snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, game.name))
                                         }
                                     }) {
-                                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_to_backlog))
+                                        Icon(
+                                            Icons.Filled.Add,
+                                            contentDescription = stringResource(R.string.action_add_to_backlog),
+                                            tint = Glass.Cyan,
+                                        )
                                     }
                                 }
                             },

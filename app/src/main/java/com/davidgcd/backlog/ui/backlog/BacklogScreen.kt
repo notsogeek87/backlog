@@ -1,46 +1,45 @@
 package com.davidgcd.backlog.ui.backlog
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LibraryAdd
-import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.InputChip
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -51,6 +50,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,24 +62,28 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
+import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
-import com.davidgcd.backlog.util.IgdbImage
-import kotlinx.coroutines.launch
+import com.davidgcd.backlog.ui.components.GameCover
+import com.davidgcd.backlog.ui.components.GameListItem
+import com.davidgcd.backlog.ui.components.GlassPill
+import com.davidgcd.backlog.ui.components.GradientButton
+import com.davidgcd.backlog.ui.components.StatCard
+import com.davidgcd.backlog.ui.components.glassTopAppBarColors
+import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.ReleaseDateFormatting
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +106,9 @@ fun BacklogScreen(
     val availableGenres by viewModel.availableGenres.collectAsState()
     val availablePlatforms by viewModel.availablePlatforms.collectAsState()
     val isBacklogEmpty by viewModel.isBacklogEmpty.collectAsState()
+    val activeCount by viewModel.activeCount.collectAsState()
+    val archivedCount by viewModel.archivedCount.collectAsState()
+    val recentlyAdded by viewModel.recentlyAdded.collectAsState()
     val backlogIds by viewModel.backlogIds.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
@@ -121,9 +128,17 @@ fun BacklogScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.backlog_title)) },
+                colors = glassTopAppBarColors(),
+                title = {
+                    Text(
+                        stringResource(R.string.backlog_title),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                },
                 actions = {
                     if (!showSearch) {
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
@@ -160,7 +175,14 @@ fun BacklogScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .focusRequester(searchFocus),
                     singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Glass.GlassStrong,
+                        unfocusedContainerColor = Glass.GlassTop,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Glass.Cyan,
+                    ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { viewModel.search(query) }),
                     placeholder = { Text(stringResource(R.string.search_placeholder)) },
@@ -175,7 +197,11 @@ fun BacklogScreen(
                 )
                 // Reserved height keeps results from jumping when the loader appears.
                 if (isSearching) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Glass.Cyan,
+                        trackColor = Color.Transparent,
+                    )
                 } else {
                     Spacer(Modifier.height(4.dp))
                 }
@@ -196,7 +222,7 @@ fun BacklogScreen(
                     Text(
                         text = stringResource(R.string.search_no_results),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Glass.TextMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(32.dp),
                     )
@@ -208,60 +234,168 @@ fun BacklogScreen(
                         viewModel.addToBacklog(game)
                         scope.launch {
                             snackbarHostState.currentSnackbarData?.dismiss()
-                            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, game.name), duration = SnackbarDuration.Short)
+                            snackbarHostState.showSnackbar(
+                                context.getString(R.string.snackbar_added, game.name),
+                                duration = SnackbarDuration.Short,
+                            )
                         }
                     },
                     onClick = { onGameClick(it.id) },
                 )
+            } else if (isBacklogEmpty) {
+                EmptyState(
+                    message = stringResource(R.string.backlog_empty),
+                    actionLabel = stringResource(R.string.backlog_empty_cta),
+                    onAction = { showSearch = true },
+                )
             } else {
-                if (filter.isActive) {
-                    ActiveFilterChips(filter = filter, onChange = viewModel::setFilter)
-                }
-                if (isBacklogEmpty) {
-                    EmptyState(
-                        message = stringResource(R.string.backlog_empty),
-                        actionLabel = stringResource(R.string.backlog_empty_cta),
-                        onAction = { showSearch = true },
-                    )
-                } else if (visibleBacklog.isEmpty()) {
-                    EmptyState(
-                        message = stringResource(R.string.backlog_filtered_empty),
-                        actionLabel = stringResource(R.string.filter_reset),
-                        onAction = { viewModel.setFilter(BacklogFilter()) },
-                    )
-                } else {
-                    BacklogList(
-                        games = visibleBacklog,
-                        onArchiveToggle = { game ->
-                            val archive = !game.isArchived
-                            viewModel.setArchived(game, archive)
-                            scope.launch {
-                                snackbarHostState.currentSnackbarData?.dismiss()
-                                val result = snackbarHostState.showSnackbar(
-                                    message = context.getString(
-                                        if (archive) R.string.snackbar_archived else R.string.snackbar_unarchived,
-                                        game.name,
-                                    ),
-                                    actionLabel = undoLabel,
-                                    duration = SnackbarDuration.Short,
-                                )
-                                if (result == SnackbarResult.ActionPerformed) viewModel.setArchived(game, !archive)
-                            }
-                        },
-                        onClick = { onGameClick(it.igdbId) },
-                    )
-                }
+                BacklogGrid(
+                    games = visibleBacklog,
+                    filter = filter,
+                    activeCount = activeCount,
+                    archivedCount = archivedCount,
+                    recentlyAdded = recentlyAdded,
+                    onFilterChange = viewModel::setFilter,
+                    onArchiveToggle = { game ->
+                        val archive = !game.isArchived
+                        viewModel.setArchived(game, archive)
+                        scope.launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            val result = snackbarHostState.showSnackbar(
+                                message = context.getString(
+                                    if (archive) R.string.snackbar_archived else R.string.snackbar_unarchived,
+                                    game.name,
+                                ),
+                                actionLabel = undoLabel,
+                                duration = SnackbarDuration.Short,
+                            )
+                            if (result == SnackbarResult.ActionPerformed) viewModel.setArchived(game, !archive)
+                        }
+                    },
+                    onClick = { onGameClick(it.igdbId) },
+                )
             }
         }
     }
 }
 
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = Glass.Text,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+/**
+ * Home + list in one adaptive grid: 1 column on phones, several on tablets/desktop.
+ * Header blocks (stats, recent carousel, active filters) span the full width.
+ */
+@Composable
+private fun BacklogGrid(
+    games: List<GameEntity>,
+    filter: BacklogFilter,
+    activeCount: Int,
+    archivedCount: Int,
+    recentlyAdded: List<GameEntity>,
+    onFilterChange: (BacklogFilter) -> Unit,
+    onArchiveToggle: (GameEntity) -> Unit,
+    onClick: (GameEntity) -> Unit,
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 340.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard(
+                    value = activeCount.toString(),
+                    label = stringResource(R.string.stat_in_backlog),
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    value = archivedCount.toString(),
+                    label = stringResource(R.string.stat_archived),
+                    modifier = Modifier.weight(1f),
+                    accent = Glass.Purple,
+                )
+            }
+        }
+        if (!filter.isActive && recentlyAdded.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SectionHeader(stringResource(R.string.section_recent))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(recentlyAdded, key = { it.igdbId }) { game ->
+                            GameCover(
+                                imageId = game.coverImageId,
+                                width = 112.dp,
+                                modifier = Modifier.clickable { onClick(game) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        if (filter.isActive) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                ActiveFilterChips(filter = filter, onChange = onFilterChange)
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            SectionHeader(stringResource(R.string.section_my_games))
+        }
+        if (games.isEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                EmptyState(
+                    message = stringResource(R.string.backlog_filtered_empty),
+                    actionLabel = stringResource(R.string.filter_reset),
+                    onAction = { onFilterChange(BacklogFilter()) },
+                    fillScreen = false,
+                )
+            }
+        }
+        items(games, key = { it.igdbId }) { game ->
+            val supporting = listOfNotNull(
+                ReleaseDateFormatting.format(game.firstReleaseDate),
+                if (game.isArchived) stringResource(R.string.label_archived) else null,
+            ).joinToString(" · ")
+            GameListItem(
+                name = game.name,
+                coverImageId = game.coverImageId,
+                platforms = GameJsonCache.platformNames(game),
+                meta = supporting,
+                rating = game.totalRating,
+                dimmed = game.isArchived,
+                onClick = { onClick(game) },
+                trailing = {
+                    val label = stringResource(
+                        if (game.isArchived) R.string.action_unarchive else R.string.action_archive,
+                    )
+                    IconButton(onClick = { onArchiveToggle(game) }) {
+                        Icon(
+                            if (game.isArchived) Icons.Filled.Unarchive else Icons.Filled.Archive,
+                            contentDescription = label,
+                            tint = Glass.TextMuted,
+                        )
+                    }
+                },
+            )
+        }
+    }
+}
+
 /** Active filters stay visible (and one tap removable) after the menu closes. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ActiveFilterChips(filter: BacklogFilter, onChange: (BacklogFilter) -> Unit) {
     Row(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).horizontalScroll(rememberScrollState()),
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         filter.genre?.let { RemovableChip(it) { onChange(filter.copy(genre = null)) } }
@@ -273,9 +407,26 @@ private fun ActiveFilterChips(filter: BacklogFilter, onChange: (BacklogFilter) -
 }
 
 @Composable
-private fun EmptyState(message: String, actionLabel: String, onAction: () -> Unit) {
+private fun RemovableChip(label: String, onClear: () -> Unit) {
+    GlassPill(
+        text = label,
+        selected = true,
+        onClick = onClear,
+        trailing = {
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = stringResource(R.string.action_clear),
+                modifier = Modifier.size(16.dp),
+                tint = Glass.Cyan,
+            )
+        },
+    )
+}
+
+@Composable
+private fun EmptyState(message: String, actionLabel: String, onAction: () -> Unit, fillScreen: Boolean = true) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
+        modifier = (if (fillScreen) Modifier.fillMaxSize() else Modifier.fillMaxWidth()).padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -283,7 +434,7 @@ private fun EmptyState(message: String, actionLabel: String, onAction: () -> Uni
             Icons.Filled.LibraryAdd,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = Glass.Cyan,
         )
         Text(
             text = message,
@@ -291,25 +442,8 @@ private fun EmptyState(message: String, actionLabel: String, onAction: () -> Uni
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
         )
-        Button(onClick = onAction) { Text(actionLabel) }
+        GradientButton(text = actionLabel, onClick = onAction)
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RemovableChip(label: String, onClear: () -> Unit) {
-    InputChip(
-        selected = true,
-        onClick = onClear,
-        label = { Text(label) },
-        trailingIcon = {
-            Icon(
-                Icons.Filled.Close,
-                contentDescription = stringResource(R.string.action_clear),
-                modifier = Modifier.size(18.dp),
-            )
-        },
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -421,88 +555,42 @@ private fun FilterSection(title: String, options: List<String>, selected: String
 }
 
 @Composable
-private fun BacklogList(
-    games: List<GameEntity>,
-    onArchiveToggle: (GameEntity) -> Unit,
-    onClick: (GameEntity) -> Unit,
-) {
-    LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-        items(games, key = { it.igdbId }) { game ->
-            val releaseDate = ReleaseDateFormatting.format(game.firstReleaseDate)
-            val supporting = listOfNotNull(
-                releaseDate,
-                if (game.isArchived) stringResource(R.string.label_archived) else null,
-            ).joinToString(" · ")
-            ListItem(
-                // Archived games stay readable but recede behind active ones.
-                modifier = Modifier.clickable { onClick(game) }.alpha(if (game.isArchived) 0.6f else 1f),
-                headlineContent = { Text(game.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                supportingContent = { if (supporting.isNotEmpty()) Text(supporting) },
-                leadingContent = { Cover(game.coverImageId) },
-                trailingContent = {
-                    val label = stringResource(
-                        if (game.isArchived) R.string.action_unarchive else R.string.action_archive,
-                    )
-                    IconButton(onClick = { onArchiveToggle(game) }) {
-                        Icon(
-                            if (game.isArchived) Icons.Filled.Unarchive else Icons.Filled.Archive,
-                            contentDescription = label,
-                        )
-                    }
-                },
-            )
-        }
-    }
-}
-
-@Composable
 private fun SearchResultsList(
     results: List<Game>,
     backlogIds: Set<Long>,
     onAdd: (Game) -> Unit,
     onClick: (Game) -> Unit,
 ) {
-    LazyColumn {
+    androidx.compose.foundation.lazy.LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         items(results, key = { it.id }) { game ->
-            ListItem(
-                modifier = Modifier.clickable { onClick(game) },
-                headlineContent = { Text(game.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                supportingContent = {
-                    ReleaseDateFormatting.format(game.firstReleaseDate)?.let { Text(it) }
-                },
-                leadingContent = { Cover(game.cover?.imageId) },
-                trailingContent = {
+            GameListItem(
+                name = game.name,
+                coverImageId = game.cover?.imageId,
+                platforms = game.platforms?.map { it.name } ?: emptyList(),
+                meta = ReleaseDateFormatting.format(game.firstReleaseDate),
+                onClick = { onClick(game) },
+                trailing = {
                     if (backlogIds.contains(game.id)) {
                         Icon(
                             Icons.Filled.Check,
                             contentDescription = stringResource(R.string.discover_already_in_backlog),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Glass.Green,
+                            modifier = Modifier.padding(12.dp),
                         )
                     } else {
                         IconButton(onClick = { onAdd(game) }) {
-                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_to_backlog))
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = stringResource(R.string.action_add_to_backlog),
+                                tint = Glass.Cyan,
+                            )
                         }
                     }
                 },
             )
         }
-    }
-}
-
-/** Fixed-size cover slot: rows without art keep the same alignment as rows with it. */
-@Composable
-private fun Cover(imageId: String?) {
-    val shape = RoundedCornerShape(6.dp)
-    if (imageId != null) {
-        AsyncImage(
-            model = IgdbImage.url(imageId, IgdbImage.Size.CoverSmall),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.size(48.dp, 64.dp).clip(shape),
-        )
-    } else {
-        Box(
-            modifier = Modifier.size(48.dp, 64.dp).clip(shape).background(MaterialTheme.colorScheme.surfaceVariant),
-        )
     }
 }

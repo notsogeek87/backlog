@@ -20,7 +20,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.ui.components.GlassNavBarColor
+import com.davidgcd.backlog.ui.components.glassNavigationItemColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -86,10 +89,11 @@ fun BacklogNavHost(
     val showBottomBar = topLevelDestinations.any { top -> currentDestination?.hierarchy?.any { it.route == top.route } == true }
 
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(containerColor = GlassNavBarColor, tonalElevation = 0.dp) {
                     topLevelDestinations.forEach { top ->
                         val label = stringResource(top.labelRes)
                         NavigationBarItem(
@@ -103,6 +107,7 @@ fun BacklogNavHost(
                             },
                             icon = { Icon(top.icon, contentDescription = null) },
                             label = { Text(label) },
+                            colors = glassNavigationItemColors(),
                         )
                     }
                 }

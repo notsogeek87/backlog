@@ -42,6 +42,20 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
         .map { list -> list.map { it.igdbId }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
+    /** Real counts for the header stat tiles (active vs archived), never narrowed by filters. */
+    val activeCount: StateFlow<Int> = backlog
+        .map { list -> list.count { !it.isArchived } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    val archivedCount: StateFlow<Int> = backlog
+        .map { list -> list.count { it.isArchived } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** Newest additions for the home carousel. */
+    val recentlyAdded: StateFlow<List<GameEntity>> = backlog
+        .map { list -> list.filter { !it.isArchived }.sortedByDescending { it.addedAt }.take(10) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     /** The unfiltered count backs the empty-library check, same rule as the iOS app's `games.isEmpty`. */
     val isBacklogEmpty: StateFlow<Boolean> = backlog
         .map { it.isEmpty() }

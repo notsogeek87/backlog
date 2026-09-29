@@ -101,4 +101,9 @@
     <string name="search_error_unknown">La recherche a échoué. Réessaie.</string>
     <string name="settings_export_done">Backlog exporté</string>
     <string name="settings_export_failed">Échec de l\'export</string>
+    <string name="stat_in_backlog">Dans le backlog</string>
+    <string name="stat_archived">Archivés</string>
+    <string name="section_recent">Ajouts récents</string>
+    <string name="section_my_games">Mes jeux</string>
+    <string name="ratings_igdb">IGDB</string>
 </resources>

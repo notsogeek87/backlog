@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -46,12 +48,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.ui.components.GlassButton
+import com.davidgcd.backlog.ui.components.GlassCard
+import com.davidgcd.backlog.ui.components.glassTopAppBarColors
+import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.notifications.ReleaseReminderSchedule
 import com.davidgcd.backlog.util.DebugLog
 
@@ -89,8 +96,10 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
     ) { uri -> uri?.let { viewModel.importCsv(it) } }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = glassTopAppBarColors(),
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     if (onBack != null) {
@@ -103,69 +112,80 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).verticalScroll(rememberScrollState())) {
-            SectionTitle(stringResource(R.string.settings_section_games), topPadding = 16.dp)
-
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_release_reminders_title),
-                subtitle = stringResource(R.string.settings_release_reminders_subtitle),
-                checked = releaseRemindersEnabled,
-                onCheckedChange = viewModel::setReleaseRemindersEnabled,
-            )
-
-            if (releaseRemindersEnabled) {
-                ScheduleRow(current = schedule, onSelect = viewModel::setSchedule)
-                TimeRow(hour = hour, minute = minute, onClick = { showTimePicker = true })
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SectionTitle(stringResource(R.string.settings_section_games))
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_release_reminders_title),
+                        subtitle = stringResource(R.string.settings_release_reminders_subtitle),
+                        checked = releaseRemindersEnabled,
+                        onCheckedChange = viewModel::setReleaseRemindersEnabled,
+                    )
+                    if (releaseRemindersEnabled) {
+                        HorizontalDivider(color = Glass.Border)
+                        ScheduleRow(current = schedule, onSelect = viewModel::setSchedule)
+                        HorizontalDivider(color = Glass.Border)
+                        TimeRow(hour = hour, minute = minute, onClick = { showTimePicker = true })
+                    }
+                }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            SectionTitle(stringResource(R.string.settings_section_changes), topPadding = 8.dp)
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_date_change_title),
+                        subtitle = stringResource(R.string.settings_date_change_subtitle),
+                        checked = dateChangeAlertsEnabled,
+                        onCheckedChange = viewModel::setDateChangeAlertsEnabled,
+                    )
+                    HorizontalDivider(color = Glass.Border)
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_platform_change_title),
+                        subtitle = stringResource(R.string.settings_platform_change_subtitle),
+                        checked = platformChangeAlertsEnabled,
+                        onCheckedChange = viewModel::setPlatformChangeAlertsEnabled,
+                    )
+                }
+            }
 
-            SectionTitle(stringResource(R.string.settings_section_changes))
-
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_date_change_title),
-                subtitle = stringResource(R.string.settings_date_change_subtitle),
-                checked = dateChangeAlertsEnabled,
-                onCheckedChange = viewModel::setDateChangeAlertsEnabled,
-            )
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_platform_change_title),
-                subtitle = stringResource(R.string.settings_platform_change_subtitle),
-                checked = platformChangeAlertsEnabled,
-                onCheckedChange = viewModel::setPlatformChangeAlertsEnabled,
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            SectionTitle(stringResource(R.string.settings_section_data))
-
+            SectionTitle(stringResource(R.string.settings_section_data), topPadding = 8.dp)
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                TextButton(onClick = { exportLauncher.launch("backlog.csv") }) {
-                    Text(stringResource(R.string.settings_export_csv))
-                }
-                TextButton(
-                    onClick = { importLauncher.launch(arrayOf("text/*", "text/comma-separated-values")) },
-                    enabled = !isImporting,
-                ) {
-                    Text(stringResource(R.string.settings_import_csv))
-                }
+                GlassButton(
+                    text = stringResource(R.string.settings_export_csv),
+                    onClick = { exportLauncher.launch("backlog.csv") },
+                    modifier = Modifier.weight(1f),
+                )
+                GlassButton(
+                    text = stringResource(R.string.settings_import_csv),
+                    onClick = {
+                        if (!isImporting) importLauncher.launch(arrayOf("text/*", "text/comma-separated-values"))
+                    },
+                    modifier = Modifier.weight(1f),
+                )
                 if (isImporting) {
-                    CircularProgressIndicator(modifier = Modifier.padding(start = 8.dp).size(20.dp))
+                    CircularProgressIndicator(color = Glass.Cyan, modifier = Modifier.size(24.dp))
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            SectionTitle(stringResource(R.string.settings_section_debug))
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
-                TextButton(onClick = { showDebugLog = true }) {
-                    Text(stringResource(R.string.settings_view_debug_log))
-                }
-            }
+            SectionTitle(stringResource(R.string.settings_section_debug), topPadding = 8.dp)
+            GlassButton(
+                text = stringResource(R.string.settings_view_debug_log),
+                onClick = { showDebugLog = true },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(16.dp))
         }
     }
 
@@ -176,6 +196,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
     importResult?.let { result ->
         AlertDialog(
             onDismissRequest = viewModel::dismissImportResult,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             confirmButton = {
                 TextButton(onClick = viewModel::dismissImportResult) { Text(stringResource(R.string.action_ok)) }
             },
@@ -202,7 +223,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
         val timePickerState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
         Dialog(onDismissRequest = { showTimePicker = false }) {
             // Dialog has no background of its own: without a Surface the picker floats transparent over the list.
-            Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
+            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -230,7 +251,7 @@ private fun SectionTitle(text: String, topPadding: androidx.compose.ui.unit.Dp =
         text = text,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = topPadding, bottom = 4.dp),
+        modifier = Modifier.padding(start = 4.dp, top = topPadding),
     )
 }
 
@@ -314,7 +335,7 @@ private fun DebugLogDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
-      Surface(modifier = Modifier.fillMaxSize(), shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
+      Surface(modifier = Modifier.fillMaxSize(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
