@@ -21,7 +21,16 @@ class IgdbService(private val api: IgdbApi) {
         // IGDB's fuzzy search endpoint can return several matches (e.g. alternative names)
         // sharing the same game id, which breaks Compose's LazyColumn key requirement, and
         // occasionally a malformed entry with no name at all (parsed as "" — not worth showing).
-        return api.search(apicalypse).distinctBy { it.id }.filter { it.name.isNotBlank() }
+        val raw = api.search(apicalypse)
+        val filtered = raw.distinctBy { it.id }.filter { it.name.isNotBlank() }
+        if (filtered.isEmpty()) {
+            // TEMPORARY diagnostic: surface exactly what IGDB sent back so we can tell a genuine
+            // zero-match response apart from a query/parsing problem, without needing device logs.
+            throw IllegalStateException(
+                "DEBUG raw=${raw.size} filtered=${filtered.size} query=[$apicalypse]",
+            )
+        }
+        return filtered
     }
 
     /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */
