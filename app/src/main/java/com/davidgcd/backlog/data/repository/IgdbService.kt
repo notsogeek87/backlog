@@ -14,7 +14,35 @@ import okhttp3.RequestBody.Companion.toRequestBody
  */
 class IgdbService(private val api: IgdbApi) : GameCatalog {
 
-    override suspend fun searchGames(query: String, limit: Int): List<Game> {
+    override suspend fun searchGames(query: String, limit: Int): List<Game> =
+        searchGames(query, limit, partial = false)
+
+    /**
+     * [partial] also matches titles that merely *contain* the query (IGDB's `search` only matches
+     * whole words, so "zel" never finds "Zelda"); those hits come after the relevance-ordered ones.
+     */
+    suspend fun searchGames(query: String, limit: Int = 20, partial: Boolean): List<Game> {
+        val ranked = searchByRelevance(query, limit)
+        if (!partial || ranked.size >= limit) return ranked
+        val trimmed = query.trim()
+        if (trimmed.length < 2) return ranked
+        val contained = searchByNameContains(trimmed, limit)
+        return (ranked + contained).distinctBy { it.id }.take(limit)
+    }
+
+    private suspend fun searchByNameContains(query: String, limit: Int): List<Game> {
+        RateLimiter.igdb.acquire()
+        // `~ *"x"*` is IGDB's case-insensitive "contains"; version_parent = null hides DLC-ish editions.
+        val apicalypse = """
+            fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
+            where name ~ *"${apicalypseEscaped(query)}"* & version_parent = null;
+            sort total_rating_count desc;
+            limit $limit;
+        """.trimIndent()
+        return api.games(apicalypse.toRequestBody()).filter { it.name.isNotBlank() }
+    }
+
+    private suspend fun searchByRelevance(query: String, limit: Int): List<Game> {
         RateLimiter.igdb.acquire()
         // IGDB's /search endpoint only accepts id/name/game — every other field, even scalars
         // like first_release_date, comes back "Invalid field name". Its `id` is the *search
