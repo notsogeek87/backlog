@@ -61,6 +61,7 @@ fun LibraryImportScreen(viewModel: LibraryImportViewModel, onBack: () -> Unit) {
 
     Scaffold(
         containerColor = Color.Transparent,
+        contentColor = Glass.Text,
         topBar = {
             TopAppBar(
                 colors = glassTopAppBarColors(),

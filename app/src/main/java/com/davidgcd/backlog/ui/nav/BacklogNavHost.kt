@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.ui.components.GlassNavBarColor
 import com.davidgcd.backlog.ui.components.glassNavigationItemColors
+import com.davidgcd.backlog.ui.theme.Glass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -111,6 +112,7 @@ fun BacklogNavHost(
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        contentColor = Glass.Text,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {

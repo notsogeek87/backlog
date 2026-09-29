@@ -102,6 +102,7 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
+        contentColor = Glass.Text,
         topBar = {
             TopAppBar(
                 colors = glassTopAppBarColors(),

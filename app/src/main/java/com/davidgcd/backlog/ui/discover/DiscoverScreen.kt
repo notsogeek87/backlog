@@ -53,6 +53,7 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        contentColor = Glass.Text,
         topBar = {
             TopAppBar(
                 colors = glassTopAppBarColors(),
