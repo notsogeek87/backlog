@@ -10,6 +10,7 @@
     <string name="action_sort">Trier</string>
     <string name="action_filter">Filtrer</string>
     <string name="search_placeholder">Rechercher sur IGDB…</string>
+    <string name="search_no_results">Aucun résultat</string>
     <string name="filter_show_archived">Afficher les archivés</string>
     <string name="filter_genre">Genre</string>
     <string name="filter_platform">Plateforme</string>

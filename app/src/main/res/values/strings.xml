@@ -10,6 +10,7 @@
     <string name="action_sort">Sort</string>
     <string name="action_filter">Filter</string>
     <string name="search_placeholder">Search IGDB…</string>
+    <string name="search_no_results">No results</string>
     <string name="filter_show_archived">Show archived</string>
     <string name="filter_genre">Genre</string>
     <string name="filter_platform">Platform</string>

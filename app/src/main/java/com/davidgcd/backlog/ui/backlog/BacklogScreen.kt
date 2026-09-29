@@ -120,6 +120,12 @@ fun BacklogScreen(
                         modifier = Modifier.padding(16.dp),
                     )
                 }
+                if (!isSearching && searchError == null && query.isNotBlank() && searchResults.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.search_no_results),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
                 SearchResultsList(
                     results = searchResults,
                     onAdd = { viewModel.addToBacklog(it) },
