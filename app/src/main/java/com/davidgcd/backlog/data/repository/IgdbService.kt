@@ -24,11 +24,9 @@ class IgdbService(private val api: IgdbApi) {
         val raw = api.search(apicalypse)
         val filtered = raw.distinctBy { it.id }.filter { it.name.isNotBlank() }
         if (filtered.isEmpty()) {
-            // TEMPORARY diagnostic: surface exactly what IGDB sent back so we can tell a genuine
-            // zero-match response apart from a query/parsing problem, without needing device logs.
-            throw IllegalStateException(
-                "DEBUG raw=${raw.size} filtered=${filtered.size} query=[$apicalypse]",
-            )
+            // TEMPORARY diagnostic: dump the raw, unparsed JSON IGDB actually returned.
+            val rawJson = api.searchRaw(apicalypse).string().take(800)
+            throw IllegalStateException("DEBUG raw=${raw.size} json=[$rawJson]")
         }
         return filtered
     }

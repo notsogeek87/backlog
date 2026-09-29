@@ -1,6 +1,7 @@
 package com.davidgcd.backlog.data.remote
 
 import com.davidgcd.backlog.model.Game
+import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.Headers
 import retrofit2.http.POST
@@ -18,4 +19,9 @@ interface IgdbApi {
     @Headers("Content-Type: text/plain")
     @POST("v4/search")
     suspend fun search(@Body apicalypseQuery: String): List<Game>
+
+    // TEMPORARY diagnostic twin of search(): returns the raw response body unparsed.
+    @Headers("Content-Type: text/plain")
+    @POST("v4/search")
+    suspend fun searchRaw(@Body apicalypseQuery: String): ResponseBody
 }
