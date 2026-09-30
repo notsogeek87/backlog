@@ -8,4 +8,8 @@ data class CastMember(
     /** TMDB `profile_path` (`/abc.jpg`), null when there is no photo. */
     val photoPath: String?,
     val isDirector: Boolean,
-)
+    /** TMDB person id; null if the answer carried none. */
+    val personId: Long? = null,
+) {
+    val tmdbUrl: String? get() = personId?.let { "https://www.themoviedb.org/person/$it" }
+}

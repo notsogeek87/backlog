@@ -86,13 +86,15 @@ class TmdbParsersTest {
 
     @Test
     fun `credits carry photos, directors first`() {
-        val json = """{"id":27205,"title":"Inception","credits":{"cast":[{"name":"Leonardo DiCaprio","character":"Cobb","profile_path":"/leo.jpg"},{"name":"Elliot Page","character":"Ariadne","profile_path":null}],
+        val json = """{"id":27205,"title":"Inception","credits":{"cast":[{"id":6193,"name":"Leonardo DiCaprio","character":"Cobb","profile_path":"/leo.jpg"},{"name":"Elliot Page","character":"Ariadne","profile_path":null}],
           "crew":[{"name":"Christopher Nolan","job":"Director","profile_path":"/nolan.jpg"},{"name":"Hans Zimmer","job":"Composer"}]}}"""
         val people = TmdbParsers.parseCredits(json, TitleKind.MOVIE)
         assertEquals(listOf("Christopher Nolan", "Leonardo DiCaprio", "Elliot Page"), people.map { it.name })
         assertEquals(listOf(true, false, false), people.map { it.isDirector })
         assertEquals("/nolan.jpg", people[0].photoPath)
         assertEquals("Cobb", people[1].role)
+        assertEquals("https://www.themoviedb.org/person/6193", people[1].tmdbUrl)
+        assertNull(people[0].tmdbUrl)
         assertNull(people[2].photoPath)
     }
 

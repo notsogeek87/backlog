@@ -115,11 +115,12 @@ object TmdbParsers {
             credits?.optJSONArray("crew")?.objects()?.filter { it.optString("job") == "Director" }
         }.orEmpty()
         fun JSONObject.photo() = optString("profile_path").ifEmpty { null }
+        fun JSONObject.personId() = optLong("id", -1).takeIf { it >= 0 }
         val directors = directorObjects.mapNotNull { d ->
-            d.optString("name").ifEmpty { null }?.let { CastMember(it, null, d.photo(), isDirector = true) }
+            d.optString("name").ifEmpty { null }?.let { CastMember(it, null, d.photo(), isDirector = true, personId = d.personId()) }
         }.distinctBy { it.name }
         val actors = credits?.optJSONArray("cast")?.objects().orEmpty().mapNotNull { a ->
-            a.optString("name").ifEmpty { null }?.let { CastMember(it, a.optString("character").ifEmpty { null }, a.photo(), isDirector = false) }
+            a.optString("name").ifEmpty { null }?.let { CastMember(it, a.optString("character").ifEmpty { null }, a.photo(), isDirector = false, personId = a.personId()) }
         }.take(maxCast)
         return directors + actors
     }

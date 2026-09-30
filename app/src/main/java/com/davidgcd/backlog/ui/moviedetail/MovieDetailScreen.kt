@@ -3,6 +3,7 @@ package com.davidgcd.backlog.ui.moviedetail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import com.davidgcd.backlog.model.CastMember
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.width
@@ -162,6 +163,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
 /** The director (creator for a series) then the top-billed actors, each with their photo, in a swipeable row. */
 @Composable
 private fun CastRow(people: List<CastMember>, kind: TitleKind) {
+    val context = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.cast_title), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted)
         Row(
@@ -169,7 +171,17 @@ private fun CastRow(people: List<CastMember>, kind: TitleKind) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             people.forEach { person ->
-                Column(modifier = Modifier.width(80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .then(
+                            person.tmdbUrl?.let { url ->
+                                Modifier.clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                            } ?: Modifier,
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     val photo = TmdbImage.profile(person.photoPath)
                     val photoModifier = Modifier
                         .size(72.dp)
