@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.ui.backlog
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.res.painterResource
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.DropdownMenu
@@ -78,6 +80,8 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.ui.components.label
+import com.davidgcd.backlog.ui.components.labelRes
+import com.davidgcd.backlog.util.BacklogShareText
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.util.FrenchLabels
@@ -156,6 +160,24 @@ fun BacklogScreen(
                 },
                 actions = {
                     if (!showSearch) {
+                        IconButton(onClick = {
+                            scope.launch {
+                                val text = BacklogShareText.build(
+                                    viewModel.gamesToShare(),
+                                    BacklogShareText.Labels(
+                                        header = { count -> context.resources.getQuantityString(R.plurals.share_backlog_header, count, count) },
+                                        status = { status -> context.getString(status.labelRes()) },
+                                    ),
+                                )
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, text)
+                                }
+                                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
+                            }
+                        }) {
+                            Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))
+                        }
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
                         FilterMenuButton(
                             current = filter,

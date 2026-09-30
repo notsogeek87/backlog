@@ -80,6 +80,9 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
             .sortedWith(sort.comparator())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Everything the share sheet sends: the whole backlog, never narrowed by the current filter. */
+    suspend fun gamesToShare(): List<GameEntity> = repository.allGames()
+
     fun setSort(sort: BacklogSort) {
         _sort.value = sort
     }
