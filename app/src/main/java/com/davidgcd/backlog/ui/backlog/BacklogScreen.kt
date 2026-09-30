@@ -33,10 +33,12 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Unarchive
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -101,6 +103,7 @@ import kotlinx.coroutines.launch
 fun BacklogScreen(
     viewModel: BacklogViewModel,
     onGameClick: (Long) -> Unit,
+    onOpenRanking: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -109,6 +112,7 @@ fun BacklogScreen(
 
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
 
     val visibleBacklog by viewModel.visibleBacklog.collectAsState()
@@ -160,25 +164,50 @@ fun BacklogScreen(
                 },
                 actions = {
                     if (!showSearch) {
-                        IconButton(onClick = {
+                        IconButton(onClick = onOpenRanking) {
+                            Icon(Icons.Filled.Leaderboard, contentDescription = stringResource(R.string.action_my_ranking))
+                        }
+                        IconButton(enabled = !sharing, onClick = {
                             scope.launch {
-                                val games = viewModel.gamesToShare()
-                                val text = BacklogShareText.build(
-                                    games,
-                                    BacklogShareText.Labels(
-                                        header = { count -> context.resources.getQuantityString(R.plurals.share_backlog_header, count, count) },
-                                        status = { status -> context.getString(status.labelRes()) },
-                                    ),
-                                    links = viewModel.linksToShare(games),
-                                )
-                                val send = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, text)
+                                sharing = true
+                                try {
+                                    val games = viewModel.gamesToShare()
+                                    val links = viewModel.linksToShare(games)
+                                    val header = context.resources.getQuantityString(
+                                        R.plurals.share_backlog_header,
+                                        games.count { !it.isArchived },
+                                        games.count { !it.isArchived },
+                                    )
+                                    // A public page when the server answers; otherwise the plain-text list, still with IGDB links.
+                                    val publicLink = viewModel.publishShareLink(header, games, links)
+                                    val text = if (publicLink != null) {
+                                        "$header\n$publicLink"
+                                    } else {
+                                        BacklogShareText.build(
+                                            games,
+                                            BacklogShareText.Labels(
+                                                header = { header },
+                                                status = { status -> context.getString(status.labelRes()) },
+                                                ranking = context.getString(R.string.share_backlog_ranking),
+                                            ),
+                                            links = links,
+                                        )
+                                    }
+                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, text)
+                                    }
+                                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
+                                } finally {
+                                    sharing = false
                                 }
-                                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
                             }
                         }) {
-                            Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))
+                            if (sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))
+                            }
                         }
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
                         FilterMenuButton(
@@ -513,6 +542,7 @@ private fun BacklogSort.label(): String = stringResource(
         BacklogSort.NAME -> R.string.sort_name
         BacklogSort.RELEASE_DATE -> R.string.sort_release_date
         BacklogSort.RATING -> R.string.sort_rating
+        BacklogSort.MY_RANKING -> R.string.sort_my_ranking
     },
 )
 

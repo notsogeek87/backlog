@@ -10,6 +10,14 @@ on:
 permissions:
   contents: write
 
+# Un push et une pull request sur la même branche lancent chacun un build ; les deux
+# supprimaient puis recréaient la même release "debug-<branche>" et s'entre-échouaient.
+# Un seul build à la fois par branche (le plus ancien est annulé) ; sur main, on ne
+# annule jamais : chaque merge doit garder sa release versionnée, ils passent l'un après l'autre.
+concurrency:
+  group: android-build-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest

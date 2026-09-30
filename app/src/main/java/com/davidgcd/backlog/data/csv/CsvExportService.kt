@@ -30,6 +30,7 @@ class CsvExportService(private val context: Context) {
             CsvColumn.ARCHIVED -> game.isArchived.toString()
             CsvColumn.STEAM_APP_ID -> game.steamAppId?.toString() ?: ""
             CsvColumn.STATUS -> game.status
+            CsvColumn.RANK -> game.userRank?.toString() ?: ""
         }
     }
 }

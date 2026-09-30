@@ -25,6 +25,8 @@ data class GameEntity(
     /** [com.davidgcd.backlog.model.GameStatus] name; stored as text so a new status never needs a type converter. */
     val status: String = GameStatus.BACKLOG.name,
     val addedAt: Long = System.currentTimeMillis(),
+    /** Personal ranking, 1 = most loved. Null = not ranked yet (listed after the ranked games). */
+    val userRank: Int? = null,
 )
 
 val GameEntity.gameStatus: GameStatus get() = GameStatus.fromName(status)

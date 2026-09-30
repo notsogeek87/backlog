@@ -84,6 +84,16 @@ sur Android avec des briques Android natives.
   `AutoExportWorker` (WorkManager périodique) réécrit `backlog.csv` dans ce dossier
   et `AutoExportPreferences` mémorise le résultat du dernier passage (affiché dans
   Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
+- Classement personnel (`GameEntity.userRank`, migration 4→5, 1 = le plus aimé) : écran
+  `ui/ranking/` (flèches monter/descendre, ouvert depuis la barre du Backlog), tri « Mon classement »,
+  colonne CSV `rank`. `model/Ranking` est le seul endroit qui ordonne (classés d'abord, puis non
+  classés par date d'ajout, archivés exclus). Le partage en tient compte : liste numérotée « Mon
+  classement » en tête, sur la page publique comme dans le texte de repli ; les autres jeux restent
+  groupés par statut. La synchro IGDB conserve le rang (`refreshAndDetectDrift`).
+- Lien public du backlog : `data/share/ShareLinkService` envoie un instantané (nom, statut,
+  jaquette, lien igdb.com) au petit serveur `server/` (Vercel + Neon Francfort, voir
+  `server/schema.sql`) et reçoit `https://…/b/<id>` ; le jeton secret reste sur l'appareil,
+  les partages suivants mettent à jour le même lien. Serveur injoignable → repli sur le texte ci-dessous.
 - Partage du backlog : bouton Partager dans la barre du Backlog → feuille de partage
   Android (`Intent.ACTION_SEND`, `text/plain`) avec la liste des jeux non archivés (+ lien igdb.com de chaque jeu via `IgdbService.getGameUrls`, sans lien si IGDB est injoignable)
   groupés par statut, texte construit par `util/BacklogShareText` (indépendant du

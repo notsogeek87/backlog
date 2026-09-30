@@ -6,8 +6,12 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.share.ShareItem
+import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.Ranking
+import com.davidgcd.backlog.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +32,10 @@ import kotlinx.coroutines.launch
 /** Coarse search failure kinds; the screen maps them to localized copy. */
 enum class SearchError { Network, Server, Unknown }
 
-class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() {
+class BacklogViewModel(
+    private val repository: BacklogRepository,
+    private val shareLinkService: ShareLinkService? = null,
+) : ViewModel() {
 
     private val backlog: StateFlow<List<GameEntity>> = repository.observeBacklog()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -83,13 +90,45 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
     /** Everything the share sheet sends: the whole backlog, never narrowed by the current filter. */
     suspend fun gamesToShare(): List<GameEntity> = repository.allGames()
 
-    /** igdb.com links for the shared games; an offline / failing IGDB just means a list without links. */
-    suspend fun linksToShare(games: List<GameEntity>): Map<Long, String> = try {
-        repository.gameUrls(games.filter { !it.isArchived }.map { it.igdbId })
-    } catch (t: CancellationException) {
-        throw t
-    } catch (t: Throwable) {
-        emptyMap()
+    /**
+     * igdb.com links for the shared games. Already-known ones come from the on-device cache; only the
+     * missing ones are asked of IGDB (bounded by a timeout). Offline / failing IGDB just means fewer links.
+     */
+    suspend fun linksToShare(games: List<GameEntity>): Map<Long, String> {
+        val ids = games.filter { !it.isArchived }.map { it.igdbId }
+        val cached = shareLinkService?.cachedUrls().orEmpty()
+        val missing = ids.filter { it !in cached }
+        if (missing.isEmpty()) return cached
+        return try {
+            // null = timed out; keep what we have rather than making the user wait longer.
+            val fetched = kotlinx.coroutines.withTimeoutOrNull(10_000) { repository.gameUrls(missing) } ?: return cached
+            shareLinkService?.rememberUrls(fetched)
+            cached + fetched
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            cached
+        }
+    }
+
+    /**
+     * Publishes the backlog to the share server and returns its public link, or null when there is
+     * no server configured or it can't be reached — the caller then shares plain text instead.
+     */
+    suspend fun publishShareLink(title: String, games: List<GameEntity>, links: Map<Long, String>): String? {
+        val service = shareLinkService ?: return null
+        val rankOf = Ranking.order(games).filter { it.userRank != null }.mapIndexed { i, g -> g.igdbId to i + 1 }.toMap()
+        val items = games.filter { !it.isArchived }.map {
+            ShareItem(it.name, it.status, it.coverImageId, links[it.igdbId], rankOf[it.igdbId])
+        }
+        return try {
+            service.publish(title, items)
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            AppLogger.network.error("Share link: publish failed, sharing plain text instead", t)
+            null
+        }
     }
 
     fun setSort(sort: BacklogSort) {
@@ -157,6 +196,7 @@ private fun BacklogSort.comparator(): Comparator<GameEntity> = when (this) {
     BacklogSort.NAME -> compareBy { it.name.lowercase() }
     BacklogSort.RELEASE_DATE -> nullsLastComparator(descending = false) { it.firstReleaseDate }
     BacklogSort.RATING -> nullsLastComparator(descending = true) { it.totalRating }
+    BacklogSort.MY_RANKING -> nullsLastComparator(descending = false) { it.userRank?.toLong() }.thenBy { it.addedAt }
 }
 
 /** `nulls last` regardless of direction — a game with no rating/date shouldn't lead either sort. */

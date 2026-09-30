@@ -8,6 +8,7 @@
     <string name="action_discover">Découvrir</string>
     <string name="action_settings">Réglages</string>
     <string name="action_share_backlog">Partager mon backlog</string>
+    <string name="share_backlog_ranking">Mon classement</string>
     <string name="share_backlog_chooser">Partager mon backlog avec…</string>
     <plurals name="share_backlog_header">
         <item quantity="one">Mon backlog (%1$d jeu)</item>
@@ -37,6 +38,13 @@
     <string name="sort_name">Nom (A-Z)</string>
     <string name="sort_release_date">Date de sortie</string>
     <string name="sort_rating">Note</string>
+    <string name="sort_my_ranking">Mon classement</string>
+    <string name="action_my_ranking">Mon classement</string>
+    <string name="ranking_title">Mon classement</string>
+    <string name="ranking_hint">Du jeu que tu as le plus aimé au moins aimé. Monte ou descends un jeu avec les flèches ; les jeux non classés restent en bas, dans l\'ordre où tu les as ajoutés.</string>
+    <string name="ranking_empty">Ajoute des jeux à ton backlog pour les classer.</string>
+    <string name="ranking_move_up">Monter</string>
+    <string name="ranking_move_down">Descendre</string>
 
     <!-- Détail d'un jeu -->
     <string name="action_back">Retour</string>
