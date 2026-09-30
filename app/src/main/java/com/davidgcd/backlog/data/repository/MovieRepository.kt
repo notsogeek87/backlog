@@ -65,6 +65,8 @@ class MovieRepository(
     suspend fun add(title: MediaTitle, status: WatchStatus = WatchStatus.TO_WATCH) {
         if (dao.findById(title.id) != null) return
         dao.upsert(title.toEntity(status))
+        // A new "to watch" title also goes to the user's TMDB watchlist (when an account is linked).
+        if (status == WatchStatus.TO_WATCH) bestEffort { tmdb.setWatchlist(title.id, true) }
     }
 
     suspend fun setArchived(entity: MovieEntity, archived: Boolean) = dao.update(entity.copy(isArchived = archived))
