@@ -308,6 +308,7 @@
     <string name="movie_rate_prompt_message">Quelle note sur 10 donnes-tu à « %1$s » ?</string>
     <string name="action_skip">Passer</string>
     <string name="movie_directors">De %1$s</string>
+    <string name="series_creators">Créée par %1$s</string>
     <string name="movie_cast">Avec %1$s</string>
     <string name="ratings_tmdb">TMDB</string>
     <string name="movie_ranking_empty">Ajoute des films ou des séries à ta liste pour les classer.</string>

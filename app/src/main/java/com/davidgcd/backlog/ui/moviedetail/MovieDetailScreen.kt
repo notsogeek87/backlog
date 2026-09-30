@@ -3,6 +3,7 @@ package com.davidgcd.backlog.ui.moviedetail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchProvider
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -245,7 +246,7 @@ private fun MovieContent(
             }
 
             listOfNotNull(
-                title.directors?.let { stringResource(R.string.movie_directors, it) },
+                title.directors?.let { stringResource(if (title.kind == TitleKind.SERIES) R.string.series_creators else R.string.movie_directors, it) },
                 title.cast?.let { stringResource(R.string.movie_cast, it) },
             ).takeIf { it.isNotEmpty() }?.let { lines ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
