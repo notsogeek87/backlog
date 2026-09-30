@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.CancellationException
@@ -129,6 +130,13 @@ class BacklogViewModel(
             AppLogger.network.error("Share link: publish failed, sharing plain text instead", t)
             null
         }
+    }
+
+    /** Name shown on the public share page; blank = the user hasn't chosen one yet. */
+    suspend fun shareOwnerName(): String = shareLinkService?.ownerName?.first().orEmpty().trim()
+
+    suspend fun setShareOwnerName(name: String) {
+        shareLinkService?.setOwnerName(name)
     }
 
     fun setSort(sort: BacklogSort) {

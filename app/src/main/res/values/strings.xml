@@ -14,6 +14,10 @@
         <item quantity="one">Mon backlog (%1$d jeu)</item>
         <item quantity="other">Mon backlog (%1$d jeux)</item>
     </plurals>
+    <string name="share_owner_prompt_title">Ton pseudo pour le partage</string>
+    <string name="share_owner_prompt_message">Il sera affiché sur ta page : « Le top de … ». Modifiable dans Réglages.</string>
+    <string name="share_owner_prompt_confirm">Partager</string>
+    <string name="share_owner_prompt_skip">Sans pseudo</string>
     <string name="action_sort">Trier</string>
     <string name="action_filter">Filtrer</string>
     <string name="search_placeholder">Rechercher sur IGDB…</string>

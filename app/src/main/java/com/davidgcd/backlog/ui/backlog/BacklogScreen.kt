@@ -55,6 +55,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import com.davidgcd.backlog.data.share.ShareLinkService
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -113,7 +117,76 @@ fun BacklogScreen(
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     var sharing by remember { mutableStateOf(false) }
+    var showOwnerPrompt by remember { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
+
+    val shareBacklog: () -> Unit = {
+        scope.launch {
+            sharing = true
+            try {
+                val games = viewModel.gamesToShare()
+                val links = viewModel.linksToShare(games)
+                val header = context.resources.getQuantityString(
+                    R.plurals.share_backlog_header,
+                    games.count { !it.isArchived },
+                    games.count { !it.isArchived },
+                )
+                // A public page when the server answers; otherwise the plain-text list, still with IGDB links.
+                val publicLink = viewModel.publishShareLink(header, games, links)
+                val text = if (publicLink != null) {
+                    "$header\n$publicLink"
+                } else {
+                    BacklogShareText.build(
+                        games,
+                        BacklogShareText.Labels(
+                            header = { header },
+                            status = { status -> context.getString(status.labelRes()) },
+                            ranking = context.getString(R.string.share_backlog_ranking),
+                        ),
+                        links = links,
+                    )
+                }
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
+    if (showOwnerPrompt) {
+        var name by remember { mutableStateOf("") }
+        val dismiss = { showOwnerPrompt = false }
+        AlertDialog(
+            onDismissRequest = dismiss,
+            title = { Text(stringResource(R.string.share_owner_prompt_title)) },
+            text = {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(ShareLinkService.MAX_OWNER_LENGTH) },
+                    label = { Text(stringResource(R.string.settings_share_name_title)) },
+                    supportingText = { Text(stringResource(R.string.share_owner_prompt_message)) },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(enabled = name.isNotBlank(), onClick = {
+                    dismiss()
+                    scope.launch {
+                        viewModel.setShareOwnerName(name)
+                        shareBacklog()
+                    }
+                }) { Text(stringResource(R.string.share_owner_prompt_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { dismiss(); shareBacklog() }) { Text(stringResource(R.string.share_owner_prompt_skip)) }
+            },
+        )
+    }
+
 
     val visibleBacklog by viewModel.visibleBacklog.collectAsState()
     val sort by viewModel.sort.collectAsState()
@@ -169,38 +242,7 @@ fun BacklogScreen(
                         }
                         IconButton(enabled = !sharing, onClick = {
                             scope.launch {
-                                sharing = true
-                                try {
-                                    val games = viewModel.gamesToShare()
-                                    val links = viewModel.linksToShare(games)
-                                    val header = context.resources.getQuantityString(
-                                        R.plurals.share_backlog_header,
-                                        games.count { !it.isArchived },
-                                        games.count { !it.isArchived },
-                                    )
-                                    // A public page when the server answers; otherwise the plain-text list, still with IGDB links.
-                                    val publicLink = viewModel.publishShareLink(header, games, links)
-                                    val text = if (publicLink != null) {
-                                        "$header\n$publicLink"
-                                    } else {
-                                        BacklogShareText.build(
-                                            games,
-                                            BacklogShareText.Labels(
-                                                header = { header },
-                                                status = { status -> context.getString(status.labelRes()) },
-                                                ranking = context.getString(R.string.share_backlog_ranking),
-                                            ),
-                                            links = links,
-                                        )
-                                    }
-                                    val send = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, text)
-                                    }
-                                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
-                                } finally {
-                                    sharing = false
-                                }
+                                if (viewModel.shareOwnerName().isBlank()) showOwnerPrompt = true else shareBacklog()
                             }
                         }) {
                             if (sharing) {
