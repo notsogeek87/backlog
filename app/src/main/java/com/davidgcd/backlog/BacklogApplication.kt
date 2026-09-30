@@ -11,6 +11,7 @@ import com.davidgcd.backlog.data.library.DataStoreLibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
 import com.davidgcd.backlog.data.library.LibrarySyncService
+import com.davidgcd.backlog.data.library.SteamAutoSyncScheduler
 import com.davidgcd.backlog.data.library.WishlistSyncService
 import com.davidgcd.backlog.data.library.android.AndroidLibraryProvider
 import com.davidgcd.backlog.data.library.android.PackageManagerInstalledApps
@@ -201,6 +202,7 @@ class BacklogApplication : Application() {
         tmdbSyncService = TmdbSyncService(tmdbClient, database.movieDao(), libraryAccountStore)
 
         ReleaseReminderScheduler.schedule(this)
+        SteamAutoSyncScheduler.schedule(this)
     }
 }
 

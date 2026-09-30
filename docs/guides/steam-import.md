@@ -15,3 +15,7 @@ Sur la carte Steam (compte connecté), **Synchroniser la liste de souhaits** cop
 - Sens unique : Steam → app (l'API Steam ne permet pas d'écrire dans la wishlist). Les jeux sont retrouvés par AppID via IGDB ; ceux qu'IGDB ne connaît pas sont comptés « introuvables ».
 - Un jeu déjà dans le backlog garde son statut. Un jeu qui quitte la wishlist est **passé en Backlog** s'il est possédé (après une synchro de la bibliothèque), sinon **archivé** (réversible). Rien n'est jamais supprimé, et une réponse vide (liste privée ou erreur) ne retire rien.
 - La wishlist doit être publique (profil Steam → « Détails des jeux » en public).
+
+## Synchronisation automatique
+
+Quand un compte Steam est connecté, l'app synchronise en arrière-plan environ toutes les 12 h (réseau requis) : temps de jeu et liens certains de la bibliothèque, puis la wishlist. Les jeux **pas encore dans le backlog** ne sont jamais ajoutés automatiquement : ils restent à choisir dans l'aperçu de la synchro manuelle.
