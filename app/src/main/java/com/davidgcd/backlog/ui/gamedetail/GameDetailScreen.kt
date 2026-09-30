@@ -54,7 +54,9 @@ import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.ui.components.GlassPill
+import com.davidgcd.backlog.ui.components.GlassBadgeButton
 import com.davidgcd.backlog.ui.components.label
+import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.data.repository.MetacriticScore
 import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.util.FrenchLabels
@@ -305,7 +307,7 @@ private fun DetailBody(
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GameStatus.entries.forEach { option ->
-                    GlassPill(text = option.label(), selected = option == status, onClick = { onStatusChange(option) })
+                    GlassBadgeButton(option.label(), option.tint(), selected = option == status) { onStatusChange(option) }
                 }
             }
         }

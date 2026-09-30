@@ -12,6 +12,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import com.davidgcd.backlog.ui.components.glassRailItemColors
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -77,6 +84,9 @@ private object Routes {
     fun gameDetail(gameId: Long) = "game/$gameId"
 }
 
+/** Screen width (dp) from which the bottom bar becomes a side rail. */
+private const val RAIL_MIN_WIDTH_DP = 600
+
 private data class TopLevelDestination(val route: String, val icon: ImageVector, val labelRes: Int)
 
 private val topLevelDestinations = listOf(
@@ -110,24 +120,45 @@ fun BacklogNavHost(
     // The bar only shows on the three top-level surfaces; game detail is a pushed screen with a back arrow.
     val showBottomBar = topLevelDestinations.any { top -> currentDestination?.hierarchy?.any { it.route == top.route } == true }
 
+    // Wide windows (unfolded foldable, tablet) get a side rail; phones keep the bottom bar.
+    val useRail = LocalConfiguration.current.screenWidthDp >= RAIL_MIN_WIDTH_DP
+    val navigateTo: (String) -> Unit = { route ->
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+    if (showBottomBar && useRail) {
+        NavigationRail(containerColor = GlassNavBarColor) {
+            Spacer(Modifier.weight(1f))
+            topLevelDestinations.forEach { top ->
+                NavigationRailItem(
+                    selected = currentDestination?.hierarchy?.any { it.route == top.route } == true,
+                    onClick = { navigateTo(top.route) },
+                    icon = { Icon(top.icon, contentDescription = null) },
+                    label = { Text(stringResource(top.labelRes)) },
+                    colors = glassRailItemColors(),
+                )
+            }
+            Spacer(Modifier.weight(1f))
+        }
+    }
     Scaffold(
+        modifier = Modifier.weight(1f),
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         contentColor = Glass.Text,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (showBottomBar) {
+            if (showBottomBar && !useRail) {
                 NavigationBar(containerColor = GlassNavBarColor, tonalElevation = 0.dp) {
                     topLevelDestinations.forEach { top ->
                         val label = stringResource(top.labelRes)
                         NavigationBarItem(
                             selected = currentDestination?.hierarchy?.any { it.route == top.route } == true,
-                            onClick = {
-                                navController.navigate(top.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { navigateTo(top.route) },
                             icon = { Icon(top.icon, contentDescription = null) },
                             label = { Text(label) },
                             colors = glassNavigationItemColors(),
@@ -218,6 +249,7 @@ fun BacklogNavHost(
             )
             LibraryImportScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
+    }
     }
     }
 }

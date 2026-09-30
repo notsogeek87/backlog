@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -140,6 +141,23 @@ fun GlassBadge(text: String, modifier: Modifier = Modifier, tint: Color = Color.
     )
 }
 
+/** Selectable chip tinted with [tint] (status picker): filled + bordered when selected, neutral otherwise. */
+@Composable
+fun GlassBadgeButton(text: String, tint: Color, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (selected) readableOnDark(tint) else Glass.TextMuted,
+        modifier = modifier
+            .heightIn(min = 36.dp)
+            .clip(PillShape)
+            .background(if (selected) tint.copy(alpha = 0.22f) else Glass.GlassTop)
+            .border(1.dp, if (selected) tint.copy(alpha = 0.7f) else Glass.Border, PillShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    )
+}
+
 /** Filterable / removable pill (active filters). */
 @Composable
 fun GlassPill(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, trailing: (@Composable RowScope.() -> Unit)? = null) {
@@ -245,6 +263,8 @@ fun GameListItem(
     meta: String? = null,
     rating: Double? = null,
     dimmed: Boolean = false,
+    statusLabel: String? = null,
+    statusTint: Color = Color.White,
     onClick: () -> Unit,
     trailing: @Composable () -> Unit = {},
 ) {
@@ -270,6 +290,7 @@ fun GameListItem(
                         if (platforms.size > 2) GlassBadge("+${platforms.size - 2}")
                     }
                 }
+                if (statusLabel != null) GlassBadge(statusLabel, tint = statusTint)
                 if (!meta.isNullOrEmpty()) {
                     Text(meta, style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -298,6 +319,15 @@ fun glassTopAppBarColors() = TopAppBarDefaults.topAppBarColors(
 
 @Composable
 fun glassNavigationItemColors() = NavigationBarItemDefaults.colors(
+    selectedIconColor = Glass.Cyan,
+    selectedTextColor = Glass.Cyan,
+    indicatorColor = Glass.Cyan.copy(alpha = 0.16f),
+    unselectedIconColor = Glass.TextMuted,
+    unselectedTextColor = Glass.TextMuted,
+)
+
+@Composable
+fun glassRailItemColors() = NavigationRailItemDefaults.colors(
     selectedIconColor = Glass.Cyan,
     selectedTextColor = Glass.Cyan,
     indicatorColor = Glass.Cyan.copy(alpha = 0.16f),

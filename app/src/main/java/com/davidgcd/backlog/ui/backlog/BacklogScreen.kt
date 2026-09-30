@@ -78,6 +78,7 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.ui.components.label
+import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.util.FrenchLabels
 import com.davidgcd.backlog.model.Game
@@ -382,7 +383,6 @@ private fun BacklogGrid(
         items(games, key = { it.igdbId }) { game ->
             val supporting = listOfNotNull(
                 ReleaseDateFormatting.format(game.firstReleaseDate),
-                game.gameStatus.takeIf { it != GameStatus.BACKLOG }?.label(),
                 if (game.isArchived) stringResource(R.string.label_archived) else null,
             ).joinToString(" · ")
             GameListItem(
@@ -392,6 +392,8 @@ private fun BacklogGrid(
                 meta = supporting,
                 rating = game.totalRating,
                 dimmed = game.isArchived,
+                statusLabel = game.gameStatus.label(),
+                statusTint = game.gameStatus.tint(),
                 onClick = { onClick(game) },
                 trailing = {
                     val label = stringResource(
