@@ -3,7 +3,9 @@ package com.davidgcd.backlog.notifications
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
@@ -11,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.davidgcd.backlog.BacklogApplication
+import com.davidgcd.backlog.MainActivity
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 import kotlinx.coroutines.flow.first
@@ -72,6 +75,7 @@ class ReleaseReminderWorker(
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(game.name)
                 .setContentText(body)
+                .setContentIntent(openGameIntent(game.igdbId))
                 .setAutoCancel(true)
                 .build()
             notificationManager.notify(NotificationIds.releaseNotificationId(game.igdbId), notification)
@@ -94,26 +98,41 @@ class ReleaseReminderWorker(
             if (drift.dateChanged && dateAlertsEnabled) {
                 notificationManager.notify(
                     NotificationIds.dateChangeNotificationId(entity.igdbId),
-                    driftNotification(entity.name, applicationContext.getString(R.string.notification_date_changed)),
+                    driftNotification(entity.igdbId, entity.name, applicationContext.getString(R.string.notification_date_changed)),
                 )
             }
             if (drift.newPlatforms.isNotEmpty() && platformAlertsEnabled) {
                 val platforms = drift.newPlatforms.joinToString(", ")
                 notificationManager.notify(
                     NotificationIds.newPlatformNotificationId(entity.igdbId),
-                    driftNotification(entity.name, applicationContext.getString(R.string.notification_new_platforms, platforms)),
+                    driftNotification(entity.igdbId, entity.name, applicationContext.getString(R.string.notification_new_platforms, platforms)),
                 )
             }
         }
     }
 
-    private fun driftNotification(title: String, body: String) =
+    private fun driftNotification(igdbId: Long, title: String, body: String) =
         NotificationCompat.Builder(applicationContext, NotificationIds.DRIFT_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
+            .setContentIntent(openGameIntent(igdbId))
             .setAutoCancel(true)
             .build()
+
+    /** Tapping a notification opens the app on that game's detail screen. */
+    private fun openGameIntent(igdbId: Long): PendingIntent {
+        val intent = Intent(applicationContext, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(NotificationIds.EXTRA_GAME_ID, igdbId)
+        // A distinct request code per game keeps each PendingIntent's extras separate (extras aren't part of intent equality).
+        return PendingIntent.getActivity(
+            applicationContext,
+            igdbId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
 
     private fun ensureChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

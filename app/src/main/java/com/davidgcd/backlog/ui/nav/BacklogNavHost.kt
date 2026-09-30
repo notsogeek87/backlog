@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -160,8 +161,17 @@ fun BacklogNavHost(
     shareLinkService: ShareLinkService,
     movieRepository: MovieRepository,
     tmdbSyncService: TmdbSyncService,
+    openGameId: Long? = null,
+    onOpenGameHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
+    // A notification tap asks for a game's detail screen; open it once, then clear the request.
+    LaunchedEffect(openGameId) {
+        if (openGameId != null) {
+            navController.navigate(Routes.gameDetail(openGameId)) { launchSingleTop = true }
+            onOpenGameHandled()
+        }
+    }
     val librarySharer = remember(repository, movieRepository, shareLinkService) {
         LibrarySharer(repository, movieRepository, shareLinkService)
     }
