@@ -7,6 +7,7 @@ import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.GameStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,14 +44,13 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
         .map { list -> list.map { it.igdbId }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
-    /** Real counts for the header stat tiles (active vs archived), never narrowed by filters. */
-    val activeCount: StateFlow<Int> = backlog
-        .map { list -> list.count { !it.isArchived } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
-    val archivedCount: StateFlow<Int> = backlog
-        .map { list -> list.count { it.isArchived } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+    /** Real per-status counts for the header stat tiles (archived games excluded), never narrowed by filters. */
+    val statusCounts: StateFlow<Map<GameStatus, Int>> = backlog
+        .map { list ->
+            val active = list.filter { !it.isArchived }
+            GameStatus.entries.associateWith { status -> active.count { it.gameStatus == status } }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GameStatus.entries.associateWith { 0 })
 
     /** Newest additions for the home carousel. */
     val recentlyAdded: StateFlow<List<GameEntity>> = backlog

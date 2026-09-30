@@ -113,8 +113,7 @@ fun BacklogScreen(
     val availableGenres by viewModel.availableGenres.collectAsState()
     val availablePlatforms by viewModel.availablePlatforms.collectAsState()
     val isBacklogEmpty by viewModel.isBacklogEmpty.collectAsState()
-    val activeCount by viewModel.activeCount.collectAsState()
-    val archivedCount by viewModel.archivedCount.collectAsState()
+    val statusCounts by viewModel.statusCounts.collectAsState()
     val recentlyAdded by viewModel.recentlyAdded.collectAsState()
     val backlogIds by viewModel.backlogIds.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
@@ -268,8 +267,7 @@ fun BacklogScreen(
                 BacklogGrid(
                     games = visibleBacklog,
                     filter = filter,
-                    activeCount = activeCount,
-                    archivedCount = archivedCount,
+                    statusCounts = statusCounts,
                     recentlyAdded = recentlyAdded,
                     onFilterChange = viewModel::setFilter,
                     onArchiveToggle = { game ->
@@ -314,8 +312,7 @@ private fun SectionHeader(text: String) {
 private fun BacklogGrid(
     games: List<GameEntity>,
     filter: BacklogFilter,
-    activeCount: Int,
-    archivedCount: Int,
+    statusCounts: Map<GameStatus, Int>,
     recentlyAdded: List<GameEntity>,
     onFilterChange: (BacklogFilter) -> Unit,
     onArchiveToggle: (GameEntity) -> Unit,
@@ -330,17 +327,14 @@ private fun BacklogGrid(
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(
-                    value = activeCount.toString(),
-                    label = stringResource(R.string.stat_in_backlog),
-                    modifier = Modifier.weight(1f),
-                )
-                StatCard(
-                    value = archivedCount.toString(),
-                    label = stringResource(R.string.stat_archived),
-                    modifier = Modifier.weight(1f),
-                    accent = Glass.Purple,
-                )
+                GameStatus.entries.forEach { status ->
+                    StatCard(
+                        value = (statusCounts[status] ?: 0).toString(),
+                        label = status.label(),
+                        modifier = Modifier.weight(1f),
+                        accent = status.tint(),
+                    )
+                }
             }
         }
         if (!filter.isActive && recentlyAdded.isNotEmpty()) {
