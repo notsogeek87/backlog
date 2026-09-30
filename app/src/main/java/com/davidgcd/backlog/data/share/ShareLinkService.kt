@@ -87,7 +87,7 @@ class ShareLinkService(
     }
 
     companion object {
-        const val DEFAULT_BASE_URL = "https://backlog-pi-umber.vercel.app"
+        const val DEFAULT_BASE_URL = "https://library.lielu.eu"
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         fun payload(title: String, items: List<ShareItem>): String = JSONObject()
