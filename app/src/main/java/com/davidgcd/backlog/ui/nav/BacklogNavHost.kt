@@ -73,12 +73,16 @@ import com.davidgcd.backlog.ui.platforms.SteamLoginViewModelFactory
 import com.davidgcd.backlog.data.csv.AutoExportPreferences
 import com.davidgcd.backlog.ui.settings.SettingsScreen
 import com.davidgcd.backlog.ui.settings.SettingsViewModel
+import com.davidgcd.backlog.ui.ranking.RankingScreen
+import com.davidgcd.backlog.ui.ranking.RankingViewModel
+import com.davidgcd.backlog.ui.ranking.RankingViewModelFactory
 import com.davidgcd.backlog.ui.settings.SettingsViewModelFactory
 
 private object Routes {
     const val BACKLOG = "backlog"
     const val SETTINGS = "settings"
     const val DISCOVER = "discover"
+    const val RANKING = "ranking"
     const val STEAM_LOGIN = "platforms/steam/login"
     const val LIBRARY_IMPORT = "platforms/{provider}/import"
     fun libraryImport(provider: String) = "platforms/$provider/import"
@@ -180,6 +184,15 @@ fun BacklogNavHost(
             val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository, shareLinkService))
             BacklogScreen(
                 viewModel = viewModel,
+                onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
+                onOpenRanking = { navController.navigate(Routes.RANKING) },
+            )
+        }
+        composable(Routes.RANKING) {
+            val viewModel: RankingViewModel = viewModel(factory = RankingViewModelFactory(repository))
+            RankingScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
                 onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
             )
         }

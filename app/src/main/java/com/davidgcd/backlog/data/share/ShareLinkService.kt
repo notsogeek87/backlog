@@ -18,7 +18,14 @@ import java.io.IOException
 private val Context.shareLinkDataStore by preferencesDataStore(name = "share_link")
 
 /** One game as the share page needs it — the same fields the server validates. */
-data class ShareItem(val name: String, val status: String, val coverImageId: String?, val url: String?)
+data class ShareItem(
+    val name: String,
+    val status: String,
+    val coverImageId: String?,
+    val url: String?,
+    /** 1 = most loved; null = not ranked. Position among the ranked games, never the stored rank. */
+    val rank: Int? = null,
+)
 
 /**
  * Publishes a snapshot of the backlog to the share server and returns the public link.
@@ -94,6 +101,7 @@ class ShareLinkService(
                             .put("status", it.status)
                             .put("coverImageId", it.coverImageId ?: JSONObject.NULL)
                             .put("url", it.url ?: JSONObject.NULL)
+                            .put("rank", it.rank ?: JSONObject.NULL)
                     },
                 ),
             )

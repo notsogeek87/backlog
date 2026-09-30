@@ -13,6 +13,7 @@ enum class BacklogSort {
     NAME,
     RELEASE_DATE,
     RATING,
+    MY_RANKING,
 }
 
 /**

@@ -31,6 +31,10 @@ class FakeGameDao(initial: List<GameEntity> = emptyList()) : GameDao {
         state.value = state.value.map { if (it.igdbId == game.igdbId) game else it }
     }
 
+    override suspend fun setRank(igdbId: Long, rank: Int?) {
+        state.value = state.value.map { if (it.igdbId == igdbId) it.copy(userRank = rank) else it }
+    }
+
     override suspend fun delete(game: GameEntity) {
         state.value = state.value.filterNot { it.igdbId == game.igdbId }
     }

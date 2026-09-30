@@ -19,6 +19,7 @@ export function validatePayload(body) {
       status: STATUSES.includes(raw.status) ? raw.status : 'BACKLOG',
       coverImageId: typeof raw.coverImageId === 'string' && IMAGE_ID.test(raw.coverImageId) ? raw.coverImageId : null,
       url: typeof raw.url === 'string' && IGDB_URL.test(raw.url) ? raw.url : null,
+      rank: Number.isInteger(raw.rank) && raw.rank >= 1 && raw.rank <= MAX_ITEMS ? raw.rank : null,
     };
   });
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 80) : '';
@@ -38,22 +39,29 @@ export function tokenMatches(token, storedHash) {
 export const escapeHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
+const card = (g, badge = '') => {
+  const img = g.coverImageId
+    ? `<img src="https://images.igdb.com/igdb/image/upload/t_cover_big/${escapeHtml(g.coverImageId)}.jpg" alt="" loading="lazy">`
+    : '<div class="noimg"></div>';
+  const inner = `<div class="cover">${img}${badge}</div><span>${escapeHtml(g.name)}</span>`;
+  return g.url
+    ? `<a class="card" href="${escapeHtml(g.url)}" rel="noopener noreferrer">${inner}</a>`
+    : `<div class="card">${inner}</div>`;
+};
+
+/** Ranked games lead as "Mon classement" (1 = most loved, in rank order); the rest are grouped by status. */
 export function renderPage({ title, items }) {
+  const ranked = items.filter((g) => g.rank != null).sort((a, b) => a.rank - b.rank);
+  const rest = items.filter((g) => g.rank == null);
+  const rankingSection = ranked.length
+    ? `<h2>Mon classement <small>${ranked.length}</small></h2><div class="grid">${ranked
+        .map((g, i) => card(g, `<b class="rank">${i + 1}</b>`))
+        .join('')}</div>`
+    : '';
   const sections = STATUSES.map((status) => {
-    const games = items.filter((g) => g.status === status).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    const games = rest.filter((g) => g.status === status).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     if (!games.length) return '';
-    const cards = games
-      .map((g) => {
-        const img = g.coverImageId
-          ? `<img src="https://images.igdb.com/igdb/image/upload/t_cover_big/${escapeHtml(g.coverImageId)}.jpg" alt="" loading="lazy">`
-          : '<div class="noimg"></div>';
-        const inner = `${img}<span>${escapeHtml(g.name)}</span>`;
-        return g.url
-          ? `<a class="card" href="${escapeHtml(g.url)}" rel="noopener noreferrer">${inner}</a>`
-          : `<div class="card">${inner}</div>`;
-      })
-      .join('');
-    return `<h2>${STATUS_LABELS[status]} <small>${games.length}</small></h2><div class="grid">${cards}</div>`;
+    return `<h2>${STATUS_LABELS[status]} <small>${games.length}</small></h2><div class="grid">${games.map((g) => card(g)).join('')}</div>`;
   }).join('');
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>
@@ -61,7 +69,9 @@ export function renderPage({ title, items }) {
 h1{font-size:1.6rem}h2{margin-top:2rem}small{opacity:.6;font-weight:400}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
 .card{display:block;color:inherit;text-decoration:none;background:#151b2c;border-radius:12px;overflow:hidden}
+.cover{position:relative}
 .card img,.noimg{width:100%;aspect-ratio:3/4;object-fit:cover;background:#1e2740;display:block}
+.rank{position:absolute;top:6px;left:6px;min-width:1.7em;padding:.15em .4em;border-radius:999px;background:#22d3ee;color:#04222a;font-size:.95rem;text-align:center}
 .card span{display:block;padding:8px;font-size:.85rem}
-</style></head><body><h1>${escapeHtml(title)}</h1>${sections || '<p>Ce backlog est vide.</p>'}</body></html>`;
+</style></head><body><h1>${escapeHtml(title)}</h1>${rankingSection}${sections || (rankingSection ? '' : '<p>Ce backlog est vide.</p>')}</body></html>`;
 }

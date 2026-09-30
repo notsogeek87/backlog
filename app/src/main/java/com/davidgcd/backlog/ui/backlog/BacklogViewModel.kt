@@ -10,6 +10,7 @@ import com.davidgcd.backlog.data.share.ShareItem
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.Ranking
 import com.davidgcd.backlog.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -116,7 +117,10 @@ class BacklogViewModel(
      */
     suspend fun publishShareLink(title: String, games: List<GameEntity>, links: Map<Long, String>): String? {
         val service = shareLinkService ?: return null
-        val items = games.filter { !it.isArchived }.map { ShareItem(it.name, it.status, it.coverImageId, links[it.igdbId]) }
+        val rankOf = Ranking.order(games).filter { it.userRank != null }.mapIndexed { i, g -> g.igdbId to i + 1 }.toMap()
+        val items = games.filter { !it.isArchived }.map {
+            ShareItem(it.name, it.status, it.coverImageId, links[it.igdbId], rankOf[it.igdbId])
+        }
         return try {
             service.publish(title, items)
         } catch (t: CancellationException) {
@@ -192,6 +196,7 @@ private fun BacklogSort.comparator(): Comparator<GameEntity> = when (this) {
     BacklogSort.NAME -> compareBy { it.name.lowercase() }
     BacklogSort.RELEASE_DATE -> nullsLastComparator(descending = false) { it.firstReleaseDate }
     BacklogSort.RATING -> nullsLastComparator(descending = true) { it.totalRating }
+    BacklogSort.MY_RANKING -> nullsLastComparator(descending = false) { it.userRank?.toLong() }.thenBy { it.addedAt }
 }
 
 /** `nulls last` regardless of direction — a game with no rating/date shouldn't lead either sort. */

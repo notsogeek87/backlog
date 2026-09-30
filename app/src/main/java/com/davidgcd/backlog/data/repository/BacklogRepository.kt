@@ -4,6 +4,7 @@ import com.davidgcd.backlog.data.local.GameDao
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.Ranking
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.Genre
@@ -59,6 +60,13 @@ class BacklogRepository(
         gameDao.update(entity.copy(status = status.name))
     }
 
+    /** Applies a new personal order (first = most loved); only rows whose rank changes are written. */
+    suspend fun applyRanking(newOrder: List<GameEntity>) {
+        Ranking.changes(newOrder).forEach { (igdbId, rank) -> gameDao.setRank(igdbId, rank) }
+    }
+
+    suspend fun setRank(igdbId: Long, rank: Int?) = gameDao.setRank(igdbId, rank)
+
     suspend fun remove(entity: GameEntity) {
         gameDao.delete(entity)
     }
@@ -108,6 +116,7 @@ class BacklogRepository(
             isArchived = entity.isArchived,
             status = entity.status,
             addedAt = entity.addedAt,
+            userRank = entity.userRank,
             steamAppId = fresh.steamAppId ?: entity.steamAppId,
         )
         if (updated != entity) gameDao.update(updated)

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
@@ -102,6 +103,7 @@ import kotlinx.coroutines.launch
 fun BacklogScreen(
     viewModel: BacklogViewModel,
     onGameClick: (Long) -> Unit,
+    onOpenRanking: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -162,6 +164,9 @@ fun BacklogScreen(
                 },
                 actions = {
                     if (!showSearch) {
+                        IconButton(onClick = onOpenRanking) {
+                            Icon(Icons.Filled.Leaderboard, contentDescription = stringResource(R.string.action_my_ranking))
+                        }
                         IconButton(enabled = !sharing, onClick = {
                             scope.launch {
                                 sharing = true
@@ -183,6 +188,7 @@ fun BacklogScreen(
                                             BacklogShareText.Labels(
                                                 header = { header },
                                                 status = { status -> context.getString(status.labelRes()) },
+                                                ranking = context.getString(R.string.share_backlog_ranking),
                                             ),
                                             links = links,
                                         )
@@ -536,6 +542,7 @@ private fun BacklogSort.label(): String = stringResource(
         BacklogSort.NAME -> R.string.sort_name
         BacklogSort.RELEASE_DATE -> R.string.sort_release_date
         BacklogSort.RATING -> R.string.sort_rating
+        BacklogSort.MY_RANKING -> R.string.sort_my_ranking
     },
 )
 

@@ -43,6 +43,7 @@ class CsvImportService(
         val idIndex = header.indexOf(CsvColumn.IGDB_ID.header)
         val archivedIndex = header.indexOf(CsvColumn.ARCHIVED.header)
         val statusIndex = header.indexOf(CsvColumn.STATUS.header)
+        val rankIndex = header.indexOf(CsvColumn.RANK.header)
 
         var added = 0
         var skipped = 0
@@ -61,6 +62,8 @@ class CsvImportService(
                     ?.let { fields.getOrNull(it) }?.trim()?.toBooleanStrictOrNull() ?: false
                 val status = statusIndex.takeIf { it >= 0 }
                     ?.let { fields.getOrNull(it) }?.let(GameStatus::fromName) ?: GameStatus.BACKLOG
+
+                val rank = rankIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toIntOrNull()?.takeIf { it > 0 }
 
                 try {
                     val game = when {
@@ -82,6 +85,7 @@ class CsvImportService(
                     if (status != GameStatus.BACKLOG) {
                         repository.findEntity(game.id)?.let { repository.setStatus(it, status) }
                     }
+                    if (rank != null) repository.setRank(game.id, rank)
                     added++
                 } catch (t: kotlinx.coroutines.CancellationException) {
                     throw t
