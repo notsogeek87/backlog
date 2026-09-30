@@ -1,20 +1,21 @@
 import { sql } from '../lib/db.js';
-import { PURGE_AFTER_DAYS, hashToken, newId, newToken, tokenMatches, validatePayload } from '../lib/shareCore.js';
+import { purgeExpired } from '../lib/purge.js';
+import { SHARE_TTL_HOURS, hashToken, newId, newToken, tokenMatches, validatePayload } from '../lib/shareCore.js';
 
 const baseUrl = (req) => `https://${req.headers['x-forwarded-host'] ?? req.headers.host}`;
 
 /**
  * POST /api/share            body {title?, items[]}  → 201 {id, token, url}
- * PUT  /api/share?id=<id>    header x-share-token    → 200 {id, url}   (same link, new content, expiry renewed)
- * Links expire after SHARE_TTL_HOURS (lib/shareCore.js) without a publish.
+ * PUT  /api/share?id=<id>    header x-share-token    → 200 {id, url}   (same link, new content; expiry NOT renewed)
+ * A link is deleted SHARE_TTL_HOURS (lib/shareCore.js) after its creation, whatever happens in between;
+ * a PUT / DELETE on an expired link answers 404 and the app then creates a new one.
  * DELETE /api/share?id=<id>  header x-share-token    → 204            (link stops working)
  */
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const payload = validatePayload(req.body);
-      // Housekeeping: drop links that expired long ago (recent ones can still be renewed by their owner).
-      await sql`DELETE FROM shares WHERE updated_at < now() - make_interval(days => ${PURGE_AFTER_DAYS})`;
+      await purgeExpired();
       const id = newId();
       const token = newToken();
       await sql`INSERT INTO shares (id, token_hash, payload) VALUES (${id}, ${hashToken(token)}, ${JSON.stringify(payload)}::jsonb)`;
@@ -23,7 +24,8 @@ export default async function handler(req, res) {
     if (req.method === 'PUT' || req.method === 'DELETE') {
       const id = String(req.query.id ?? '');
       const token = String(req.headers['x-share-token'] ?? '');
-      const rows = await sql`SELECT token_hash FROM shares WHERE id = ${id}`;
+      await purgeExpired();
+      const rows = await sql`SELECT token_hash FROM shares WHERE id = ${id} AND created_at > now() - make_interval(hours => ${SHARE_TTL_HOURS})`;
       if (!rows.length || !token || !tokenMatches(token, rows[0].token_hash)) return res.status(404).json({ error: 'introuvable' });
       if (req.method === 'DELETE') {
         await sql`DELETE FROM shares WHERE id = ${id}`;

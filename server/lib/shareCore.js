@@ -3,10 +3,8 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 export const STATUSES = ['BACKLOG', 'PLAYED', 'COMPLETED'];
 export const STATUS_LABELS = { BACKLOG: 'Backlog', PLAYED: 'Joué', COMPLETED: 'Terminé' };
 export const MAX_ITEMS = 2000;
-/** A link stops working this long after its last publish; publishing again (same link) renews it. */
+/** A link lives this long after its creation, then it is deleted. Republishing does not extend it. */
 export const SHARE_TTL_HOURS = 24;
-/** Expired rows are only purged after this many days, so the owner can still renew the same link meanwhile. */
-export const PURGE_AFTER_DAYS = 30;
 
 export const MOVIE_STATUSES = ['TO_WATCH', 'WATCHING', 'WATCHED'];
 export const MOVIE_STATUS_LABELS = { TO_WATCH: 'À voir', WATCHING: 'En cours', WATCHED: 'Vu' };

@@ -97,7 +97,7 @@ sur Android avec des briques Android natives.
 - Partage « ma librairie » : le bouton Partager des onglets Jeux et Films & séries ouvre un choix
   (`ui/components/ShareScopeDialog`) — partager la librairie ou uniquement l'onglet en cours. La librairie
   (`data/share/LibrarySharer` → `ShareLinkService.publishLibrary`, payload `kind: "library"`) donne un
-  seul lien (valable 24 h, renouvelé à chaque partage) vers une page avec un onglet par typologie (Jeux, Films & séries ; onglets CSS sans script,
+  seul lien (supprimé 24 h après sa création, sans renouvellement ; un partage ultérieur en crée un nouveau) vers une page avec un onglet par typologie (Jeux, Films & séries ; onglets CSS sans script,
   un onglet vide n'est pas affiché), avec son propre lien/jeton. Serveur injoignable → texte de l'onglet en cours.
 - Partage du backlog : bouton Partager dans la barre du Backlog → feuille de partage
   Android (`Intent.ACTION_SEND`, `text/plain`) avec la liste des jeux non archivés (+ lien igdb.com de chaque jeu via `IgdbService.getGameUrls`, sans lien si IGDB est injoignable)

@@ -3,6 +3,6 @@ CREATE TABLE IF NOT EXISTS shares (
   token_hash text NOT NULL,
   payload    jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  -- Links expire 24 h after updated_at (see SHARE_TTL_HOURS in lib/shareCore.js)
+  -- Rows are deleted 24 h after created_at (SHARE_TTL_HOURS in lib/shareCore.js; daily cron + on every write)
   updated_at timestamptz NOT NULL DEFAULT now()
 );
