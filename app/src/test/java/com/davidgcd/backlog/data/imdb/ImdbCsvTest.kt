@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ImdbCsvTest {
-    private val ratings = "﻿Const,Your Rating,Date Rated,Title,Original Title,URL,Title Type,IMDb Rating,Runtime (mins),Year,Genres,Num Votes,Release Date,Directors\n" +
+    private val ratings = "\uFEFFConst,Your Rating,Date Rated,Title,Original Title,URL,Title Type,IMDb Rating,Runtime (mins),Year,Genres,Num Votes,Release Date,Directors\n" +
         "tt0111161,10,2020-01-02,The Shawshank Redemption,The Shawshank Redemption,https://www.imdb.com/title/tt0111161/,Movie,9.3,142,1994,Drama,2900000,1994-09-23,Frank Darabont\n" +
         "tt0903747,9,2020-02-03,\"Breaking Bad, the show\",Breaking Bad,https://www.imdb.com/title/tt0903747/,TV Series,9.5,49,2008,\"Crime, Drama, Thriller\",2100000,2008-01-20,\n" +
         "tt0000003,7,2020-03-03,Some Game,Some Game,https://www.imdb.com/title/tt0000003/,Video Game,7.0,,2010,Action,10,2010-01-01,\n" +

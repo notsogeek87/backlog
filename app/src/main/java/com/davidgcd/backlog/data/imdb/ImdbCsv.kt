@@ -18,12 +18,12 @@ data class ImdbCsvRow(
  */
 object ImdbCsv {
     fun looksLikeExport(text: String): Boolean {
-        val header = text.removePrefix("﻿").lineSequence().firstOrNull()?.lowercase() ?: return false
+        val header = text.removePrefix("\uFEFF").lineSequence().firstOrNull()?.lowercase() ?: return false
         return header.contains("const") && header.contains("title")
     }
 
     fun parse(text: String): List<ImdbCsvRow> {
-        val records = splitRecords(text.removePrefix("﻿"))
+        val records = splitRecords(text.removePrefix("\uFEFF"))
         if (records.isEmpty()) return emptyList()
         val header = CsvFormat.parseRow(records.first()).map { it.trim().lowercase() }
         fun column(vararg names: String): Int = names.firstNotNullOfOrNull { n -> header.indexOf(n).takeIf { it >= 0 } } ?: -1
