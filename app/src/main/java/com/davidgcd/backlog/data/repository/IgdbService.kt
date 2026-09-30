@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.repository
 
 import com.davidgcd.backlog.data.library.GameCatalog
 import com.davidgcd.backlog.data.remote.IgdbApi
+import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.util.RateLimiter
 import okhttp3.MediaType.Companion.toMediaType
@@ -75,15 +76,41 @@ class IgdbService(private val api: IgdbApi) : GameCatalog {
     }
 
     /** Popular-enough games with a real rating, most-rated first — a simple stand-in for the iOS app's PopularGamesLoader/RRF fusion. */
-    suspend fun getPopularGames(limit: Int = 20): List<Game> {
+    suspend fun getPopularGames(limit: Int = 20): List<Game> = getDiscoverGames(DiscoverCategory.POPULAR, limit)
+
+    /**
+     * One Discover list. Every category needs a cover; the rest is IGDB's own data, never invented:
+     * rating counts for popularity, `total_rating` for quality, release dates for recency and
+     * `hypes` (IGDB's pre-release follower count) for upcoming games. [nowEpochSeconds] is a
+     * parameter so the date windows are computed once per call, from the caller's clock.
+     */
+    suspend fun getDiscoverGames(
+        category: DiscoverCategory,
+        limit: Int = 20,
+        nowEpochSeconds: Long = System.currentTimeMillis() / 1000,
+    ): List<Game> {
+        val recentWindow = 60L * 60 * 24 * 548 // ~18 months
+        val newWindow = 60L * 60 * 24 * 90 // ~3 months
+        val (conditions, sort) = when (category) {
+            DiscoverCategory.POPULAR -> "total_rating_count > 10" to "total_rating_count desc"
+            DiscoverCategory.TOP_RATED -> "total_rating_count > 50 & total_rating != null & version_parent = null" to "total_rating desc"
+            DiscoverCategory.TRENDING ->
+                "first_release_date > ${nowEpochSeconds - recentWindow} & first_release_date <= $nowEpochSeconds & total_rating_count > 5" to
+                    "total_rating_count desc"
+            DiscoverCategory.NEW_RELEASES ->
+                "first_release_date > ${nowEpochSeconds - newWindow} & first_release_date <= $nowEpochSeconds & version_parent = null" to
+                    "first_release_date desc"
+            DiscoverCategory.UPCOMING ->
+                "first_release_date > $nowEpochSeconds & hypes != null" to "hypes desc"
+        }
         RateLimiter.igdb.acquire()
         val apicalypse = """
             fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating;
-            where total_rating_count > 10 & cover != null;
-            sort total_rating_count desc;
+            where cover != null & $conditions;
+            sort $sort;
             limit $limit;
         """.trimIndent()
-        return api.games(apicalypse.toRequestBody())
+        return api.games(apicalypse.toRequestBody()).filter { it.name.isNotBlank() }
     }
 
     suspend fun getGame(id: Long): Game? {

@@ -44,7 +44,12 @@
 
     <!-- Découvertes -->
     <string name="discover_title">Découvrir</string>
-    <string name="discover_error">Impossible de charger les jeux populaires.</string>
+    <string name="discover_error">Impossible de charger les jeux.</string>
+    <string name="discover_popular">Populaires</string>
+    <string name="discover_top_rated">Mieux notés</string>
+    <string name="discover_trending">Tendances</string>
+    <string name="discover_new_releases">Nouveautés</string>
+    <string name="discover_upcoming">À venir</string>
     <string name="action_retry">Réessayer</string>
     <string name="discover_already_in_backlog">Déjà dans le backlog</string>
     <string name="action_add">Ajouter</string>

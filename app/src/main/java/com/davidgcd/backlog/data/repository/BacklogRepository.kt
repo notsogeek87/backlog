@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.repository
 
 import com.davidgcd.backlog.data.local.GameDao
 import com.davidgcd.backlog.data.local.GameEntity
+import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
@@ -36,6 +37,9 @@ class BacklogRepository(
     suspend fun searchGames(query: String): List<Game> = igdbService.searchGames(query, partial = true)
 
     suspend fun getPopularGames(limit: Int = 20): List<Game> = igdbService.getPopularGames(limit)
+
+    suspend fun getDiscoverGames(category: DiscoverCategory, limit: Int = 20): List<Game> =
+        igdbService.getDiscoverGames(category, limit)
 
     /** Falls back to IGDB when the game isn't (or isn't yet) in the backlog. */
     suspend fun fetchRemoteGame(igdbId: Long): Game? = igdbService.getGame(igdbId)

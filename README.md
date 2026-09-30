@@ -65,8 +65,10 @@ sur Android avec des briques Android natives.
   `HomeRoute.game(id:)` sur iOS ; section Notes = `RatingsState`, jamais de
   "note indisponible" affiché, comme la section Notes de l'app iOS),
   `ui/settings/` (réglages de notifications).
-- `ui/discover/` — jeux populaires IGDB (`getPopularGames`, tri par
-  `total_rating_count`), équivalent simplifié de Découvertes/
+- `ui/discover/` — jeux IGDB en 5 listes sélectionnables par pastilles
+  (`DiscoverCategory` : Populaires = `total_rating_count`, Mieux notés =
+  `total_rating`, Tendances = sorties des ~18 derniers mois les plus notées,
+  Nouveautés = sorties des ~3 derniers mois, À venir = `hypes`), équivalent simplifié de Découvertes/
   `PopularGamesLoader` sur iOS (pas de cache disque ni de stale-while-
   revalidate pour l'instant) ; les jeux déjà dans le backlog sont filtrés
   côté client.
