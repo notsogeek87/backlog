@@ -103,13 +103,14 @@ jobs:
           path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
 
-      # Vraie release GitHub, versionnée et permanente : seulement pour main,
+      # Vraie release GitHub, versionnée et permanente : seulement pour main (push ou
+      # lancement manuel — un build lancé à la main sur main doit aussi laisser une release),
       # jamais écrasée (chaque run a une version unique), pas marquée
       # "Pre-release". Toujours signée avec la clé debug committée (pas de
       # clé de production configurée) : à faire évoluer le jour où on distribue
       # via le Play Store ou en dehors des testeurs internes.
       - name: Publier la release GitHub (main)
-        if: github.event_name == 'push' && github.ref_name == 'main'
+        if: github.event_name != 'pull_request' && github.ref_name == 'main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -128,7 +129,7 @@ jobs:
       # Réservé à staging/PR/dispatch : main a sa vraie release ci-dessus.
       - name: Déterminer le tag de release debug
         id: reltag
-        if: "!(github.event_name == 'push' && github.ref_name == 'main')"
+        if: "!(github.event_name != 'pull_request' && github.ref_name == 'main')"
         run: |
           BRANCH="${{ github.head_ref || github.ref_name }}"
           SAFE_BRANCH=$(echo "$BRANCH" | tr '/' '-')
@@ -136,7 +137,7 @@ jobs:
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Publier l'APK debug en release GitHub
-        if: "!(github.event_name == 'push' && github.ref_name == 'main')"
+        if: "!(github.event_name != 'pull_request' && github.ref_name == 'main')"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
