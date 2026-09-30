@@ -75,6 +75,9 @@
     <string name="settings_auto_export_last_failed">Échec du dernier export (%1$s) — vérifie le dossier</string>
     <string name="settings_auto_export_pending">Premier export en attente</string>
     <string name="settings_import_csv">Importer un CSV</string>
+    <string name="settings_import_progress">Import en cours : %1$d / %2$d</string>
+    <string name="settings_import_reading">Lecture du fichier…</string>
+    <string name="settings_import_cancelled_title">Import annulé</string>
     <string name="settings_import_done_title">Import terminé</string>
     <string name="settings_import_done_summary">%1$d ajoutés, %2$d ignorés.</string>
     <string name="settings_import_done_failed_prefix">Non trouvés : %1$s</string>

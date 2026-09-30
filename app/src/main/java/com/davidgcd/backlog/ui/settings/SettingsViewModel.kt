@@ -11,6 +11,7 @@ import com.davidgcd.backlog.data.csv.AutoExportPreferences
 import com.davidgcd.backlog.data.csv.AutoExportScheduler
 import com.davidgcd.backlog.data.csv.AutoExportStatus
 import com.davidgcd.backlog.data.csv.CsvExportService
+import com.davidgcd.backlog.data.csv.CsvImportProgress
 import com.davidgcd.backlog.data.csv.CsvImportResult
 import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.repository.BacklogRepository
@@ -18,6 +19,7 @@ import com.davidgcd.backlog.notifications.NotificationPreferences
 import com.davidgcd.backlog.notifications.ReleaseReminderSchedule
 import com.davidgcd.backlog.notifications.ReleaseReminderScheduler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -55,6 +57,11 @@ class SettingsViewModel(
 
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> = _isImporting
+
+    private val _importProgress = MutableStateFlow<CsvImportProgress?>(null)
+    val importProgress: StateFlow<CsvImportProgress?> = _importProgress
+
+    private var importJob: Job? = null
 
     private val _importResult = MutableStateFlow<CsvImportResult?>(null)
     val importResult: StateFlow<CsvImportResult?> = _importResult
@@ -150,12 +157,21 @@ class SettingsViewModel(
     }
 
     fun importCsv(uri: Uri) {
-        viewModelScope.launch {
+        importJob = viewModelScope.launch {
             _isImporting.value = true
             _importResult.value = null
-            _importResult.value = csvImportService.import(uri)
-            _isImporting.value = false
+            _importProgress.value = null
+            try {
+                _importResult.value = csvImportService.import(uri) { _importProgress.value = it }
+            } finally {
+                _isImporting.value = false
+                _importProgress.value = null
+            }
         }
+    }
+
+    fun cancelImport() {
+        importJob?.cancel()
     }
 
     fun dismissImportResult() {

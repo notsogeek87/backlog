@@ -90,6 +90,7 @@ fun SettingsScreen(
     val platformChangeAlertsEnabled by viewModel.platformChangeAlertsEnabled.collectAsState()
     val isImporting by viewModel.isImporting.collectAsState()
     val importResult by viewModel.importResult.collectAsState()
+    val importProgress by viewModel.importProgress.collectAsState()
 
     var showTimePicker by remember { mutableStateOf(false) }
     var showDebugLog by remember { mutableStateOf(false) }
@@ -218,11 +219,34 @@ fun SettingsScreen(
                 }
             }
             if (isImporting) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Glass.Cyan,
-                    trackColor = Glass.GlassTop,
-                )
+                val progress = importProgress
+                if (progress != null && progress.total > 0) {
+                    LinearProgressIndicator(
+                        progress = { progress.done.toFloat() / progress.total },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Glass.Cyan,
+                        trackColor = Glass.GlassTop,
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Glass.Cyan,
+                        trackColor = Glass.GlassTop,
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (progress != null) {
+                            stringResource(R.string.settings_import_progress, progress.done, progress.total)
+                        } else {
+                            stringResource(R.string.settings_import_reading)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = viewModel::cancelImport) { Text(stringResource(R.string.action_cancel)) }
+                }
             }
 
             SectionTitle(stringResource(R.string.settings_section_debug), topPadding = 8.dp)
@@ -246,7 +270,13 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = viewModel::dismissImportResult) { Text(stringResource(R.string.action_ok)) }
             },
-            title = { Text(stringResource(R.string.settings_import_done_title)) },
+            title = {
+                Text(
+                    stringResource(
+                        if (result.cancelled) R.string.settings_import_cancelled_title else R.string.settings_import_done_title,
+                    ),
+                )
+            },
             text = {
                 Column {
                     Text(stringResource(R.string.settings_import_done_summary, result.added, result.skipped))

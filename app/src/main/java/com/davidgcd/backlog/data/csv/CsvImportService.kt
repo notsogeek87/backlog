@@ -9,7 +9,16 @@ import com.davidgcd.backlog.util.TitleSimilarity
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-data class CsvImportResult(val added: Int, val skipped: Int, val failedNames: List<String>)
+/** [cancelled] = the user stopped the import midway; the counts cover the rows processed until then. */
+data class CsvImportResult(
+    val added: Int,
+    val skipped: Int,
+    val failedNames: List<String>,
+    val cancelled: Boolean = false,
+)
+
+/** [done] rows processed out of [total] data rows. */
+data class CsvImportProgress(val done: Int, val total: Int)
 
 /**
  * Rows with an `igdbId` resolve directly against IGDB; a name-only row (the
@@ -22,7 +31,7 @@ class CsvImportService(
     private val context: Context,
     private val repository: BacklogRepository,
 ) {
-    suspend fun import(uri: Uri): CsvImportResult {
+    suspend fun import(uri: Uri, onProgress: (CsvImportProgress) -> Unit = {}): CsvImportResult {
         val lines = context.contentResolver.openInputStream(uri)?.use { input ->
             BufferedReader(InputStreamReader(input)).readLines()
         } ?: return CsvImportResult(added = 0, skipped = 0, failedNames = emptyList())
@@ -39,44 +48,57 @@ class CsvImportService(
         var skipped = 0
         val failedNames = mutableListOf<String>()
 
-        lines.drop(1).filter { it.isNotBlank() }.forEach { line ->
-            val fields = CsvFormat.parseRow(line)
-            val name = nameIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim().orEmpty()
-            val igdbId = idIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toLongOrNull()
-            val archived = archivedIndex.takeIf { it >= 0 }
-                ?.let { fields.getOrNull(it) }?.trim()?.toBooleanStrictOrNull() ?: false
-            val status = statusIndex.takeIf { it >= 0 }
-                ?.let { fields.getOrNull(it) }?.let(GameStatus::fromName) ?: GameStatus.BACKLOG
+        val rows = lines.drop(1).filter { it.isNotBlank() }
+        var cancelled = false
+        onProgress(CsvImportProgress(done = 0, total = rows.size))
 
-            try {
-                val game = when {
-                    igdbId != null -> repository.fetchRemoteGame(igdbId)
-                    name.isNotBlank() -> resolveByName(name)
-                    else -> null
-                }
+        try {
+            rows.forEachIndexed { index, line ->
+                val fields = CsvFormat.parseRow(line)
+                val name = nameIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim().orEmpty()
+                val igdbId = idIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toLongOrNull()
+                val archived = archivedIndex.takeIf { it >= 0 }
+                    ?.let { fields.getOrNull(it) }?.trim()?.toBooleanStrictOrNull() ?: false
+                val status = statusIndex.takeIf { it >= 0 }
+                    ?.let { fields.getOrNull(it) }?.let(GameStatus::fromName) ?: GameStatus.BACKLOG
 
-                if (game == null) {
+                try {
+                    val game = when {
+                        igdbId != null -> repository.fetchRemoteGame(igdbId)
+                        name.isNotBlank() -> resolveByName(name)
+                        else -> null
+                    }
+
+                    if (game == null) {
+                        skipped++
+                        if (name.isNotBlank()) failedNames.add(name)
+                        return@forEachIndexed
+                    }
+
+                    repository.addToBacklog(game)
+                    if (archived) {
+                        repository.findEntity(game.id)?.let { repository.setArchived(it, archived = true) }
+                    }
+                    if (status != GameStatus.BACKLOG) {
+                        repository.findEntity(game.id)?.let { repository.setStatus(it, status) }
+                    }
+                    added++
+                } catch (t: kotlinx.coroutines.CancellationException) {
+                    throw t
+                } catch (t: Throwable) {
+                    AppLogger.network.warn("CSV import row failed for \"$name\": ${t.message}")
                     skipped++
                     if (name.isNotBlank()) failedNames.add(name)
-                    return@forEach
+                } finally {
+                    onProgress(CsvImportProgress(done = index + 1, total = rows.size))
                 }
-
-                repository.addToBacklog(game)
-                if (archived) {
-                    repository.findEntity(game.id)?.let { repository.setArchived(it, archived = true) }
-                }
-                if (status != GameStatus.BACKLOG) {
-                    repository.findEntity(game.id)?.let { repository.setStatus(it, status) }
-                }
-                added++
-            } catch (t: Throwable) {
-                AppLogger.network.warn("CSV import row failed for \"$name\": ${t.message}")
-                skipped++
-                if (name.isNotBlank()) failedNames.add(name)
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Games already added stay; report them instead of dropping the whole result.
+            cancelled = true
         }
 
-        return CsvImportResult(added, skipped, failedNames)
+        return CsvImportResult(added, skipped, failedNames, cancelled)
     }
 
     private suspend fun resolveByName(name: String) =
