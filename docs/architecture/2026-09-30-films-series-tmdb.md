@@ -18,5 +18,9 @@ Les jeux viennent d'IGDB. Pour les films et séries, une première version lisai
 
 ## Limites connues
 - Sans clé TMDB dans le build, l'onglet Films/séries affiche des erreurs de chargement et la connexion est refusée avec un message clair.
-- Pas (encore) d'export/import CSV des films, de page de partage publique, ni de rappels de sortie pour les films.
+- Pas (encore) d'export/import CSV des films, ni de rappels de sortie pour les films.
 - Les notes TMDB vont de 0,5 à 10 ; l'app les arrondit à 1–10 en import.
+
+## Page de partage
+
+Le serveur `server/` gère aussi les films & séries : un payload avec `kind: "movies"` (nom, statut, série, année, affiche TMDB, lien TMDB, note 1–10) est validé puis rendu par `renderMoviesPage` (affiches notées, meilleure note en premier, puis les non notés par statut). Lien distinct de celui des jeux (`ShareLinkService.publishMovies`, clés `movies_share_*`). La CSP de `/b/:id` autorise `image.tmdb.org`.

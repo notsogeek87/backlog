@@ -1,6 +1,7 @@
 package com.davidgcd.backlog.data.share
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,6 +30,18 @@ data class ShareItem(
     val rank: Int? = null,
 )
 
+/** One film / série as the share page needs it — the same fields the server validates. */
+data class ShareMovieItem(
+    val name: String,
+    val status: String,
+    val series: Boolean,
+    val year: Int?,
+    val posterUrl: String?,
+    val url: String?,
+    /** The user's own note, 1–10. */
+    val rating: Int?,
+)
+
 /**
  * Publishes a snapshot of the backlog to the share server and returns the public link.
  * The first publish creates the link and keeps its secret token on the device; later ones update
@@ -42,6 +55,9 @@ class ShareLinkService(
 ) {
     private val idKey = stringPreferencesKey("share_id")
     private val tokenKey = stringPreferencesKey("share_token")
+    // Films & séries get their own link, so sharing one list never overwrites the other's page.
+    private val moviesIdKey = stringPreferencesKey("movies_share_id")
+    private val moviesTokenKey = stringPreferencesKey("movies_share_token")
     private val urlsKey = stringPreferencesKey("igdb_urls")
     private val ownerKey = stringPreferencesKey("owner_name")
 
@@ -72,9 +88,21 @@ class ShareLinkService(
     }
 
     /** Throws [IOException] on any network / server failure; the caller falls back to a plain-text share. */
-    suspend fun publish(title: String, items: List<ShareItem>): String = withContext(Dispatchers.IO) {
+    suspend fun publish(title: String, items: List<ShareItem>): String = send(payload(title, items, owner()), idKey, tokenKey)
+
+    /** Same, for the films & séries page (its own link). */
+    suspend fun publishMovies(title: String, items: List<ShareMovieItem>): String =
+        send(moviesPayload(title, items, owner()), moviesIdKey, moviesTokenKey)
+
+    private suspend fun owner(): String = context.shareLinkDataStore.data.first()[ownerKey].orEmpty().trim()
+
+    private suspend fun send(
+        json: String,
+        idKey: Preferences.Key<String>,
+        tokenKey: Preferences.Key<String>,
+    ): String = withContext(Dispatchers.IO) {
         val prefs = context.shareLinkDataStore.data.first()
-        val body = payload(title, items, prefs[ownerKey].orEmpty().trim()).toRequestBody(JSON)
+        val body = json.toRequestBody(JSON)
         val id = prefs[idKey]
         val token = prefs[tokenKey]
         if (id != null && token != null) {
@@ -87,12 +115,12 @@ class ShareLinkService(
         val create = Request.Builder().url("$baseUrl/api/share").post(body).build()
         client.newCall(create).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-            val json = JSONObject(response.body!!.string())
+            val created = JSONObject(response.body!!.string())
             context.shareLinkDataStore.edit {
-                it[idKey] = json.getString("id")
-                it[tokenKey] = json.getString("token")
+                it[idKey] = created.getString("id")
+                it[tokenKey] = created.getString("token")
             }
-            json.getString("url")
+            created.getString("url")
         }
     }
 
@@ -100,6 +128,27 @@ class ShareLinkService(
         const val DEFAULT_BASE_URL = "https://library.lielu.eu"
         const val MAX_OWNER_LENGTH = 40
         private val JSON = "application/json; charset=utf-8".toMediaType()
+
+        fun moviesPayload(title: String, items: List<ShareMovieItem>, owner: String = ""): String = JSONObject()
+            .put("kind", "movies")
+            .put("title", title)
+            .put("owner", owner)
+            .put(
+                "items",
+                JSONArray(
+                    items.map {
+                        JSONObject()
+                            .put("name", it.name)
+                            .put("status", it.status)
+                            .put("series", it.series)
+                            .put("year", it.year ?: JSONObject.NULL)
+                            .put("posterUrl", it.posterUrl ?: JSONObject.NULL)
+                            .put("url", it.url ?: JSONObject.NULL)
+                            .put("rating", it.rating ?: JSONObject.NULL)
+                    },
+                ),
+            )
+            .toString()
 
         fun payload(title: String, items: List<ShareItem>, owner: String = ""): String = JSONObject()
             .put("title", title)

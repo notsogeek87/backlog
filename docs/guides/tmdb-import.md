@@ -7,7 +7,7 @@
 2. Local : `TMDB_API_KEY` dans `Secrets.kt` (copie de `Secrets.kt.example`). CI : secret de dépôt `TMDB_API_KEY`.
 
 ## Utiliser l'onglet
-- **Films/séries** (barre du bas) : ta liste, pastilles Tous / Films / Séries, statuts (À voir, En cours, Vu), tri, filtres, archivage, classement personnel et partage texte.
+- **Films/séries** (barre du bas) : ta liste, pastilles Tous / Films / Séries, statuts (À voir, En cours, Vu), tri, filtres, archivage, classement personnel et partage : une page web publique (affiches triées par ta note, puis les titres sans note par statut), ou le texte si le serveur est injoignable. Une note est proposée quand tu passes un titre à « Vu », et s'affiche sur les cartes.
 - **Rechercher** (loupe) : recherche TMDB, `+` pour ajouter.
 - **Découvrir** → *Films & séries* : populaires et mieux notés.
 - **Où regarder ?** (fiche d'un titre) : plateformes disponibles **en France**, récupérées en direct chez TMDB à chaque ouverture (`/watch/providers`), avec logos et lignes séparées Abonnement / Location / Achat / Gratuit (avec pub). « Voir toutes les offres » ouvre la page TMDB/JustWatch. Données JustWatch, créditées sous la carte.

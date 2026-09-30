@@ -256,7 +256,7 @@ fun BacklogNavHost(
             }
         }
         composable(Routes.MOVIES) {
-            val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository))
+            val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository, shareLinkService))
             MoviesScreen(
                 viewModel = viewModel,
                 onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },

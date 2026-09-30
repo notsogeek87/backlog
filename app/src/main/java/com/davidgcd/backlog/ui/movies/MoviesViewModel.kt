@@ -8,11 +8,16 @@ import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.local.watchStatus
 import com.davidgcd.backlog.data.repository.MovieRepository
+import com.davidgcd.backlog.data.share.ShareLinkService
+import com.davidgcd.backlog.data.share.ShareMovieItem
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieRanking
+import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchStatus
 import com.davidgcd.backlog.ui.backlog.SearchError
+import com.davidgcd.backlog.util.AppLogger
+import com.davidgcd.backlog.util.TmdbImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -45,7 +50,10 @@ data class MovieFilter(
 }
 
 /** State of the films & séries tab: the saved list (sorted / filtered) and the TMDB search. */
-class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
+class MoviesViewModel(
+    private val repository: MovieRepository,
+    private val shareLinkService: ShareLinkService? = null,
+) : ViewModel() {
 
     private val movies: StateFlow<List<MovieEntity>> = repository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -99,6 +107,33 @@ class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
 
     /** What a plain-text share lists: every non-archived title, ranked ones first (never narrowed by the filter). */
     suspend fun titlesToShare(): List<MovieEntity> = MovieRanking.order(repository.allMovies())
+
+    /**
+     * Publishes the list as a public page (posters, best user note first) and returns its link, or null
+     * when there is no server configured or it can't be reached — the caller then shares plain text.
+     */
+    suspend fun publishShareLink(title: String, movies: List<MovieEntity>): String? {
+        val service = shareLinkService ?: return null
+        val items = movies.filter { !it.isArchived }.map {
+            ShareMovieItem(
+                name = it.title,
+                status = it.status,
+                series = it.titleKind == TitleKind.SERIES,
+                year = it.year,
+                posterUrl = TmdbImage.poster(it.posterUrl, width = 342),
+                url = TitleKey.url(it.titleKey),
+                rating = it.userRating,
+            )
+        }
+        return try {
+            service.publishMovies(title, items)
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            AppLogger.network.error("Share link: publishing the movies page failed, sharing plain text instead", t)
+            null
+        }
+    }
 
     // --- search ------------------------------------------------------------------------------
 
@@ -176,10 +211,13 @@ private fun <T : Comparable<T>> nullsLast(descending: Boolean, selector: (MovieE
         }
     }
 
-class MoviesViewModelFactory(private val repository: MovieRepository) : ViewModelProvider.Factory {
+class MoviesViewModelFactory(
+    private val repository: MovieRepository,
+    private val shareLinkService: ShareLinkService? = null,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == MoviesViewModel::class.java)
-        return MoviesViewModel(repository) as T
+        return MoviesViewModel(repository, shareLinkService) as T
     }
 }

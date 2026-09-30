@@ -62,3 +62,35 @@ test('owner is trimmed, capped and shown on the page (escaped)', () => {
   assert.ok(!html.includes('<b>David'));
   assert.match(renderPage({ title: 'T', items: [] }), /<h1>T<\/h1><p>Ce backlog/);
 });
+
+test('movies payload: only sane poster / tmdb url / note / status survive', () => {
+  const p = validatePayload({
+    kind: 'movies',
+    items: [
+      { name: 'Alien', status: 'WATCHED', series: false, year: 1979, posterUrl: 'https://image.tmdb.org/t/p/w500/abc_1-2.jpg', url: 'https://www.themoviedb.org/movie/348', rating: 9 },
+      { name: 'X', status: 'NOPE', posterUrl: 'https://evil.example/a.jpg', url: 'javascript:alert(1)', rating: 11, year: 'y' },
+    ],
+  });
+  assert.equal(p.kind, 'movies');
+  assert.deepEqual(p.items[0], { name: 'Alien', status: 'WATCHED', series: false, year: 1979, posterPath: '/abc_1-2.jpg', url: 'https://www.themoviedb.org/movie/348', rating: 9 });
+  assert.deepEqual(p.items[1], { name: 'X', status: 'TO_WATCH', series: false, year: null, posterPath: null, url: null, rating: null });
+});
+
+test('movies page: rated posters best note first, unrated grouped by status, all escaped', () => {
+  const html = renderPage({
+    kind: 'movies',
+    title: 'Ma liste',
+    owner: 'David',
+    items: [
+      { name: 'Bof', status: 'WATCHED', series: false, year: 2001, posterPath: '/b.jpg', url: null, rating: 4 },
+      { name: 'Top', status: 'WATCHED', series: true, year: null, posterPath: '/t.jpg', url: 'https://www.themoviedb.org/tv/1', rating: 10 },
+      { name: '<i>Plus tard</i>', status: 'TO_WATCH', series: false, year: null, posterPath: null, url: null, rating: null },
+    ],
+  });
+  assert.ok(html.includes('Les notes de David'));
+  assert.ok(html.indexOf('Top') < html.indexOf('Bof'));
+  assert.ok(html.includes('★ 10'));
+  assert.ok(html.includes('https://image.tmdb.org/t/p/w342/t.jpg'));
+  assert.ok(html.indexOf('Bof') < html.indexOf('À voir <small>'));
+  assert.ok(!html.includes('<i>Plus tard'));
+});

@@ -115,6 +115,7 @@ fun MoviesScreen(
 
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
 
     val visible by viewModel.visible.collectAsState()
@@ -140,21 +141,33 @@ fun MoviesScreen(
 
     val shareList: () -> Unit = {
         scope.launch {
-            val movies = viewModel.titlesToShare()
-            val count = movies.count { !it.isArchived }
-            val text = MovieShareText.build(
-                movies,
-                MovieShareText.Labels(
-                    header = { context.resources.getQuantityString(R.plurals.share_movies_header, count, count) },
-                    status = { status -> context.getString(status.labelRes()) },
-                    ranking = context.getString(R.string.share_backlog_ranking),
-                ),
-            )
-            val send = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
+            sharing = true
+            try {
+                val movies = viewModel.titlesToShare()
+                val count = movies.count { !it.isArchived }
+                val header = context.resources.getQuantityString(R.plurals.share_movies_header, count, count)
+                // A public page (posters, best note first) when the server answers; otherwise the plain-text list.
+                val publicLink = viewModel.publishShareLink(header, movies)
+                val text = if (publicLink != null) {
+                    "$header\n$publicLink"
+                } else {
+                    MovieShareText.build(
+                        movies,
+                        MovieShareText.Labels(
+                            header = { header },
+                            status = { status -> context.getString(status.labelRes()) },
+                            ranking = context.getString(R.string.share_backlog_ranking),
+                        ),
+                    )
+                }
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_movies_chooser)))
+            } finally {
+                sharing = false
             }
-            context.startActivity(Intent.createChooser(send, context.getString(R.string.share_movies_chooser)))
         }
     }
 
@@ -180,8 +193,12 @@ fun MoviesScreen(
                         IconButton(onClick = onOpenRanking) {
                             Icon(Icons.Filled.Leaderboard, contentDescription = stringResource(R.string.action_my_ranking))
                         }
-                        IconButton(onClick = shareList) {
-                            Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_movies))
+                        IconButton(onClick = shareList, enabled = !sharing) {
+                            if (sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_movies))
+                            }
                         }
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
                         FilterMenuButton(current = filter, availableGenres = genres, onChange = viewModel::setFilter)
