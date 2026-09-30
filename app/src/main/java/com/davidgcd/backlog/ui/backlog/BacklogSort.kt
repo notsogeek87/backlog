@@ -21,7 +21,11 @@ enum class BacklogSort {
  * Backlog filter's archived toggle — off by default, so an all-archived
  * library still shows the empty state rather than a full one.
  */
+/** Wishlist vs. owned games — a one-tap switch above the list, since the two are rarely wanted together. */
+enum class BacklogScope { ALL, WISHLIST, OWNED }
+
 data class BacklogFilter(
+    val scope: BacklogScope = BacklogScope.ALL,
     val showArchived: Boolean = false,
     val genre: String? = null,
     val platform: String? = null,

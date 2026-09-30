@@ -61,8 +61,9 @@ class BacklogViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GameStatus.entries.associateWith { 0 })
 
     /** Newest additions for the home carousel. */
-    val recentlyAdded: StateFlow<List<GameEntity>> = backlog
-        .map { list -> list.filter { !it.isArchived }.sortedByDescending { it.addedAt }.take(10) }
+    val recentlyAdded: StateFlow<List<GameEntity>> = combine(backlog, _filter) { list, filter ->
+        list.filter { !it.isArchived && filter.scope.accepts(it) }.sortedByDescending { it.addedAt }.take(10)
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** The unfiltered count backs the empty-library check, same rule as the iOS app's `games.isEmpty`. */
@@ -82,6 +83,7 @@ class BacklogViewModel(
     val visibleBacklog: StateFlow<List<GameEntity>> = combine(backlog, _sort, _filter) { list, sort, filter ->
         list
             .filter { entity -> filter.showArchived || !entity.isArchived }
+            .filter { entity -> filter.scope.accepts(entity) }
             .filter { entity -> filter.status == null || entity.gameStatus == filter.status }
             .filter { entity -> filter.genre == null || GameJsonCache.genreNames(entity).contains(filter.genre) }
             .filter { entity -> filter.platform == null || GameJsonCache.platformNames(entity).contains(filter.platform) }
@@ -220,3 +222,9 @@ private fun <T : Comparable<T>> nullsLastComparator(descending: Boolean, selecto
             else -> left.compareTo(right)
         }
     }
+
+private fun BacklogScope.accepts(entity: GameEntity) = when (this) {
+    BacklogScope.ALL -> true
+    BacklogScope.WISHLIST -> entity.gameStatus == GameStatus.WISHLIST
+    BacklogScope.OWNED -> entity.gameStatus != GameStatus.WISHLIST
+}

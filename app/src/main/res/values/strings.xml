@@ -37,6 +37,9 @@
     <string name="status_played">Joué</string>
     <string name="status_completed">Terminé</string>
     <string name="status_wishlist">Souhaité</string>
+    <string name="scope_all">Tous</string>
+    <string name="scope_wishlist">Souhaités</string>
+    <string name="scope_owned">Possédés</string>
     <string name="filter_status">Statut</string>
 
     <string name="sort_recently_added">Ajoutés récemment</string>
