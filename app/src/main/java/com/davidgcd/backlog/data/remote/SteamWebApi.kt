@@ -26,6 +26,13 @@ interface SteamWebApi {
         @Query("format") format: String = "json",
     ): OwnedGamesEnvelope
 
+    /** Public wishlist (appid + priority + date added, no names). Empty `response` for a private profile. */
+    @GET("IWishlistService/GetWishlist/v1/")
+    suspend fun wishlist(
+        @Query("steamid") steamId: String,
+        @Query("format") format: String = "json",
+    ): WishlistEnvelope
+
     @GET("ISteamUser/GetPlayerSummaries/v2/")
     suspend fun playerSummaries(
         @Query("steamids") steamIds: String,
@@ -60,6 +67,15 @@ data class OwnedGame(
     @Json(name = "playtime_forever") val playtimeForever: Int? = null,
     @Json(name = "playtime_2weeks") val playtime2Weeks: Int? = null,
 )
+
+@JsonClass(generateAdapter = true)
+data class WishlistEnvelope(val response: WishlistResponse? = null)
+
+@JsonClass(generateAdapter = true)
+data class WishlistResponse(val items: List<WishlistItem>? = null)
+
+@JsonClass(generateAdapter = true)
+data class WishlistItem(val appid: Long)
 
 @JsonClass(generateAdapter = true)
 data class PlayerSummariesEnvelope(val response: PlayersResponse? = null)

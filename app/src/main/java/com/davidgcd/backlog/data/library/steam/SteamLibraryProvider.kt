@@ -5,6 +5,7 @@ import com.davidgcd.backlog.data.library.LibraryError
 import com.davidgcd.backlog.data.library.LibraryException
 import com.davidgcd.backlog.data.library.LibraryGame
 import com.davidgcd.backlog.data.library.LibraryProviders
+import com.davidgcd.backlog.data.library.WishlistSource
 import com.davidgcd.backlog.data.library.toLibraryException
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.remote.SteamWebApi
@@ -20,7 +21,7 @@ data class SteamProfile(val steamId: String, val displayName: String?)
 class SteamLibraryProvider(
     private val api: SteamWebApi,
     private val isConfigured: Boolean = true,
-) : GameLibraryProvider {
+) : GameLibraryProvider, WishlistSource {
     override val id = LibraryProviders.STEAM
 
     /** IGDB `external_game_sources`: 1 = Steam. */
@@ -47,6 +48,12 @@ class SteamLibraryProvider(
                     imageUrl = headerImageUrl(it.appid),
                 )
             }
+    }
+
+    /** Steam AppIDs on the account's wishlist; an empty list is a genuinely empty *or* a private wishlist. */
+    override suspend fun fetchWishlist(accountId: String): List<String> {
+        ensureConfigured()
+        return guarded { api.wishlist(accountId) }.response?.items.orEmpty().map { it.appid.toString() }.distinct()
     }
 
     suspend fun fetchProfile(steamId: String): SteamProfile {

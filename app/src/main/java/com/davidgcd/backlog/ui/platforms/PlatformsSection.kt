@@ -58,6 +58,7 @@ fun PlatformsSection(
     val steam by viewModel.steam.collectAsState()
     val tmdb by viewModel.tmdb.collectAsState()
     val android by viewModel.android.collectAsState()
+    val wishlist by viewModel.wishlist.collectAsState()
     var confirmDisconnect by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -67,7 +68,14 @@ fun PlatformsSection(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 4.dp),
         )
-        SteamCard(steam, onConnectSteam, onSyncSteam, onDisconnect = { confirmDisconnect = LibraryProviders.STEAM })
+        SteamCard(
+            account = steam,
+            wishlist = wishlist,
+            onConnect = onConnectSteam,
+            onSync = onSyncSteam,
+            onSyncWishlist = viewModel::syncWishlist,
+            onDisconnect = { confirmDisconnect = LibraryProviders.STEAM },
+        )
         AndroidCard(
             account = android,
             onConnect = { viewModel.connectAndroid(onReady = onSyncAndroid) },
@@ -101,8 +109,10 @@ fun PlatformsSection(
 @Composable
 private fun SteamCard(
     account: LibraryAccount?,
+    wishlist: WishlistUiState,
     onConnect: () -> Unit,
     onSync: () -> Unit,
+    onSyncWishlist: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
     GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -136,7 +146,34 @@ private fun SteamCard(
                     GradientButton(stringResource(R.string.platform_sync), onSync, Modifier.weight(1f))
                     GlassButton(stringResource(R.string.platform_disconnect), onDisconnect, Modifier.weight(1f))
                 }
+                GlassButton(
+                    text = stringResource(if (wishlist == WishlistUiState.Working) R.string.wishlist_syncing else R.string.wishlist_sync),
+                    onClick = { if (wishlist != WishlistUiState.Working) onSyncWishlist() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                wishlistMessage(wishlist)?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted)
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun wishlistMessage(state: WishlistUiState): String? = when (state) {
+    WishlistUiState.Idle, WishlistUiState.Working -> null
+    is WishlistUiState.Failed -> stringResource(state.error.messageRes())
+    is WishlistUiState.Done -> {
+        val r = state.result
+        when {
+            r.total == 0 -> stringResource(R.string.wishlist_empty)
+            else -> listOfNotNull(
+                pluralText(R.plurals.wishlist_total, r.total, r.total),
+                r.added.takeIf { it > 0 }?.let { pluralText(R.plurals.wishlist_added, it, it) },
+                r.promoted.takeIf { it > 0 }?.let { pluralText(R.plurals.wishlist_promoted, it, it) },
+                r.archived.takeIf { it > 0 }?.let { pluralText(R.plurals.wishlist_archived, it, it) },
+                r.unmatched.takeIf { it > 0 }?.let { pluralText(R.plurals.wishlist_unmatched, it, it) },
+            ).joinToString(" · ")
         }
     }
 }

@@ -21,6 +21,7 @@ object Glass {
     val Pink = Color(0xFFEC4899)
     val Green = Color(0xFF22C55E)
     val Amber = Color(0xFFF59E0B)
+    val Teal = Color(0xFF14B8A6)
 
     val Text = Color(0xFFF5F7FF)
     val TextMuted = Color(0xFFF5F7FF).copy(alpha = 0.62f)

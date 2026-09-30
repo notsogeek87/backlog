@@ -36,6 +36,7 @@
     <string name="status_backlog">Backlog</string>
     <string name="status_played">Joué</string>
     <string name="status_completed">Terminé</string>
+    <string name="status_wishlist">Souhaité</string>
     <string name="filter_status">Statut</string>
 
     <string name="sort_recently_added">Ajoutés récemment</string>
@@ -168,6 +169,29 @@
     <string name="platform_disconnect">Déconnecter</string>
     <string name="platform_disconnect_title">Déconnecter Steam ?</string>
     <string name="platform_disconnect_message">Vos jeux restent dans votre backlog. Seul le lien avec votre compte Steam est supprimé.</string>
+    <string name="wishlist_sync">Synchroniser la liste de souhaits</string>
+    <string name="wishlist_syncing">Synchronisation de la liste de souhaits…</string>
+    <string name="wishlist_empty">Aucun jeu sur la liste de souhaits (ou liste privée : passez « Détails des jeux » en public sur Steam).</string>
+    <plurals name="wishlist_total">
+        <item quantity="one">%1$d jeu souhaité</item>
+        <item quantity="other">%1$d jeux souhaités</item>
+    </plurals>
+    <plurals name="wishlist_added">
+        <item quantity="one">%1$d ajouté</item>
+        <item quantity="other">%1$d ajoutés</item>
+    </plurals>
+    <plurals name="wishlist_promoted">
+        <item quantity="one">%1$d acheté, passé en Backlog</item>
+        <item quantity="other">%1$d achetés, passés en Backlog</item>
+    </plurals>
+    <plurals name="wishlist_archived">
+        <item quantity="one">%1$d retiré de Steam, archivé</item>
+        <item quantity="other">%1$d retirés de Steam, archivés</item>
+    </plurals>
+    <plurals name="wishlist_unmatched">
+        <item quantity="one">%1$d introuvable sur IGDB</item>
+        <item quantity="other">%1$d introuvables sur IGDB</item>
+    </plurals>
     <string name="platform_stats_owned">%1$d jeux possédés</string>
     <string name="platform_stats_present">%1$d déjà dans Backlog</string>
     <string name="platform_stats_new">%1$d nouveaux jeux détectés</string>

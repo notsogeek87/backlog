@@ -47,9 +47,9 @@ class BacklogRepository(
     /** Falls back to IGDB when the game isn't (or isn't yet) in the backlog. */
     suspend fun fetchRemoteGame(igdbId: Long): Game? = igdbService.getGame(igdbId)
 
-    suspend fun addToBacklog(game: Game) {
+    suspend fun addToBacklog(game: Game, status: GameStatus = GameStatus.BACKLOG) {
         if (gameDao.findById(game.id) != null) return
-        gameDao.upsert(game.toEntity(moshi))
+        gameDao.upsert(game.toEntity(moshi).copy(status = status.name))
     }
 
     suspend fun setArchived(entity: GameEntity, archived: Boolean) {

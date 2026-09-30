@@ -72,6 +72,7 @@ import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
 import com.davidgcd.backlog.data.library.LibrarySyncService
+import com.davidgcd.backlog.data.library.WishlistSyncService
 import com.davidgcd.backlog.data.library.steam.SteamAuthService
 import com.davidgcd.backlog.data.local.GameSourceDao
 import com.davidgcd.backlog.data.repository.BacklogRepository
@@ -151,6 +152,7 @@ fun BacklogNavHost(
     csvImportService: CsvImportService,
     libraryAccountStore: LibraryAccountStore,
     librarySyncService: LibrarySyncService,
+    wishlistSyncService: WishlistSyncService,
     steamAuthService: SteamAuthService,
     gameSourceDao: GameSourceDao,
     shareLinkService: ShareLinkService,
@@ -333,7 +335,7 @@ fun BacklogNavHost(
                 ),
             )
             val platformsViewModel: PlatformsViewModel = viewModel(
-                factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao, tmdbSyncService),
+                factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao, tmdbSyncService, wishlistSyncService),
             )
             SettingsScreen(
                 viewModel = viewModel,

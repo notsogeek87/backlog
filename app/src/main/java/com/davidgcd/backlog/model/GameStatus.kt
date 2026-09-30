@@ -8,6 +8,9 @@ enum class GameStatus {
     BACKLOG,
     PLAYED,
     COMPLETED,
+
+    /** Wanted, not owned (Steam wishlist or added by hand). Comes last so the existing statuses keep their order. */
+    WISHLIST,
     ;
 
     companion object {
