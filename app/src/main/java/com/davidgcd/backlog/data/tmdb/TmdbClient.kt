@@ -4,6 +4,7 @@ import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
+import com.davidgcd.backlog.model.WatchProviders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -64,6 +65,17 @@ class TmdbClient(
             if (e.message?.startsWith("HTTP 404") == true) return null else throw e
         }
         return TmdbParsers.parseDetails(body, kind)
+    }
+
+    /**
+     * Where to watch [key] in France, fetched live (offers change), or null when TMDB lists none.
+     * The data behind it is JustWatch's, which TMDB requires crediting.
+     */
+    suspend fun watchProviders(key: String): WatchProviders? {
+        val kind = TitleKey.kind(key) ?: return null
+        val id = TitleKey.tmdbId(key) ?: return null
+        val body = call("GET", "/${TitleKey.prefix(kind)}/$id/watch/providers")
+        return TmdbParsers.parseWatchProviders(body, WatchProviders.REGION)
     }
 
     /** Genre id → French name, both films and series; empty (no genre badges) if TMDB can't be asked. */

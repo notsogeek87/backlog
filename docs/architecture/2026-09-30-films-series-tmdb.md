@@ -12,6 +12,7 @@ Les jeux viennent d'IGDB. Pour les films et séries, une première version lisai
 - **Connexion = flux request-token TMDB** : `/authentication/token/new` → page d'autorisation `themoviedb.org/authenticate/<token>` dans un WebView (redirection interceptée, comme Steam) → `/authentication/session/new`. L'app ne voit jamais le mot de passe. Le `session_id` (le vrai secret) est stocké dans `noBackupFilesDir` (`FileTmdbSessionStore`), donc **hors sauvegarde Android/transfert d'appareil** ; le DataStore (sauvegardé) ne garde que l'id/pseudo du compte. Déconnexion = `DELETE /authentication/session` + effacement local.
 - **Import additif** (`TmdbSyncService`) : titre noté = *Vu* + note ; watchlist = *À voir*. Jamais de suppression ni d'écrasement d'un statut/rang/note posé dans l'app.
 - **Écriture vers TMDB, au mieux** (`MovieRepository`) : noter un titre dans l'app le note sur TMDB ; passer un titre en *À voir* l'ajoute à la watchlist TMDB, le quitter l'en retire. Sans session/réseau, l'action locale réussit quand même (best effort, rien n'est bloquant).
+- **Où regarder ?** : `/{movie|tv}/{id}/watch/providers`, région fixée à `FR` (`WatchProviders.REGION`), jamais mis en cache ni stocké (les offres changent) ; « free » et « ads » fusionnés. Erreur réseau → la carte disparaît. Crédit JustWatch obligatoire affiché sous la carte.
 - **Navigation** : onglet « Films/séries » à côté de « Jeux » ; Découvrir a un sélecteur Jeux / Films & séries.
 - **Attribution** : la mention exigée par TMDB est affichée dans la carte TMDB des Réglages.
 

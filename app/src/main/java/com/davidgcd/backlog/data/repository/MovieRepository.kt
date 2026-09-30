@@ -8,6 +8,7 @@ import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.MovieRanking
+import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -61,6 +62,9 @@ class MovieRepository(
         merged?.let { seen[titleKey] = it }
         return merged
     }
+
+    /** Live "where to watch" for France; never cached, since availability changes. */
+    suspend fun watchProviders(titleKey: String): WatchProviders? = tmdb.watchProviders(titleKey)
 
     suspend fun add(title: MediaTitle, status: WatchStatus = WatchStatus.TO_WATCH) {
         if (dao.findById(title.id) != null) return

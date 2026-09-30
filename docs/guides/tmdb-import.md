@@ -10,6 +10,7 @@
 - **Films/séries** (barre du bas) : ta liste, pastilles Tous / Films / Séries, statuts (À voir, En cours, Vu), tri, filtres, archivage, classement personnel et partage texte.
 - **Rechercher** (loupe) : recherche TMDB, `+` pour ajouter.
 - **Découvrir** → *Films & séries* : populaires et mieux notés.
+- **Où regarder ?** (fiche d'un titre) : plateformes disponibles **en France**, récupérées en direct chez TMDB à chaque ouverture (`/watch/providers`), avec logos et lignes séparées Abonnement / Location / Achat / Gratuit (avec pub). « Voir toutes les offres » ouvre la page TMDB/JustWatch. Données JustWatch, créditées sous la carte.
 - Fiche d'un titre : statut, **ma note /10**, note TMDB, synopsis, réalisateur, distribution, « Ouvrir sur TMDB ».
 
 ## Lier son compte TMDB

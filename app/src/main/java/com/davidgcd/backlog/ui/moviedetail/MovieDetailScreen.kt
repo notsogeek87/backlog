@@ -3,6 +3,13 @@ package com.davidgcd.backlog.ui.moviedetail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import com.davidgcd.backlog.model.WatchProvider
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +80,7 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 @Composable
 fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    val providers by viewModel.providers.collectAsState()
 
     val backdrop = when (val s = state) {
         is MovieDetailState.Saved -> s.movie.posterUrl
@@ -118,6 +126,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                     is MovieDetailState.Loading -> Centered { CircularProgressIndicator(color = Glass.Cyan) }
                     is MovieDetailState.NotFound -> Centered { Text(stringResource(R.string.movie_not_found)) }
                     is MovieDetailState.Saved -> MovieContent(
+                        providers = providers,
                         title = current.movie.toMediaTitle(),
                         saved = current.movie,
                         onStatusChange = { viewModel.setStatus(current.movie, it) },
@@ -127,6 +136,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                         onAdd = {},
                     )
                     is MovieDetailState.Remote -> MovieContent(
+                        providers = providers,
                         title = current.title,
                         saved = null,
                         onStatusChange = {},
@@ -153,6 +163,7 @@ private fun Centered(content: @Composable () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MovieContent(
+    providers: ProvidersState,
     title: MediaTitle,
     saved: MovieEntity?,
     onStatusChange: (WatchStatus) -> Unit,
@@ -237,6 +248,8 @@ private fun MovieContent(
                 }
             }
 
+            WhereToWatchCard(providers)
+
             title.plot?.let { plot ->
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -295,5 +308,72 @@ private fun MovieContent(
                 TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
+    }
+}
+
+/**
+ * "Où regarder ?" — the platforms offering the title in France, one labelled row per way of watching
+ * (subscription / rent / buy / free) so they are never confused. Hidden if TMDB can't be reached.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WhereToWatchCard(state: ProvidersState) {
+    if (state is ProvidersState.Unavailable) return
+    val context = LocalContext.current
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(stringResource(R.string.where_to_watch_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            when (state) {
+                is ProvidersState.Loading -> CircularProgressIndicator(color = Glass.Cyan, modifier = Modifier.height(20.dp))
+                is ProvidersState.Loaded -> {
+                    val providers = state.providers
+                    if (providers == null) {
+                        Text(stringResource(R.string.where_to_watch_none), style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted)
+                    } else {
+                        ProviderRow(stringResource(R.string.where_to_watch_subscription), Glass.Cyan, providers.subscription)
+                        ProviderRow(stringResource(R.string.where_to_watch_rent), Glass.Amber, providers.rent)
+                        ProviderRow(stringResource(R.string.where_to_watch_buy), Glass.Purple, providers.buy)
+                        ProviderRow(stringResource(R.string.where_to_watch_free), Glass.Green, providers.free)
+                        providers.link?.let { link ->
+                            GlassButton(
+                                text = stringResource(R.string.where_to_watch_all_offers),
+                                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+                ProvidersState.Unavailable -> Unit
+            }
+            Text(stringResource(R.string.where_to_watch_credit), style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProviderRow(label: String, tint: Color, providers: List<WatchProvider>) {
+    if (providers.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GlassBadge(label, tint = tint)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            providers.forEach { provider ->
+                val shape = RoundedCornerShape(10.dp)
+                val modifier = Modifier.size(48.dp).clip(shape).border(1.dp, Glass.Border, shape)
+                if (provider.logoUrl != null) {
+                    AsyncImage(
+                        model = provider.logoUrl,
+                        contentDescription = provider.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = modifier,
+                    )
+                } else {
+                    // No logo from TMDB: the name stays readable in a tile of the same size.
+                    Box(modifier = modifier.background(Glass.GlassTop), contentAlignment = Alignment.Center) {
+                        Text(provider.name, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(2.dp))
+                    }
+                }
+            }
+        }
     }
 }

@@ -3,6 +3,8 @@ package com.davidgcd.backlog.data.tmdb
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
+import com.davidgcd.backlog.model.WatchProvider
+import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.util.TmdbImage
 import org.json.JSONArray
 import org.json.JSONObject
@@ -97,6 +99,30 @@ object TmdbParsers {
             directors = directors?.takeIf { it.isNotEmpty() }?.joinToString(", "),
             cast = credits?.optJSONArray("cast")?.objects()?.mapNotNull { it.optString("name").ifEmpty { null } }?.take(6)?.takeIf { it.isNotEmpty() }?.joinToString(", "),
         )
+    }
+
+    /**
+     * `/movie|tv/{id}/watch/providers`: the offers for [region], or null when TMDB has none for it.
+     * "free" and "ads" (free with advertising) are one list here; each list is ordered by TMDB's display priority.
+     */
+    fun parseWatchProviders(json: String, region: String): WatchProviders? {
+        val entry = runCatching { JSONObject(json).optJSONObject("results")?.optJSONObject(region) }.getOrNull() ?: return null
+        fun providers(key: String): List<WatchProvider> =
+            (entry.optJSONArray(key)?.objects() ?: emptyList())
+                .sortedBy { it.optInt("display_priority", Int.MAX_VALUE) }
+                .mapNotNull { p ->
+                    val id = p.optInt("provider_id", -1).takeIf { it >= 0 } ?: return@mapNotNull null
+                    val name = p.optString("provider_name").ifEmpty { null } ?: return@mapNotNull null
+                    WatchProvider(id, name, TmdbImage.logo(p.optString("logo_path").ifEmpty { null }))
+                }
+        val result = WatchProviders(
+            link = entry.optString("link").ifEmpty { null },
+            subscription = providers("flatrate"),
+            rent = providers("rent"),
+            buy = providers("buy"),
+            free = (providers("free") + providers("ads")).distinctBy { it.id },
+        )
+        return result.takeUnless { it.isEmpty }
     }
 
     /** `{"request_token":"…"}` / `{"session_id":"…"}` style single-string fields. */

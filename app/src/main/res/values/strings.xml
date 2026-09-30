@@ -310,4 +310,12 @@
     </plurals>
     <string name="tmdb_import_rated">Notes lues : %1$d</string>
     <string name="tmdb_import_watchlist">Watchlist lue : %1$d</string>
+    <string name="where_to_watch_title">Où regarder ?</string>
+    <string name="where_to_watch_subscription">Abonnement</string>
+    <string name="where_to_watch_rent">Location</string>
+    <string name="where_to_watch_buy">Achat</string>
+    <string name="where_to_watch_free">Gratuit / avec pub</string>
+    <string name="where_to_watch_none">Aucune offre trouvée en France pour le moment.</string>
+    <string name="where_to_watch_all_offers">Voir toutes les offres</string>
+    <string name="where_to_watch_credit">Disponibilités en France, données JustWatch via TMDB.</string>
 </resources>

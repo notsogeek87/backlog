@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.model.MediaTitle
+import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,13 @@ sealed interface MovieDetailState {
     data object NotFound : MovieDetailState
 }
 
+/** "Où regarder ?": loading, the offers (null = none in France), or a failure (the card is then hidden). */
+sealed interface ProvidersState {
+    data object Loading : ProvidersState
+    data class Loaded(val providers: WatchProviders?) : ProvidersState
+    data object Unavailable : ProvidersState
+}
+
 /** A title on the detail screen may or may not be in the list — same split as the game detail. */
 class MovieDetailViewModel(
     private val titleKey: String,
@@ -31,10 +39,14 @@ class MovieDetailViewModel(
     private val _state = MutableStateFlow<MovieDetailState>(MovieDetailState.Loading)
     val state: StateFlow<MovieDetailState> = _state
 
+    private val _providers = MutableStateFlow<ProvidersState>(ProvidersState.Loading)
+    val providers: StateFlow<ProvidersState> = _providers
+
     private var refreshed = false
     private var remoteLoadStarted = false
 
     init {
+        loadProviders()
         repository.observe(titleKey)
             .onEach { movie ->
                 if (movie != null) {
@@ -48,6 +60,19 @@ class MovieDetailViewModel(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    /** Fetched live on every opening — offers change — and independently of the rest of the fiche. */
+    private fun loadProviders() {
+        viewModelScope.launch {
+            _providers.value = try {
+                ProvidersState.Loaded(repository.watchProviders(titleKey))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                ProvidersState.Unavailable
+            }
+        }
     }
 
     /** Titles imported from TMDB's CSV have no plot: pull the page once, quietly. */

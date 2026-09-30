@@ -114,4 +114,32 @@ class TmdbParsersTest {
         assertEquals(9L, TitleKey.tmdbId("movie:9"))
         assertNull(TitleKey.tmdbId("movie:x"))
     }
+
+    private val providersJson = """{"id":27205,"results":{
+      "US":{"link":"https://www.themoviedb.org/movie/27205/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":1}]},
+      "FR":{"link":"https://www.themoviedb.org/movie/27205/watch?locale=FR",
+        "flatrate":[{"provider_id":337,"provider_name":"Disney Plus","logo_path":"/d.jpg","display_priority":5},{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":1}],
+        "rent":[{"provider_id":2,"provider_name":"Apple TV","logo_path":"/a.jpg","display_priority":3}],
+        "buy":[{"provider_id":2,"provider_name":"Apple TV","logo_path":"/a.jpg","display_priority":3},{"provider_id":3,"provider_name":"Google Play Movies","logo_path":null,"display_priority":4}],
+        "free":[{"provider_id":700,"provider_name":"Arte","logo_path":"/ar.jpg","display_priority":2}],
+        "ads":[{"provider_id":700,"provider_name":"Arte","logo_path":"/ar.jpg","display_priority":2},{"provider_id":701,"provider_name":"TF1+","logo_path":"/t.jpg","display_priority":6}]}}}"""
+
+    @Test
+    fun `watch providers for France are split by way of watching`() {
+        val fr = TmdbParsers.parseWatchProviders(providersJson, "FR")!!
+        assertEquals(listOf("Netflix", "Disney Plus"), fr.subscription.map { it.name })
+        assertEquals(listOf("Apple TV"), fr.rent.map { it.name })
+        assertEquals(listOf("Apple TV", "Google Play Movies"), fr.buy.map { it.name })
+        assertEquals(listOf("Arte", "TF1+"), fr.free.map { it.name })
+        assertEquals("https://image.tmdb.org/t/p/w92/n.jpg", fr.subscription[0].logoUrl)
+        assertNull(fr.buy[1].logoUrl)
+        assertEquals("https://www.themoviedb.org/movie/27205/watch?locale=FR", fr.link)
+    }
+
+    @Test
+    fun `no offers in the region means null`() {
+        assertNull(TmdbParsers.parseWatchProviders(providersJson, "DE"))
+        assertNull(TmdbParsers.parseWatchProviders("""{"results":{"FR":{"link":"x"}}}""", "FR"))
+        assertNull(TmdbParsers.parseWatchProviders("nope", "FR"))
+    }
 }
