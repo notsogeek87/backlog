@@ -109,6 +109,7 @@ class MovieRepository(
             tmdbRating = fresh.rating ?: entity.tmdbRating,
             runtimeMinutes = fresh.runtimeMinutes ?: entity.runtimeMinutes,
             directors = fresh.directors ?: entity.directors,
+            cast = fresh.cast ?: entity.cast,
         )
         if (updated != entity) dao.update(updated)
     }
@@ -141,6 +142,7 @@ fun MediaTitle.toEntity(status: WatchStatus = WatchStatus.TO_WATCH, userRating: 
     tmdbRating = rating,
     runtimeMinutes = runtimeMinutes,
     directors = directors,
+    cast = cast,
     status = status.name,
     userRating = userRating,
 )
@@ -157,4 +159,5 @@ fun MovieEntity.toMediaTitle() = MediaTitle(
     rating = tmdbRating,
     runtimeMinutes = runtimeMinutes,
     directors = directors,
+    cast = cast,
 )

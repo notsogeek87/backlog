@@ -26,6 +26,8 @@ data class MovieEntity(
     val tmdbRating: Double? = null,
     val runtimeMinutes: Int? = null,
     val directors: String? = null,
+    /** Top-billed actors, joined with ", ". */
+    val cast: String? = null,
     val isArchived: Boolean = false,
     /** [WatchStatus] name. */
     val status: String = WatchStatus.TO_WATCH.name,

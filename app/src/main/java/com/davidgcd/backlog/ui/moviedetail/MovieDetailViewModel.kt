@@ -77,7 +77,7 @@ class MovieDetailViewModel(
 
     /** Titles imported from TMDB's CSV have no plot: pull the page once, quietly. */
     private fun refreshOnce(movie: MovieEntity) {
-        if (refreshed || (movie.plot != null && movie.tmdbRating != null)) return
+        if (refreshed || (movie.plot != null && movie.tmdbRating != null && movie.directors != null && movie.cast != null)) return
         refreshed = true
         viewModelScope.launch {
             try {
