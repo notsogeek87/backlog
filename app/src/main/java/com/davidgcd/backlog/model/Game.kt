@@ -20,6 +20,8 @@ data class Game(
     @Json(name = "summary") val summary: String? = null,
     @Json(name = "total_rating") val totalRating: Double? = null,
     @Json(name = "websites") val websites: List<Website>? = null,
+    /** The game's igdb.com page; only requested by the share query, absent everywhere else. */
+    val url: String? = null,
 ) {
     /**
      * Extracted from the IGDB `websites` expander (category 13 = Steam),

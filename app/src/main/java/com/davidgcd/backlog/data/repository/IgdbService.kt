@@ -124,6 +124,21 @@ class IgdbService(private val api: IgdbApi) : GameCatalog {
         return api.games(apicalypse.toRequestBody()).firstOrNull()
     }
 
+    /** igdb.com page of each game, for sharing. Games IGDB doesn't answer for are simply absent. */
+    suspend fun getGameUrls(ids: List<Long>): Map<Long, String> {
+        val urls = LinkedHashMap<Long, String>()
+        ids.distinct().chunked(BATCH_SIZE).forEach { chunk ->
+            RateLimiter.igdb.acquire()
+            val apicalypse = """
+                fields id,url;
+                where id = (${chunk.joinToString(",")});
+                limit ${BATCH_LIMIT};
+            """.trimIndent()
+            api.games(apicalypse.toRequestBody()).forEach { game -> game.url?.let { urls[game.id] = it } }
+        }
+        return urls
+    }
+
     override suspend fun resolveExternalIds(externalSourceId: Int, externalIds: List<String>): Map<String, Long> {
         val resolved = LinkedHashMap<String, Long>()
         externalIds.chunked(BATCH_SIZE).forEach { chunk ->

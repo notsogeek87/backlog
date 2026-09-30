@@ -15,7 +15,8 @@ object BacklogShareText {
         val status: (GameStatus) -> String,
     )
 
-    fun build(games: List<GameEntity>, labels: Labels): String {
+    /** [links] maps an IGDB id to its igdb.com page; a game without one is listed by name only. */
+    fun build(games: List<GameEntity>, labels: Labels, links: Map<Long, String> = emptyMap()): String {
         val active = games.filter { !it.isArchived }
         return buildString {
             append(labels.header(active.size))
@@ -23,7 +24,10 @@ object BacklogShareText {
                 val inStatus = active.filter { it.gameStatus == status }.sortedBy { it.name.lowercase() }
                 if (inStatus.isEmpty()) return@forEach
                 append("\n\n").append(labels.status(status)).append(" (").append(inStatus.size).append(")")
-                inStatus.forEach { append("\n• ").append(it.name) }
+                inStatus.forEach { game ->
+                    append("\n• ").append(game.name)
+                    links[game.igdbId]?.let { append(" — ").append(it) }
+                }
             }
         }
     }

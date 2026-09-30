@@ -29,4 +29,16 @@ class BacklogShareTextTest {
     fun emptyBacklogIsJustTheHeader() {
         assertEquals("Mon backlog (0 jeux)", BacklogShareText.build(emptyList(), labels))
     }
+
+    @Test
+    fun appendsIgdbLinkWhenKnown() {
+        val games = listOf(
+            GameEntity(igdbId = 1, name = "Celeste"),
+            GameEntity(igdbId = 2, name = "Hades"),
+        )
+        assertEquals(
+            "Mon backlog (2 jeux)\n\nBACKLOG (2)\n• Celeste — https://www.igdb.com/games/celeste\n• Hades",
+            BacklogShareText.build(games, labels, mapOf(1L to "https://www.igdb.com/games/celeste")),
+        )
+    }
 }

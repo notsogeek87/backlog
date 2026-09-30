@@ -83,6 +83,15 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
     /** Everything the share sheet sends: the whole backlog, never narrowed by the current filter. */
     suspend fun gamesToShare(): List<GameEntity> = repository.allGames()
 
+    /** igdb.com links for the shared games; an offline / failing IGDB just means a list without links. */
+    suspend fun linksToShare(games: List<GameEntity>): Map<Long, String> = try {
+        repository.gameUrls(games.filter { !it.isArchived }.map { it.igdbId })
+    } catch (t: CancellationException) {
+        throw t
+    } catch (t: Throwable) {
+        emptyMap()
+    }
+
     fun setSort(sort: BacklogSort) {
         _sort.value = sort
     }

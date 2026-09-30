@@ -162,12 +162,14 @@ fun BacklogScreen(
                     if (!showSearch) {
                         IconButton(onClick = {
                             scope.launch {
+                                val games = viewModel.gamesToShare()
                                 val text = BacklogShareText.build(
-                                    viewModel.gamesToShare(),
+                                    games,
                                     BacklogShareText.Labels(
                                         header = { count -> context.resources.getQuantityString(R.plurals.share_backlog_header, count, count) },
                                         status = { status -> context.getString(status.labelRes()) },
                                     ),
+                                    links = viewModel.linksToShare(games),
                                 )
                                 val send = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
