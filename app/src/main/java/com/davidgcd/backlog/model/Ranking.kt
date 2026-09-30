@@ -16,9 +16,11 @@ object Ranking {
     }
 
     /** Moves the game at [index] by [delta] places (-1 = up), or returns the list unchanged at either end. */
-    fun move(ordered: List<GameEntity>, index: Int, delta: Int): List<GameEntity> {
-        val target = index + delta
-        if (index !in ordered.indices || target !in ordered.indices) return ordered
+    fun move(ordered: List<GameEntity>, index: Int, delta: Int): List<GameEntity> = moveTo(ordered, index, index + delta)
+
+    /** Puts the game at [index] at position [target] (0 = first), or returns the list unchanged if nothing moves. */
+    fun moveTo(ordered: List<GameEntity>, index: Int, target: Int): List<GameEntity> {
+        if (index !in ordered.indices || target !in ordered.indices || index == target) return ordered
         return ordered.toMutableList().also { list -> list.add(target, list.removeAt(index)) }
     }
 

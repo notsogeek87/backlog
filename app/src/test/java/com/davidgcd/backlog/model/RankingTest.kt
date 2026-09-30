@@ -33,4 +33,18 @@ class RankingTest {
         val moved = Ranking.move(Ranking.order(listOf(game(1), game(2), game(3))), 2, -1)
         assertEquals(mapOf(1L to 1, 3L to 2, 2L to 3), Ranking.changes(moved))
     }
+
+    @Test
+    fun moveToJumpsStraightToTheTopOrBottom() {
+        val list = listOf(game(1, 1), game(2, 2), game(3, 3), game(4, 4))
+        assertEquals(listOf(4L, 1L, 2L, 3L), Ranking.moveTo(list, 3, 0).map { it.igdbId })
+        assertEquals(listOf(2L, 3L, 4L, 1L), Ranking.moveTo(list, 0, 3).map { it.igdbId })
+        assertEquals(list, Ranking.moveTo(list, 0, 0))
+    }
+
+    @Test
+    fun jumpToTopRewritesEveryRankItPasses() {
+        val moved = Ranking.moveTo(listOf(game(1, 1), game(2, 2), game(3, 3)), 2, 0)
+        assertEquals(mapOf(3L to 1, 1L to 2, 2L to 3), Ranking.changes(moved))
+    }
 }
