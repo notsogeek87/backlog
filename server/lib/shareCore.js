@@ -23,7 +23,8 @@ export function validatePayload(body) {
     };
   });
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 80) : '';
-  return { title: title || 'Mon backlog', items };
+  const owner = typeof body.owner === 'string' ? body.owner.trim().slice(0, 40) : '';
+  return { title: title || 'Mon backlog', owner, items };
 }
 
 export const newId = () => randomBytes(8).toString('base64url');
@@ -50,11 +51,11 @@ const card = (g, badge = '') => {
 };
 
 /** Ranked games lead as "Mon classement" (1 = most loved, in rank order); the rest are grouped by status. */
-export function renderPage({ title, items }) {
+export function renderPage({ title, owner = '', items }) {
   const ranked = items.filter((g) => g.rank != null).sort((a, b) => a.rank - b.rank);
   const rest = items.filter((g) => g.rank == null);
   const rankingSection = ranked.length
-    ? `<h2>Mon classement <small>${ranked.length}</small></h2><div class="grid">${ranked
+    ? `<h2>${owner ? `Le top de ${escapeHtml(owner)}` : 'Mon classement'} <small>${ranked.length}</small></h2><div class="grid">${ranked
         .map((g, i) => card(g, `<b class="rank">${i + 1}</b>`))
         .join('')}</div>`
     : '';
@@ -64,14 +65,14 @@ export function renderPage({ title, items }) {
     return `<h2>${STATUS_LABELS[status]} <small>${games.length}</small></h2><div class="grid">${games.map((g) => card(g)).join('')}</div>`;
   }).join('');
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>
+<meta name="robots" content="noindex"><title>${escapeHtml(owner ? `${title} — ${owner}` : title)}</title><style>
 :root{color-scheme:dark}body{margin:0;background:#0b0f1a;color:#e8ecf5;font:16px system-ui,sans-serif;padding:16px 16px 48px;max-width:1000px;margin-inline:auto}
-h1{font-size:1.6rem}h2{margin-top:2rem}small{opacity:.6;font-weight:400}
+h1{font-size:1.6rem;margin-bottom:.2rem}.owner{margin:0;opacity:.75}h2{margin-top:2rem}small{opacity:.6;font-weight:400}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
 .card{display:block;color:inherit;text-decoration:none;background:#151b2c;border-radius:12px;overflow:hidden}
 .cover{position:relative}
 .card img,.noimg{width:100%;aspect-ratio:3/4;object-fit:cover;background:#1e2740;display:block}
 .rank{position:absolute;top:6px;left:6px;min-width:1.7em;padding:.15em .4em;border-radius:999px;background:#22d3ee;color:#04222a;font-size:.95rem;text-align:center}
 .card span{display:block;padding:8px;font-size:.85rem}
-</style></head><body><h1>${escapeHtml(title)}</h1>${rankingSection}${sections || (rankingSection ? '' : '<p>Ce backlog est vide.</p>')}</body></html>`;
+</style></head><body><h1>${escapeHtml(title)}</h1>${owner ? `<p class="owner">par <strong>${escapeHtml(owner)}</strong></p>` : ''}${rankingSection}${sections || (rankingSection ? '' : '<p>Ce backlog est vide.</p>')}</body></html>`;
 }

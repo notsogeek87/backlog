@@ -52,3 +52,13 @@ test('renderPage lists ranked games first, numbered by rank, and keeps them out 
   assert.equal(html.match(/Celeste/g).length, 1);
   assert.ok(!html.includes('Terminé <small>'));
 });
+
+test('owner is trimmed, capped and shown on the page (escaped)', () => {
+  const { owner } = validatePayload({ owner: '  ' + 'x'.repeat(60), items: [] });
+  assert.equal(owner.length, 40);
+  assert.equal(validatePayload({ items: [] }).owner, '');
+  const html = renderPage({ title: 'T', owner: '<b>David</b>', items: [{ name: 'Hades', status: 'PLAYED', coverImageId: null, url: null, rank: 1 }] });
+  assert.match(html, /Le top de &lt;b&gt;David&lt;\/b&gt;/);
+  assert.ok(!html.includes('<b>David'));
+  assert.match(renderPage({ title: 'T', items: [] }), /<h1>T<\/h1><p>Ce backlog/);
+});

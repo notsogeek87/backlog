@@ -5,7 +5,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -41,6 +43,14 @@ class ShareLinkService(
     private val idKey = stringPreferencesKey("share_id")
     private val tokenKey = stringPreferencesKey("share_token")
     private val urlsKey = stringPreferencesKey("igdb_urls")
+    private val ownerKey = stringPreferencesKey("owner_name")
+
+    /** Name shown on the public page ("par David", "Le top de David"); empty = anonymous. */
+    val ownerName: Flow<String> = context.shareLinkDataStore.data.map { it[ownerKey].orEmpty() }
+
+    suspend fun setOwnerName(name: String) {
+        context.shareLinkDataStore.edit { it[ownerKey] = name.take(MAX_OWNER_LENGTH) }
+    }
 
     /** igdb.com pages already looked up, so a share only asks IGDB about games it hasn't seen. */
     suspend fun cachedUrls(): Map<Long, String> {
@@ -63,8 +73,8 @@ class ShareLinkService(
 
     /** Throws [IOException] on any network / server failure; the caller falls back to a plain-text share. */
     suspend fun publish(title: String, items: List<ShareItem>): String = withContext(Dispatchers.IO) {
-        val body = payload(title, items).toRequestBody(JSON)
         val prefs = context.shareLinkDataStore.data.first()
+        val body = payload(title, items, prefs[ownerKey].orEmpty().trim()).toRequestBody(JSON)
         val id = prefs[idKey]
         val token = prefs[tokenKey]
         if (id != null && token != null) {
@@ -88,10 +98,12 @@ class ShareLinkService(
 
     companion object {
         const val DEFAULT_BASE_URL = "https://library.lielu.eu"
+        const val MAX_OWNER_LENGTH = 40
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
-        fun payload(title: String, items: List<ShareItem>): String = JSONObject()
+        fun payload(title: String, items: List<ShareItem>, owner: String = ""): String = JSONObject()
             .put("title", title)
+            .put("owner", owner)
             .put(
                 "items",
                 JSONArray(

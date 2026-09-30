@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.data.csv.AutoExportFrequency
 import com.davidgcd.backlog.data.csv.AutoExportStatus
 import com.davidgcd.backlog.ui.components.GlassButton
@@ -73,6 +74,7 @@ fun SettingsScreen(
     platformsContent: @Composable () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val shareOwnerName by viewModel.shareOwnerName.collectAsState()
     val exportSucceeded by viewModel.exportSucceeded.collectAsState()
     val exportDoneMsg = stringResource(R.string.settings_export_done)
     val exportFailedMsg = stringResource(R.string.settings_export_failed)
@@ -143,6 +145,8 @@ fun SettingsScreen(
             SectionTitle(stringResource(R.string.settings_section_games), topPadding = 8.dp)
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
+                    ShareNameRow(saved = shareOwnerName, onSave = viewModel::setShareOwnerName)
+                    HorizontalDivider(color = Glass.Border)
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_release_reminders_title),
                         subtitle = stringResource(R.string.settings_release_reminders_subtitle),
@@ -319,6 +323,19 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ShareNameRow(saved: String, onSave: (String) -> Unit) {
+    var text by remember(saved) { mutableStateOf(saved) }
+    androidx.compose.material3.OutlinedTextField(
+        value = text,
+        onValueChange = { text = it.take(ShareLinkService.MAX_OWNER_LENGTH); onSave(text) },
+        label = { Text(stringResource(R.string.settings_share_name_title)) },
+        supportingText = { Text(stringResource(R.string.settings_share_name_hint)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+    )
 }
 
 @Composable

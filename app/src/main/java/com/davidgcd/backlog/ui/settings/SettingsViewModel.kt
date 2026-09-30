@@ -15,6 +15,7 @@ import com.davidgcd.backlog.data.csv.CsvImportProgress
 import com.davidgcd.backlog.data.csv.CsvImportResult
 import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.notifications.NotificationPreferences
 import com.davidgcd.backlog.notifications.ReleaseReminderSchedule
 import com.davidgcd.backlog.notifications.ReleaseReminderScheduler
@@ -36,7 +37,15 @@ class SettingsViewModel(
     private val csvExportService: CsvExportService,
     private val csvImportService: CsvImportService,
     private val autoExportPreferences: AutoExportPreferences,
+    private val shareLinkService: ShareLinkService,
 ) : ViewModel() {
+    val shareOwnerName: StateFlow<String> = shareLinkService.ownerName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    fun setShareOwnerName(name: String) {
+        viewModelScope.launch { shareLinkService.setOwnerName(name) }
+    }
+
     val releaseRemindersEnabled: StateFlow<Boolean> = preferences.releaseRemindersEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
@@ -186,10 +195,11 @@ class SettingsViewModelFactory(
     private val csvExportService: CsvExportService,
     private val csvImportService: CsvImportService,
     private val autoExportPreferences: AutoExportPreferences,
+    private val shareLinkService: ShareLinkService,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == SettingsViewModel::class.java)
-        return SettingsViewModel(preferences, appContext, repository, csvExportService, csvImportService, autoExportPreferences) as T
+        return SettingsViewModel(preferences, appContext, repository, csvExportService, csvImportService, autoExportPreferences, shareLinkService) as T
     }
 }

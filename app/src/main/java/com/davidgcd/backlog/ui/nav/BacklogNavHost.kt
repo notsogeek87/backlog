@@ -224,6 +224,7 @@ fun BacklogNavHost(
                     csvExportService,
                     csvImportService,
                     AutoExportPreferences(appContext),
+                    shareLinkService,
                 ),
             )
             val platformsViewModel: PlatformsViewModel = viewModel(

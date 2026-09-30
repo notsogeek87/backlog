@@ -77,6 +77,8 @@
     <string name="settings_release_reminders_subtitle">Me notifier quand un jeu du backlog sort</string>
     <string name="settings_remind_me">Me prévenir</string>
     <string name="settings_time">Heure</string>
+    <string name="settings_share_name_title">Nom sur ma page de partage</string>
+    <string name="settings_share_name_hint">Pseudo affiché à côté de mon classement (facultatif)</string>
     <string name="settings_section_changes">Changements</string>
     <string name="settings_date_change_title">Changements de date de sortie</string>
     <string name="settings_date_change_subtitle">Me notifier si la date de sortie d\'un jeu change</string>
