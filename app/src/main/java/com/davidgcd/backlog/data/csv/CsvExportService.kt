@@ -9,7 +9,7 @@ import java.io.OutputStreamWriter
 class CsvExportService(private val context: Context) {
 
     fun export(uri: Uri, games: List<GameEntity>) {
-        context.contentResolver.openOutputStream(uri)?.use { output ->
+        context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
             OutputStreamWriter(output).use { writer ->
                 writer.appendLine(CsvFormat.writeRow(CsvColumn.EXPORT_ORDER.map { it.header }))
                 games.forEach { game -> writer.appendLine(CsvFormat.writeRow(row(game))) }
