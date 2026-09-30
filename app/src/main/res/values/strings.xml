@@ -314,8 +314,6 @@
     <string name="series_creators">Créée par %1$s</string>
     <string name="movie_cast">Avec %1$s</string>
     <string name="ratings_tmdb">TMDB</string>
-    <string name="movie_ranking_empty">Ajoute des films ou des séries à ta liste pour les classer.</string>
-    <string name="movie_ranking_hint">Du titre que tu as le plus aimé au moins aimé. Monte ou descends un titre d\'une place avec les flèches simples, ou d\'un coup tout en haut / tout en bas avec les doubles ; les titres non classés restent en bas, dans l\'ordre où tu les as ajoutés.</string>
     <string name="movie_discover_error">Impossible de charger les classements TMDB. Vérifie ta connexion et réessaie.</string>
     <string name="movie_chart_popular_movies">Films populaires</string>
     <string name="movie_chart_top_movies">Meilleurs films</string>

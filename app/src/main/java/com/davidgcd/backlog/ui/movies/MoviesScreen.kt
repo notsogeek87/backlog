@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
@@ -106,7 +105,6 @@ import kotlinx.coroutines.launch
 fun MoviesScreen(
     viewModel: MoviesViewModel,
     onMovieClick: (String) -> Unit,
-    onOpenRanking: () -> Unit,
     onOpenTmdbImport: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -224,9 +222,6 @@ fun MoviesScreen(
                 },
                 actions = {
                     if (!showSearch) {
-                        IconButton(onClick = onOpenRanking) {
-                            Icon(Icons.Filled.Leaderboard, contentDescription = stringResource(R.string.action_my_ranking))
-                        }
                         IconButton(onClick = { showScopeDialog = true }, enabled = !sharing) {
                             if (sharing) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)

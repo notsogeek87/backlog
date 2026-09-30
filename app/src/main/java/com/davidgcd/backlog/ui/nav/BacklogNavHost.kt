@@ -58,9 +58,6 @@ import com.davidgcd.backlog.ui.moviedetail.MovieDetailViewModelFactory
 import com.davidgcd.backlog.ui.movies.MovieDiscoverScreen
 import com.davidgcd.backlog.ui.movies.MovieDiscoverViewModel
 import com.davidgcd.backlog.ui.movies.MovieDiscoverViewModelFactory
-import com.davidgcd.backlog.ui.movies.MovieRankingScreen
-import com.davidgcd.backlog.ui.movies.MovieRankingViewModel
-import com.davidgcd.backlog.ui.movies.MovieRankingViewModelFactory
 import com.davidgcd.backlog.ui.movies.MoviesScreen
 import com.davidgcd.backlog.ui.movies.MoviesViewModel
 import com.davidgcd.backlog.ui.movies.MoviesViewModelFactory
@@ -118,7 +115,6 @@ private object Routes {
     const val LIBRARY_IMPORT = "platforms/{provider}/import"
     fun libraryImport(provider: String) = "platforms/$provider/import"
     const val MOVIES = "movies"
-    const val MOVIE_RANKING = "movies/ranking"
     const val MOVIE_DETAIL = "movie/{titleKey}"
     fun movieDetail(titleKey: String) = "movie/$titleKey"
     const val TMDB_LOGIN = "platforms/tmdb/login"
@@ -275,18 +271,9 @@ fun BacklogNavHost(
             MoviesScreen(
                 viewModel = viewModel,
                 onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
-                onOpenRanking = { navController.navigate(Routes.MOVIE_RANKING) },
                 onOpenTmdbImport = {
                     navController.navigate(if (tmdbAccount != null) Routes.TMDB_IMPORT else Routes.TMDB_LOGIN)
                 },
-            )
-        }
-        composable(Routes.MOVIE_RANKING) {
-            val viewModel: MovieRankingViewModel = viewModel(factory = MovieRankingViewModelFactory(movieRepository))
-            MovieRankingScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
             )
         }
         composable(
