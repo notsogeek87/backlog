@@ -3,11 +3,13 @@ package com.davidgcd.backlog.ui.gamedetail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.davidgcd.backlog.R
@@ -170,100 +173,50 @@ private fun GameDetailContent(
 ) {
     var confirmRemove by remember { mutableStateOf(false) }
 
-    // Centred, width-capped column so tablets/desktop don't stretch a phone layout.
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 720.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // Hero: big cover + title block.
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
-                GameCover(display.coverImageId, width = 132.dp)
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = display.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Glass.Text,
-                    )
-                    ReleaseDateFormatting.format(display.firstReleaseDate)?.let { date ->
-                        Text(date, style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted)
-                    }
-                    if (isArchived) GlassBadge(stringResource(R.string.label_archived), tint = Glass.Amber)
+    // Phones: one centred, width-capped column. Wide windows (unfolded foldable, tablet): the
+    // cover/identity block sits beside the details instead of leaving a phone layout floating in the middle.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        val twoPane = maxWidth >= TWO_PANE_MIN_WIDTH
+        if (twoPane) {
+            Row(
+                modifier = Modifier
+                    .widthIn(max = 1040.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+            ) {
+                Column(
+                    modifier = Modifier.weight(0.4f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    DetailHero(display, isArchived, coverWidth = 200.dp, stacked = true)
+                    DetailTags(display)
+                    DetailActions(inBacklog, isArchived, onArchiveToggle, onRemoveRequest = { confirmRemove = true }, onAdd = onAdd)
+                }
+                Column(
+                    modifier = Modifier.weight(0.6f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    DetailBody(display, ratings, inBacklog, status, onStatusChange)
                 }
             }
-
-            if (display.platforms.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    display.platforms.forEach { GlassBadge(FrenchLabels.platform(it), tint = Glass.Cyan) }
-                }
-            }
-            if (display.genres.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    display.genres.forEach { GlassBadge(FrenchLabels.genre(it), tint = Glass.Purple) }
-                }
-            }
-
-            if (inBacklog) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.status_title),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Glass.TextMuted,
-                    )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GameStatus.entries.forEach { option ->
-                            GlassPill(text = option.label(), selected = option == status, onClick = { onStatusChange(option) })
-                        }
-                    }
-                }
-            }
-
-            // Never renders "No score available" — a game with no score just has no section here,
-            // same rule as the iOS app's Notes (GameRatingsSection): missing is not an error.
-            if (display.totalRating != null || !ratings.isEmpty) {
-                RatingsCard(display.totalRating, ratings)
-            }
-
-            display.summary?.let { summary ->
-                GlassCard(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = summary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Glass.Text.copy(alpha = 0.86f),
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-            }
-
-            // One clear primary action; the destructive one is visually demoted and confirmed.
-            Column(modifier = Modifier.padding(top = 8.dp, bottom = 24.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (inBacklog) {
-                    GlassButton(
-                        text = stringResource(if (isArchived) R.string.action_unarchive else R.string.action_archive),
-                        onClick = onArchiveToggle,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    GlassButton(
-                        text = stringResource(R.string.action_remove_from_backlog),
-                        onClick = { confirmRemove = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        contentColor = MaterialTheme.colorScheme.error,
-                    )
-                } else {
-                    GradientButton(
-                        text = stringResource(R.string.action_add_to_backlog),
-                        onClick = onAdd,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+        } else {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 720.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                DetailHero(display, isArchived, coverWidth = 132.dp, stacked = false)
+                DetailTags(display)
+                DetailBody(display, ratings, inBacklog, status, onStatusChange)
+                DetailActions(inBacklog, isArchived, onArchiveToggle, onRemoveRequest = { confirmRemove = true }, onAdd = onAdd)
             }
         }
     }
+
 
     if (confirmRemove) {
         AlertDialog(
@@ -285,6 +238,129 @@ private fun GameDetailContent(
 }
 
 /** One glass card, one row per score that actually exists, each with a gradient bar. */
+/** Below this width the detail screen keeps the single-column phone layout. */
+private val TWO_PANE_MIN_WIDTH = 600.dp
+
+/** Big cover + title block. [stacked] puts the title under the cover (side pane) instead of beside it. */
+@Composable
+private fun DetailHero(display: GameDisplay, isArchived: Boolean, coverWidth: Dp, stacked: Boolean) {
+    val title: @Composable (Modifier) -> Unit = { modifier ->
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = display.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Glass.Text,
+            )
+            ReleaseDateFormatting.format(display.firstReleaseDate)?.let { date ->
+                Text(date, style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted)
+            }
+            if (isArchived) GlassBadge(stringResource(R.string.label_archived), tint = Glass.Amber)
+        }
+    }
+    if (stacked) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            GameCover(display.coverImageId, width = coverWidth)
+            title(Modifier.fillMaxWidth())
+        }
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
+            GameCover(display.coverImageId, width = coverWidth)
+            title(Modifier.weight(1f))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DetailTags(display: GameDisplay) {
+    if (display.platforms.isNotEmpty()) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            display.platforms.forEach { GlassBadge(FrenchLabels.platform(it), tint = Glass.Cyan) }
+        }
+    }
+    if (display.genres.isNotEmpty()) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            display.genres.forEach { GlassBadge(FrenchLabels.genre(it), tint = Glass.Purple) }
+        }
+    }
+}
+
+/** Status picker, ratings and summary — the reading part of the screen. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DetailBody(
+    display: GameDisplay,
+    ratings: RatingsState,
+    inBacklog: Boolean,
+    status: GameStatus,
+    onStatusChange: (GameStatus) -> Unit,
+) {
+    if (inBacklog) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.status_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = Glass.TextMuted,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameStatus.entries.forEach { option ->
+                    GlassPill(text = option.label(), selected = option == status, onClick = { onStatusChange(option) })
+                }
+            }
+        }
+    }
+
+    // Never renders "No score available" — a game with no score just has no section here,
+    // same rule as the iOS app's Notes (GameRatingsSection): missing is not an error.
+    if (display.totalRating != null || !ratings.isEmpty) {
+        RatingsCard(display.totalRating, ratings)
+    }
+
+    display.summary?.let { summary ->
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Glass.Text.copy(alpha = 0.86f),
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+// One clear primary action; the destructive one is visually demoted and confirmed.
+@Composable
+private fun DetailActions(
+    inBacklog: Boolean,
+    isArchived: Boolean,
+    onArchiveToggle: () -> Unit,
+    onRemoveRequest: () -> Unit,
+    onAdd: () -> Unit,
+) {
+    Column(modifier = Modifier.padding(top = 8.dp, bottom = 24.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (inBacklog) {
+            GlassButton(
+                text = stringResource(if (isArchived) R.string.action_unarchive else R.string.action_archive),
+                onClick = onArchiveToggle,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            GlassButton(
+                text = stringResource(R.string.action_remove_from_backlog),
+                onClick = onRemoveRequest,
+                modifier = Modifier.fillMaxWidth(),
+                contentColor = MaterialTheme.colorScheme.error,
+            )
+        } else {
+            GradientButton(
+                text = stringResource(R.string.action_add_to_backlog),
+                onClick = onAdd,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
 @Composable
 private fun RatingsCard(igdbRating: Double?, ratings: RatingsState) {
     GlassCard(modifier = Modifier.fillMaxWidth()) {

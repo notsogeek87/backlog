@@ -80,6 +80,12 @@ sur Android avec des briques Android natives.
   `BACKLOG` (défaut), `PLAYED` (joué), `COMPLETED`
   (terminé). Modifiable sur la fiche du jeu, filtrable dans le backlog, et
   exporté/importé dans la colonne CSV `status`.
+- Grands écrans (écran interne d'un pliant type Galaxy Z Fold, tablette) :
+  l'activité gère elle-même les changements de taille (`configChanges`,
+  pas de recréation au pli/dépli), les grilles Backlog/Découvrir sont
+  adaptatives (colonnes de 340 dp min) et la fiche d'un jeu passe sur deux
+  colonnes dès 600 dp de large (cover + actions à gauche, statut/notes/
+  résumé à droite).
 - `notifications/` — `NotificationPreferences` (DataStore, équivalent
   `UserDefaults`/`NotificationPolicyStore` — délai configurable via
   `ReleaseReminderSchedule`, heure, et les deux alertes de dérive),
