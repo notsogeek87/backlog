@@ -14,6 +14,15 @@
         <item quantity="one">Mon backlog (%1$d jeu)</item>
         <item quantity="other">Mon backlog (%1$d jeux)</item>
     </plurals>
+    <string name="share_scope_title">Que veux-tu partager ?</string>
+    <string name="share_scope_library">Ma librairie</string>
+    <string name="share_scope_library_hint">Un seul lien, avec un onglet par typologie : jeux, films &amp; séries</string>
+    <string name="share_scope_tab">Uniquement cet onglet</string>
+    <string name="share_scope_tab_games_hint">Seulement ma liste de jeux</string>
+    <string name="share_scope_tab_movies_hint">Seulement ma liste de films &amp; séries</string>
+    <string name="share_scope_cancel">Annuler</string>
+    <string name="share_library_header">Ma librairie</string>
+    <string name="share_library_chooser">Partager ma librairie avec…</string>
     <string name="share_owner_prompt_title">Ton pseudo pour le partage</string>
     <string name="share_owner_prompt_message">Il sera affiché sur ta page : « Le top de … ». Modifiable dans Réglages.</string>
     <string name="share_owner_prompt_confirm">Partager</string>

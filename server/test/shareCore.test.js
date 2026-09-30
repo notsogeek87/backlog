@@ -94,3 +94,29 @@ test('movies page: rated posters best note first, unrated grouped by status, all
   assert.ok(html.indexOf('Bof') < html.indexOf('À voir <small>'));
   assert.ok(!html.includes('<i>Plus tard'));
 });
+
+test('library payload keeps one validated section per typology', () => {
+  const p = validatePayload({
+    kind: 'library',
+    title: 'Ma librairie',
+    owner: 'David',
+    games: { items: [{ name: 'Hades', status: 'COMPLETED', url: 'javascript:1' }] },
+    movies: { items: [{ name: 'Dune', status: 'WATCHED', series: false, rating: 9, url: 'https://www.themoviedb.org/movie/1' }] },
+  });
+  assert.equal(p.kind, 'library');
+  assert.equal(p.games[0].url, null);
+  assert.equal(p.movies[0].rating, 9);
+  assert.throws(() => validatePayload({ kind: 'library', games: { items: [{ name: '' }] } }));
+});
+
+test('renderPage of a library has a tab per non-empty typology', () => {
+  const html = renderPage({
+    kind: 'library', title: 'Ma librairie', owner: 'David',
+    games: [{ name: 'Hades', status: 'COMPLETED', coverImageId: null, url: null, rank: null }],
+    movies: [{ name: 'Dune', status: 'WATCHED', series: false, year: 2021, posterPath: null, url: null, rating: 9 }],
+  });
+  assert.ok(html.includes('id="tab-games"') && html.includes('id="tab-movies"'));
+  assert.ok(html.includes('Hades') && html.includes('Dune'));
+  const gamesOnly = renderPage({ kind: 'library', title: 't', games: [{ name: 'Hades', status: 'PLAYED', coverImageId: null, url: null, rank: null }], movies: [] });
+  assert.ok(!gamesOnly.includes('id="tab-movies"'));
+});

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -76,6 +77,7 @@ import com.davidgcd.backlog.data.library.WishlistSyncService
 import com.davidgcd.backlog.data.library.steam.SteamAuthService
 import com.davidgcd.backlog.data.local.GameSourceDao
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.share.LibrarySharer
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.SteamService
@@ -160,6 +162,9 @@ fun BacklogNavHost(
     tmdbSyncService: TmdbSyncService,
 ) {
     val navController = rememberNavController()
+    val librarySharer = remember(repository, movieRepository, shareLinkService) {
+        LibrarySharer(repository, movieRepository, shareLinkService)
+    }
     // Discover serves both worlds; which one is showing survives rotation and tab switches.
     var discoverMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
     val tmdbAccount by libraryAccountStore.observe(LibraryProviders.TMDB).collectAsState(initial = null)
@@ -222,7 +227,7 @@ fun BacklogNavHost(
         modifier = Modifier.padding(outerPadding).consumeWindowInsets(outerPadding),
     ) {
         composable(Routes.BACKLOG) {
-            val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository, shareLinkService))
+            val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository, shareLinkService, librarySharer))
             BacklogScreen(
                 viewModel = viewModel,
                 onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
@@ -256,7 +261,7 @@ fun BacklogNavHost(
             }
         }
         composable(Routes.MOVIES) {
-            val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository, shareLinkService))
+            val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository, shareLinkService, librarySharer))
             MoviesScreen(
                 viewModel = viewModel,
                 onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },

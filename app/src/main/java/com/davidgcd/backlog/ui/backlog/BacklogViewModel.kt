@@ -6,6 +6,7 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.share.LibrarySharer
 import com.davidgcd.backlog.data.share.ShareItem
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.model.Game
@@ -36,6 +37,7 @@ enum class SearchError { Network, Server, Unknown }
 class BacklogViewModel(
     private val repository: BacklogRepository,
     private val shareLinkService: ShareLinkService? = null,
+    private val librarySharer: LibrarySharer? = null,
 ) : ViewModel() {
 
     private val backlog: StateFlow<List<GameEntity>> = repository.observeBacklog()
@@ -133,6 +135,9 @@ class BacklogViewModel(
             null
         }
     }
+
+    /** Link to the whole-library page (games + films & séries tabs), or null when unavailable. */
+    suspend fun publishLibraryLink(title: String): String? = librarySharer?.publish(title)
 
     /** Name shown on the public share page; blank = the user hasn't chosen one yet. */
     suspend fun shareOwnerName(): String = shareLinkService?.ownerName?.first().orEmpty().trim()

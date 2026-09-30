@@ -58,6 +58,9 @@ class ShareLinkService(
     // Films & séries get their own link, so sharing one list never overwrites the other's page.
     private val moviesIdKey = stringPreferencesKey("movies_share_id")
     private val moviesTokenKey = stringPreferencesKey("movies_share_token")
+    // The whole library (games + films & séries as tabs) is a third page with its own link.
+    private val libraryIdKey = stringPreferencesKey("library_share_id")
+    private val libraryTokenKey = stringPreferencesKey("library_share_token")
     private val urlsKey = stringPreferencesKey("igdb_urls")
     private val ownerKey = stringPreferencesKey("owner_name")
 
@@ -94,6 +97,10 @@ class ShareLinkService(
     suspend fun publishMovies(title: String, items: List<ShareMovieItem>): String =
         send(moviesPayload(title, items, owner()), moviesIdKey, moviesTokenKey)
 
+    /** Same, for the whole library: one page with a tab per typology (its own link). */
+    suspend fun publishLibrary(title: String, games: List<ShareItem>, movies: List<ShareMovieItem>): String =
+        send(libraryPayload(title, games, movies, owner()), libraryIdKey, libraryTokenKey)
+
     private suspend fun owner(): String = context.shareLinkDataStore.data.first()[ownerKey].orEmpty().trim()
 
     private suspend fun send(
@@ -129,43 +136,49 @@ class ShareLinkService(
         const val MAX_OWNER_LENGTH = 40
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
+        private fun movieItems(items: List<ShareMovieItem>) = JSONArray(
+            items.map {
+                JSONObject()
+                    .put("name", it.name)
+                    .put("status", it.status)
+                    .put("series", it.series)
+                    .put("year", it.year ?: JSONObject.NULL)
+                    .put("posterUrl", it.posterUrl ?: JSONObject.NULL)
+                    .put("url", it.url ?: JSONObject.NULL)
+                    .put("rating", it.rating ?: JSONObject.NULL)
+            },
+        )
+
+        private fun gameItems(items: List<ShareItem>) = JSONArray(
+            items.map {
+                JSONObject()
+                    .put("name", it.name)
+                    .put("status", it.status)
+                    .put("coverImageId", it.coverImageId ?: JSONObject.NULL)
+                    .put("url", it.url ?: JSONObject.NULL)
+                    .put("rank", it.rank ?: JSONObject.NULL)
+            },
+        )
+
         fun moviesPayload(title: String, items: List<ShareMovieItem>, owner: String = ""): String = JSONObject()
             .put("kind", "movies")
             .put("title", title)
             .put("owner", owner)
-            .put(
-                "items",
-                JSONArray(
-                    items.map {
-                        JSONObject()
-                            .put("name", it.name)
-                            .put("status", it.status)
-                            .put("series", it.series)
-                            .put("year", it.year ?: JSONObject.NULL)
-                            .put("posterUrl", it.posterUrl ?: JSONObject.NULL)
-                            .put("url", it.url ?: JSONObject.NULL)
-                            .put("rating", it.rating ?: JSONObject.NULL)
-                    },
-                ),
-            )
+            .put("items", movieItems(items))
             .toString()
 
         fun payload(title: String, items: List<ShareItem>, owner: String = ""): String = JSONObject()
             .put("title", title)
             .put("owner", owner)
-            .put(
-                "items",
-                JSONArray(
-                    items.map {
-                        JSONObject()
-                            .put("name", it.name)
-                            .put("status", it.status)
-                            .put("coverImageId", it.coverImageId ?: JSONObject.NULL)
-                            .put("url", it.url ?: JSONObject.NULL)
-                            .put("rank", it.rank ?: JSONObject.NULL)
-                    },
-                ),
-            )
+            .put("items", gameItems(items))
+            .toString()
+
+        fun libraryPayload(title: String, games: List<ShareItem>, movies: List<ShareMovieItem>, owner: String = ""): String = JSONObject()
+            .put("kind", "library")
+            .put("title", title)
+            .put("owner", owner)
+            .put("games", JSONObject().put("items", gameItems(games)))
+            .put("movies", JSONObject().put("items", movieItems(movies)))
             .toString()
     }
 }

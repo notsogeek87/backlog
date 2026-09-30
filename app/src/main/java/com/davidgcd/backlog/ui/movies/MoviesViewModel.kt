@@ -8,6 +8,7 @@ import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.local.watchStatus
 import com.davidgcd.backlog.data.repository.MovieRepository
+import com.davidgcd.backlog.data.share.LibrarySharer
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.data.share.ShareMovieItem
 import com.davidgcd.backlog.model.MediaTitle
@@ -53,6 +54,7 @@ data class MovieFilter(
 class MoviesViewModel(
     private val repository: MovieRepository,
     private val shareLinkService: ShareLinkService? = null,
+    private val librarySharer: LibrarySharer? = null,
 ) : ViewModel() {
 
     private val movies: StateFlow<List<MovieEntity>> = repository.observeAll()
@@ -135,6 +137,9 @@ class MoviesViewModel(
         }
     }
 
+    /** Link to the whole-library page (games + films & séries tabs), or null when unavailable. */
+    suspend fun publishLibraryLink(title: String): String? = librarySharer?.publish(title)
+
     // --- search ------------------------------------------------------------------------------
 
     private val _searchResults = MutableStateFlow<List<MediaTitle>>(emptyList())
@@ -214,10 +219,11 @@ private fun <T : Comparable<T>> nullsLast(descending: Boolean, selector: (MovieE
 class MoviesViewModelFactory(
     private val repository: MovieRepository,
     private val shareLinkService: ShareLinkService? = null,
+    private val librarySharer: LibrarySharer? = null,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == MoviesViewModel::class.java)
-        return MoviesViewModel(repository, shareLinkService) as T
+        return MoviesViewModel(repository, shareLinkService, librarySharer) as T
     }
 }

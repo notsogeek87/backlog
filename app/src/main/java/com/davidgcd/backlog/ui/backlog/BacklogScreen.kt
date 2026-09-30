@@ -56,6 +56,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import com.davidgcd.backlog.data.share.ShareLinkService
+import com.davidgcd.backlog.ui.components.ShareScopeDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.AlertDialog
@@ -118,6 +119,7 @@ fun BacklogScreen(
     var showSearch by remember { mutableStateOf(false) }
     var sharing by remember { mutableStateOf(false) }
     var showOwnerPrompt by remember { mutableStateOf(false) }
+    var showScopeDialog by remember { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
 
     val shareBacklog: () -> Unit = {
@@ -157,6 +159,37 @@ fun BacklogScreen(
         }
     }
 
+    val shareLibrary: () -> Unit = {
+        scope.launch {
+            sharing = true
+            try {
+                val header = context.getString(R.string.share_library_header)
+                // No server reachable: fall back to this tab's plain text rather than sharing nothing.
+                val publicLink = viewModel.publishLibraryLink(header)
+                if (publicLink == null) {
+                    shareBacklog()
+                } else {
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "$header\n$publicLink")
+                    }
+                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_library_chooser)))
+                }
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
+    if (showScopeDialog) {
+        ShareScopeDialog(
+            tabHintRes = R.string.share_scope_tab_games_hint,
+            onLibrary = { showScopeDialog = false; shareLibrary() },
+            onTab = { showScopeDialog = false; shareBacklog() },
+            onDismiss = { showScopeDialog = false },
+        )
+    }
+
     if (showOwnerPrompt) {
         var name by remember { mutableStateOf("") }
         val dismiss = { showOwnerPrompt = false }
@@ -177,12 +210,12 @@ fun BacklogScreen(
                     dismiss()
                     scope.launch {
                         viewModel.setShareOwnerName(name)
-                        shareBacklog()
+                        showScopeDialog = true
                     }
                 }) { Text(stringResource(R.string.share_owner_prompt_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { dismiss(); shareBacklog() }) { Text(stringResource(R.string.share_owner_prompt_skip)) }
+                TextButton(onClick = { dismiss(); showScopeDialog = true }) { Text(stringResource(R.string.share_owner_prompt_skip)) }
             },
         )
     }
@@ -242,7 +275,7 @@ fun BacklogScreen(
                         }
                         IconButton(enabled = !sharing, onClick = {
                             scope.launch {
-                                if (viewModel.shareOwnerName().isBlank()) showOwnerPrompt = true else shareBacklog()
+                                if (viewModel.shareOwnerName().isBlank()) showOwnerPrompt = true else showScopeDialog = true
                             }
                         }) {
                             if (sharing) {

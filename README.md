@@ -94,6 +94,11 @@ sur Android avec des briques Android natives.
   jaquette, lien igdb.com) au petit serveur `server/` (Vercel + Neon Francfort, voir
   `server/schema.sql`) et reçoit `https://…/b/<id>` ; le jeton secret reste sur l'appareil,
   les partages suivants mettent à jour le même lien. Serveur injoignable → repli sur le texte ci-dessous.
+- Partage « ma librairie » : le bouton Partager des onglets Jeux et Films & séries ouvre un choix
+  (`ui/components/ShareScopeDialog`) — partager la librairie ou uniquement l'onglet en cours. La librairie
+  (`data/share/LibrarySharer` → `ShareLinkService.publishLibrary`, payload `kind: "library"`) donne un
+  seul lien vers une page avec un onglet par typologie (Jeux, Films & séries ; onglets CSS sans script,
+  un onglet vide n'est pas affiché), avec son propre lien/jeton. Serveur injoignable → texte de l'onglet en cours.
 - Partage du backlog : bouton Partager dans la barre du Backlog → feuille de partage
   Android (`Intent.ACTION_SEND`, `text/plain`) avec la liste des jeux non archivés (+ lien igdb.com de chaque jeu via `IgdbService.getGameUrls`, sans lien si IGDB est injoignable)
   groupés par statut, texte construit par `util/BacklogShareText` (indépendant du

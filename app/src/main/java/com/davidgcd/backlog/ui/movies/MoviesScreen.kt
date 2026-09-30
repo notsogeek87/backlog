@@ -96,6 +96,7 @@ import com.davidgcd.backlog.ui.components.labelRes
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.TmdbImage
+import com.davidgcd.backlog.ui.components.ShareScopeDialog
 import com.davidgcd.backlog.util.MovieShareText
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 import kotlinx.coroutines.launch
@@ -139,6 +140,8 @@ fun MoviesScreen(
     BackHandler(enabled = showSearch) { closeSearch() }
     LaunchedEffect(showSearch) { if (showSearch) searchFocus.requestFocus() }
 
+    var showScopeDialog by remember { mutableStateOf(false) }
+
     val shareList: () -> Unit = {
         scope.launch {
             sharing = true
@@ -171,6 +174,37 @@ fun MoviesScreen(
         }
     }
 
+    val shareLibrary: () -> Unit = {
+        scope.launch {
+            sharing = true
+            try {
+                val header = context.getString(R.string.share_library_header)
+                // No server reachable: fall back to this tab's plain text rather than sharing nothing.
+                val publicLink = viewModel.publishLibraryLink(header)
+                if (publicLink == null) {
+                    shareList()
+                } else {
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "$header\n$publicLink")
+                    }
+                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_library_chooser)))
+                }
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
+    if (showScopeDialog) {
+        ShareScopeDialog(
+            tabHintRes = R.string.share_scope_tab_movies_hint,
+            onLibrary = { showScopeDialog = false; shareLibrary() },
+            onTab = { showScopeDialog = false; shareList() },
+            onDismiss = { showScopeDialog = false },
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         contentColor = Glass.Text,
@@ -193,7 +227,7 @@ fun MoviesScreen(
                         IconButton(onClick = onOpenRanking) {
                             Icon(Icons.Filled.Leaderboard, contentDescription = stringResource(R.string.action_my_ranking))
                         }
-                        IconButton(onClick = shareList, enabled = !sharing) {
+                        IconButton(onClick = { showScopeDialog = true }, enabled = !sharing) {
                             if (sharing) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
                             } else {
