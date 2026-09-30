@@ -25,6 +25,9 @@ interface GameLibraryProvider {
 object LibraryProviders {
     const val STEAM = "steam"
     const val ANDROID = "android"
+
+    /** IMDb account (films & séries, not games): shares the account store, has no [GameLibraryProvider]. */
+    const val IMDB = "imdb"
 }
 
 data class LibraryGame(

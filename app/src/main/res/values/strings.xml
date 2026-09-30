@@ -233,4 +233,80 @@
     <string name="library_error_account_not_found">Ce compte Steam est introuvable.</string>
     <string name="library_error_rate_limited">Trop de requêtes. Patientez une minute puis réessayez.</string>
     <string name="library_error_unknown">Une erreur est survenue. Réessayez.</string>
+    <!-- Films & séries (IMDb) -->
+    <string name="tab_games">Jeux</string>
+    <string name="tab_movies">Films/séries</string>
+    <string name="media_games">Jeux</string>
+    <string name="media_movies">Films &amp; séries</string>
+    <string name="movies_title">Films &amp; séries</string>
+    <string name="movies_search_placeholder">Rechercher sur IMDb…</string>
+    <string name="movies_search_error_imdb">IMDb ne répond pas pour le moment. Réessaie dans un instant.</string>
+    <string name="movies_empty">Ta liste est vide. Recherche un film ou une série, ou importe ta watchlist IMDb.</string>
+    <string name="movies_empty_cta">Rechercher</string>
+    <string name="movies_empty_import">Importer depuis IMDb</string>
+    <string name="movies_filtered_empty">Aucun titre ne correspond aux filtres.</string>
+    <string name="section_my_movies">Mes films &amp; séries</string>
+    <string name="movies_already_saved">Déjà dans ta liste</string>
+    <string name="action_add_to_movies">Ajouter à ma liste</string>
+    <string name="action_remove_from_movies">Retirer de ma liste</string>
+    <string name="remove_movie_confirm_message">« %1$s » sera retiré de ta liste. Ton compte IMDb n\'est pas modifié.</string>
+    <string name="action_open_imdb">Ouvrir sur IMDb</string>
+    <string name="action_share_movies">Partager ma liste</string>
+    <string name="share_movies_chooser">Partager ma liste avec…</string>
+    <plurals name="share_movies_header">
+        <item quantity="one">Ma liste de films &amp; séries (%1$d titre)</item>
+        <item quantity="other">Ma liste de films &amp; séries (%1$d titres)</item>
+    </plurals>
+    <string name="watch_status_to_watch">À voir</string>
+    <string name="watch_status_watching">En cours</string>
+    <string name="watch_status_watched">Vu</string>
+    <string name="kind_movie">Film</string>
+    <string name="kind_series">Série</string>
+    <string name="sort_imdb_rating">Note IMDb</string>
+    <string name="sort_my_rating">Ma note</string>
+    <string name="movie_runtime_minutes">%1$d min</string>
+    <string name="movie_not_found">Titre introuvable</string>
+    <string name="movie_my_rating">Ma note (sur 10)</string>
+    <string name="movie_directors">De %1$s</string>
+    <string name="movie_cast">Avec %1$s</string>
+    <string name="ratings_imdb">IMDb</string>
+    <string name="movie_ranking_empty">Ajoute des films ou des séries à ta liste pour les classer.</string>
+    <string name="movie_ranking_hint">Du titre que tu as le plus aimé au moins aimé. Monte ou descends un titre d\'une place avec les flèches simples, ou d\'un coup tout en haut / tout en bas avec les doubles ; les titres non classés restent en bas, dans l\'ordre où tu les as ajoutés.</string>
+    <string name="movie_discover_error">Impossible de charger les classements IMDb. Vérifie ta connexion et réessaie.</string>
+    <string name="movie_chart_popular_movies">Films populaires</string>
+    <string name="movie_chart_top_movies">Meilleurs films</string>
+    <string name="movie_chart_popular_series">Séries populaires</string>
+    <string name="movie_chart_top_series">Meilleures séries</string>
+
+    <!-- Compte IMDb -->
+    <string name="platform_imdb">IMDb (films &amp; séries)</string>
+    <string name="platform_imdb_hint">Connecte ton compte pour importer ta watchlist et tes notes.</string>
+    <string name="platform_imdb_connected_as">Compte IMDb %1$s</string>
+    <string name="platform_connect_imdb">Se connecter à IMDb</string>
+    <string name="platform_imdb_disconnect_title">Déconnecter IMDb ?</string>
+    <string name="platform_imdb_disconnect_message">Ta session IMDb est oubliée sur cet appareil. Les films et séries déjà dans ta liste sont conservés.</string>
+    <plurals name="platform_imdb_titles">
+        <item quantity="one">%1$d titre importé</item>
+        <item quantity="other">%1$d titres importés</item>
+    </plurals>
+    <string name="imdb_login_title">Connexion à IMDb</string>
+    <string name="imdb_login_hint">Tu te connectes sur la page d\'IMDb : l\'app ne voit jamais ton mot de passe. Elle utilise seulement ta session pour lire l\'export de ta watchlist et de tes notes.</string>
+    <string name="imdb_error_not_signed_in">Ta session IMDb n\'est pas (ou plus) valide. Reconnecte-toi.</string>
+    <string name="imdb_error_unavailable">IMDb est injoignable ou a répondu autre chose que prévu. Réessaie plus tard.</string>
+    <string name="imdb_error_unknown">Une erreur inattendue est survenue avec IMDb.</string>
+    <string name="imdb_reconnect">Me reconnecter</string>
+    <string name="imdb_import_title">Import depuis IMDb</string>
+    <string name="imdb_import_running">Lecture de ta watchlist et de tes notes…</string>
+    <string name="imdb_import_up_to_date">Tout est déjà à jour.</string>
+    <plurals name="imdb_import_added">
+        <item quantity="one">%1$d titre ajouté</item>
+        <item quantity="other">%1$d titres ajoutés</item>
+    </plurals>
+    <plurals name="imdb_import_updated">
+        <item quantity="one">%1$d titre mis à jour</item>
+        <item quantity="other">%1$d titres mis à jour</item>
+    </plurals>
+    <string name="imdb_import_rated">Notes lues : %1$d</string>
+    <string name="imdb_import_watchlist">Watchlist lue : %1$d</string>
+    <string name="imdb_import_watchlist_missing">Ta watchlist n\'a pas pu être trouvée (tes notes ont bien été importées).</string>
 </resources>

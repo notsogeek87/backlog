@@ -39,7 +39,40 @@ object FrenchLabels {
         "Windows Mobile" to "Windows Mobile",
     )
 
+    /** IMDb's genre names (films & séries) — a different vocabulary from IGDB's, same display-only rule. */
+    private val movieGenres = mapOf(
+        "Action" to "Action",
+        "Adventure" to "Aventure",
+        "Animation" to "Animation",
+        "Biography" to "Biographie",
+        "Comedy" to "Comédie",
+        "Crime" to "Policier",
+        "Documentary" to "Documentaire",
+        "Drama" to "Drame",
+        "Family" to "Famille",
+        "Fantasy" to "Fantastique",
+        "Film-Noir" to "Film noir",
+        "Game-Show" to "Jeu télévisé",
+        "History" to "Historique",
+        "Horror" to "Horreur",
+        "Music" to "Musique",
+        "Musical" to "Comédie musicale",
+        "Mystery" to "Mystère",
+        "News" to "Actualités",
+        "Reality-TV" to "Téléréalité",
+        "Romance" to "Romance",
+        "Sci-Fi" to "Science-fiction",
+        "Short" to "Court métrage",
+        "Sport" to "Sport",
+        "Talk-Show" to "Talk-show",
+        "Thriller" to "Thriller",
+        "War" to "Guerre",
+        "Western" to "Western",
+    )
+
     fun genre(name: String): String = genres[name] ?: name
+
+    fun movieGenre(name: String): String = movieGenres[name] ?: name
 
     fun platform(name: String): String = platforms[name] ?: name
 }

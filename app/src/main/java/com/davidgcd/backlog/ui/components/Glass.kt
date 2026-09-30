@@ -99,9 +99,18 @@ fun GlassCard(
     ) { content() }
 }
 
-/** Cover art as a first-class element: rounded, hairline border, soft drop shadow. */
+/**
+ * Cover art as a first-class element: rounded, hairline border, soft drop shadow.
+ * Games pass an IGDB [imageId]; films & séries pass a full [imageUrl] (an IMDb poster) instead.
+ */
 @Composable
-fun GameCover(imageId: String?, width: Dp, modifier: Modifier = Modifier, size: IgdbImage.Size = IgdbImage.Size.CoverBig) {
+fun GameCover(
+    imageId: String?,
+    width: Dp,
+    modifier: Modifier = Modifier,
+    size: IgdbImage.Size = IgdbImage.Size.CoverBig,
+    imageUrl: String? = null,
+) {
     val shape = RoundedCornerShape(12.dp)
     val boxModifier = modifier
         .size(width, width * 4f / 3f)
@@ -109,9 +118,10 @@ fun GameCover(imageId: String?, width: Dp, modifier: Modifier = Modifier, size: 
         .clip(shape)
         .background(MaterialTheme.colorScheme.surfaceVariant)
         .border(1.dp, Glass.Border, shape)
-    if (imageId != null) {
+    val model = imageUrl ?: imageId?.let { IgdbImage.url(it, size) }
+    if (model != null) {
         AsyncImage(
-            model = IgdbImage.url(imageId, size),
+            model = model,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = boxModifier,
@@ -265,6 +275,9 @@ fun GameListItem(
     dimmed: Boolean = false,
     statusLabel: String? = null,
     statusTint: Color = Color.White,
+    coverUrl: String? = null,
+    /** Replaces the number next to the rating bar (IMDb's 0–10 scale); [rating] still drives the bar (0–100). */
+    ratingText: String? = null,
     onClick: () -> Unit,
     trailing: @Composable () -> Unit = {},
 ) {
@@ -274,7 +287,7 @@ fun GameListItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            GameCover(coverImageId, width = 64.dp, size = IgdbImage.Size.CoverSmall)
+            GameCover(coverImageId, width = 64.dp, size = IgdbImage.Size.CoverSmall, imageUrl = coverUrl)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     name,
@@ -297,7 +310,7 @@ fun GameListItem(
                 if (rating != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         GradientProgressBar((rating / 100.0).toFloat(), modifier = Modifier.weight(1f))
-                        Text("${rating.toInt()}", style = MaterialTheme.typography.labelMedium, color = Glass.TextMuted)
+                        Text(ratingText ?: "${rating.toInt()}", style = MaterialTheme.typography.labelMedium, color = Glass.TextMuted)
                     }
                 }
             }

@@ -51,7 +51,13 @@ import com.davidgcd.backlog.util.FrenchLabels
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, onBack: (() -> Unit)? = null) {
+fun DiscoverScreen(
+    viewModel: DiscoverViewModel,
+    onGameClick: (Long) -> Unit,
+    onBack: (() -> Unit)? = null,
+    /** Jeux / Films & séries switch, rendered above the category pills when the host provides one. */
+    mediaSwitch: @Composable () -> Unit = {},
+) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -78,6 +84,7 @@ fun DiscoverScreen(viewModel: DiscoverViewModel, onGameClick: (Long) -> Unit, on
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            mediaSwitch()
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

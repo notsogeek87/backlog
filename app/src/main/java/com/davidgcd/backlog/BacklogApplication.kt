@@ -4,6 +4,9 @@ import android.app.Application
 import com.davidgcd.backlog.config.Secrets
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.csv.CsvImportService
+import com.davidgcd.backlog.data.imdb.ImdbClient
+import com.davidgcd.backlog.data.imdb.ImdbSyncService
+import com.davidgcd.backlog.data.imdb.WebViewCookieJar
 import com.davidgcd.backlog.data.library.DataStoreLibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
@@ -26,6 +29,7 @@ import com.davidgcd.backlog.data.remote.TwitchAuthApi
 import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.data.repository.IgdbService
 import com.davidgcd.backlog.data.repository.MetacriticService
+import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.notifications.ReleaseReminderScheduler
@@ -72,6 +76,12 @@ class BacklogApplication : Application() {
         private set
 
     lateinit var shareLinkService: ShareLinkService
+        private set
+
+    lateinit var movieRepository: MovieRepository
+        private set
+
+    lateinit var imdbSyncService: ImdbSyncService
         private set
 
     override fun onCreate() {
@@ -174,6 +184,17 @@ class BacklogApplication : Application() {
         shareLinkService = ShareLinkService(this, OkHttpClient.Builder().callTimeout(12, TimeUnit.SECONDS).build())
         csvExportService = CsvExportService(this)
         csvImportService = CsvImportService(this, repository)
+
+        // Films & séries: IMDb has no public API, so the client talks to its website endpoints and
+        // replays the session the user opened in the login WebView (never their password).
+        val imdbClient = ImdbClient(
+            OkHttpClient.Builder()
+                .cookieJar(WebViewCookieJar())
+                .callTimeout(20, TimeUnit.SECONDS)
+                .build(),
+        )
+        movieRepository = MovieRepository(database.movieDao(), imdbClient)
+        imdbSyncService = ImdbSyncService(imdbClient, database.movieDao(), libraryAccountStore)
 
         ReleaseReminderScheduler.schedule(this)
     }
