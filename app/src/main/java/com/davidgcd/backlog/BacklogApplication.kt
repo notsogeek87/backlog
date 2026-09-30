@@ -11,6 +11,8 @@ import com.davidgcd.backlog.data.library.DataStoreLibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
 import com.davidgcd.backlog.data.library.LibrarySyncService
+import com.davidgcd.backlog.data.library.SteamAutoSyncScheduler
+import com.davidgcd.backlog.data.library.WishlistSyncService
 import com.davidgcd.backlog.data.library.android.AndroidLibraryProvider
 import com.davidgcd.backlog.data.library.android.PackageManagerInstalledApps
 import com.davidgcd.backlog.data.library.steam.SteamAuthService
@@ -67,6 +69,9 @@ class BacklogApplication : Application() {
         private set
 
     lateinit var librarySyncService: LibrarySyncService
+        private set
+
+    lateinit var wishlistSyncService: WishlistSyncService
         private set
 
     lateinit var steamAuthService: SteamAuthService
@@ -178,6 +183,7 @@ class BacklogApplication : Application() {
             sourceDao = gameSourceDao,
             accounts = libraryAccountStore,
         )
+        wishlistSyncService = WishlistSyncService(steamProvider, igdbService, repository, gameSourceDao, libraryAccountStore)
         steamAuthService = SteamAuthService(steamOpenIdApi, steamProvider)
         steamService = SteamService(steamApi)
         metacriticService = MetacriticService(metacriticApi)
@@ -196,6 +202,7 @@ class BacklogApplication : Application() {
         tmdbSyncService = TmdbSyncService(tmdbClient, database.movieDao(), libraryAccountStore)
 
         ReleaseReminderScheduler.schedule(this)
+        SteamAutoSyncScheduler.schedule(this)
     }
 }
 

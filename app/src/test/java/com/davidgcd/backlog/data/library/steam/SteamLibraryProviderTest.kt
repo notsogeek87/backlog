@@ -25,8 +25,10 @@ class SteamLibraryProviderTest {
     private class FakeSteamWebApi(
         var owned: () -> OwnedGamesEnvelope = { OwnedGamesEnvelope() },
         var players: () -> PlayerSummariesEnvelope = { PlayerSummariesEnvelope() },
+        var wishlist: () -> com.davidgcd.backlog.data.remote.WishlistEnvelope = { com.davidgcd.backlog.data.remote.WishlistEnvelope() },
     ) : SteamWebApi {
         override suspend fun ownedGames(steamId: String, includeAppInfo: Int, includePlayedFreeGames: Int, format: String) = owned()
+        override suspend fun wishlist(steamId: String, format: String) = wishlist()
         override suspend fun playerSummaries(steamIds: String, format: String) = players()
     }
 
@@ -124,5 +126,16 @@ class SteamLibraryProviderTest {
 
         api.players = { PlayerSummariesEnvelope(PlayersResponse(emptyList())) }
         assertEquals(LibraryError.ACCOUNT_NOT_FOUND, errorOf { provider.fetchProfile("1") })
+    }
+
+    @Test
+    fun `wishlist returns distinct app ids, empty for a private profile`() = runTest {
+        api.wishlist = { com.davidgcd.backlog.data.remote.WishlistEnvelope(com.davidgcd.backlog.data.remote.WishlistResponse(listOf(
+            com.davidgcd.backlog.data.remote.WishlistItem(10), com.davidgcd.backlog.data.remote.WishlistItem(20), com.davidgcd.backlog.data.remote.WishlistItem(10),
+        ))) }
+        assertEquals(listOf("10", "20"), provider.fetchWishlist("76561198000000000"))
+
+        api.wishlist = { com.davidgcd.backlog.data.remote.WishlistEnvelope(com.davidgcd.backlog.data.remote.WishlistResponse()) }
+        assertTrue(provider.fetchWishlist("76561198000000000").isEmpty())
     }
 }

@@ -432,6 +432,9 @@ private fun BacklogGrid(
                 }
             }
         }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            ScopeChips(filter.scope) { onFilterChange(filter.copy(scope = it)) }
+        }
         if (!filter.isActive && recentlyAdded.isNotEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -497,6 +500,20 @@ private fun BacklogGrid(
                     }
                 },
             )
+        }
+    }
+}
+
+/** Tous / Souhaités / Possédés: keeps the wishlist from being mixed in with the games already owned. */
+@Composable
+private fun ScopeChips(selected: BacklogScope, onSelect: (BacklogScope) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(
+            BacklogScope.ALL to R.string.scope_all,
+            BacklogScope.WISHLIST to R.string.scope_wishlist,
+            BacklogScope.OWNED to R.string.scope_owned,
+        ).forEach { (scope, label) ->
+            GlassPill(text = stringResource(label), selected = selected == scope, onClick = { onSelect(scope) })
         }
     }
 }

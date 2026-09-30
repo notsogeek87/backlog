@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
                         shareLinkService = app.shareLinkService,
                         movieRepository = app.movieRepository,
                         tmdbSyncService = app.tmdbSyncService,
+                        wishlistSyncService = app.wishlistSyncService,
                     )
                 }
             }

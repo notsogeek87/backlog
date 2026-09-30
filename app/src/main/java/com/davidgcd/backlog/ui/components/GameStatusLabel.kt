@@ -11,6 +11,7 @@ fun GameStatus.labelRes(): Int = when (this) {
     GameStatus.BACKLOG -> R.string.status_backlog
     GameStatus.PLAYED -> R.string.status_played
     GameStatus.COMPLETED -> R.string.status_completed
+    GameStatus.WISHLIST -> R.string.status_wishlist
 }
 
 @Composable
@@ -21,4 +22,5 @@ fun GameStatus.tint(): Color = when (this) {
     GameStatus.BACKLOG -> Glass.Blue
     GameStatus.PLAYED -> Glass.Pink
     GameStatus.COMPLETED -> Glass.Green
+    GameStatus.WISHLIST -> Glass.Teal
 }
