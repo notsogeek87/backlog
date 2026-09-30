@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.repository.MovieRepository
-import com.davidgcd.backlog.model.ImdbTitle
+import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,13 +18,13 @@ sealed interface MovieDetailState {
     data object Loading : MovieDetailState
     data class Saved(val movie: MovieEntity) : MovieDetailState
     /** Seen in a search / chart / link but not saved yet. */
-    data class Remote(val title: ImdbTitle) : MovieDetailState
+    data class Remote(val title: MediaTitle) : MovieDetailState
     data object NotFound : MovieDetailState
 }
 
 /** A title on the detail screen may or may not be in the list — same split as the game detail. */
 class MovieDetailViewModel(
-    private val imdbId: String,
+    private val titleKey: String,
     private val repository: MovieRepository,
 ) : ViewModel() {
 
@@ -35,7 +35,7 @@ class MovieDetailViewModel(
     private var remoteLoadStarted = false
 
     init {
-        repository.observe(imdbId)
+        repository.observe(titleKey)
             .onEach { movie ->
                 if (movie != null) {
                     _state.value = MovieDetailState.Saved(movie)
@@ -50,9 +50,9 @@ class MovieDetailViewModel(
             .launchIn(viewModelScope)
     }
 
-    /** Titles imported from IMDb's CSV have no plot: pull the page once, quietly. */
+    /** Titles imported from TMDB's CSV have no plot: pull the page once, quietly. */
     private fun refreshOnce(movie: MovieEntity) {
-        if (refreshed || (movie.plot != null && movie.imdbRating != null)) return
+        if (refreshed || (movie.plot != null && movie.tmdbRating != null)) return
         refreshed = true
         viewModelScope.launch {
             try {
@@ -70,7 +70,7 @@ class MovieDetailViewModel(
         remoteLoadStarted = true
         viewModelScope.launch {
             val title = try {
-                repository.fetchRemote(imdbId)
+                repository.fetchRemote(titleKey)
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
@@ -81,7 +81,7 @@ class MovieDetailViewModel(
         }
     }
 
-    fun add(title: ImdbTitle) {
+    fun add(title: MediaTitle) {
         viewModelScope.launch { repository.add(title) }
     }
 
@@ -108,12 +108,12 @@ class MovieDetailViewModel(
 }
 
 class MovieDetailViewModelFactory(
-    private val imdbId: String,
+    private val titleKey: String,
     private val repository: MovieRepository,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == MovieDetailViewModel::class.java)
-        return MovieDetailViewModel(imdbId, repository) as T
+        return MovieDetailViewModel(titleKey, repository) as T
     }
 }

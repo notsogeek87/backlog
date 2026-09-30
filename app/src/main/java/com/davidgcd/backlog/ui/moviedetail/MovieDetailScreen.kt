@@ -51,8 +51,8 @@ import coil.compose.AsyncImage
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.watchStatus
-import com.davidgcd.backlog.data.repository.toImdbTitle
-import com.davidgcd.backlog.model.ImdbTitle
+import com.davidgcd.backlog.data.repository.toMediaTitle
+import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.WatchStatus
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
@@ -66,8 +66,7 @@ import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
-import com.davidgcd.backlog.util.FrenchLabels
-import com.davidgcd.backlog.util.ImdbImage
+import com.davidgcd.backlog.util.TmdbImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +78,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
         is MovieDetailState.Saved -> s.movie.posterUrl
         is MovieDetailState.Remote -> s.title.posterUrl
         else -> null
-    }?.let { ImdbImage.poster(it) }
+    }?.let { TmdbImage.poster(it) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // The poster tints the screen: blurred, dimmed, faded into the night canvas (blur needs API 31+).
@@ -119,7 +118,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                     is MovieDetailState.Loading -> Centered { CircularProgressIndicator(color = Glass.Cyan) }
                     is MovieDetailState.NotFound -> Centered { Text(stringResource(R.string.movie_not_found)) }
                     is MovieDetailState.Saved -> MovieContent(
-                        title = current.movie.toImdbTitle(),
+                        title = current.movie.toMediaTitle(),
                         saved = current.movie,
                         onStatusChange = { viewModel.setStatus(current.movie, it) },
                         onRate = { viewModel.setUserRating(current.movie, it) },
@@ -154,7 +153,7 @@ private fun Centered(content: @Composable () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MovieContent(
-    title: ImdbTitle,
+    title: MediaTitle,
     saved: MovieEntity?,
     onStatusChange: (WatchStatus) -> Unit,
     onRate: (Int) -> Unit,
@@ -175,7 +174,7 @@ private fun MovieContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
-                GameCover(imageId = null, width = 132.dp, imageUrl = ImdbImage.poster(title.posterUrl))
+                GameCover(imageId = null, width = 132.dp, imageUrl = TmdbImage.poster(title.posterUrl))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = title.title,
@@ -195,7 +194,7 @@ private fun MovieContent(
 
             if (title.genres.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    title.genres.forEach { GlassBadge(FrenchLabels.movieGenre(it), tint = Glass.Purple) }
+                    title.genres.forEach { GlassBadge(it, tint = Glass.Purple) }
                 }
             }
 
@@ -221,7 +220,7 @@ private fun MovieContent(
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(stringResource(R.string.ratings_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.ratings_imdb), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted, modifier = Modifier.weight(1f))
+                            Text(stringResource(R.string.ratings_tmdb), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted, modifier = Modifier.weight(1f))
                             Text("%.1f / 10".format(java.util.Locale.FRENCH, rating), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         }
                         GradientProgressBar((rating / 10.0).toFloat())
@@ -264,8 +263,8 @@ private fun MovieContent(
                     )
                 }
                 GlassButton(
-                    text = stringResource(R.string.action_open_imdb),
-                    onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(title.imdbUrl))) },
+                    text = stringResource(R.string.action_open_tmdb),
+                    onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(title.tmdbUrl))) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (saved != null) {

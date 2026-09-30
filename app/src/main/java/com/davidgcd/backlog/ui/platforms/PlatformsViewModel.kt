@@ -4,7 +4,7 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.davidgcd.backlog.data.imdb.WebViewCookieJar
+import com.davidgcd.backlog.data.tmdb.TmdbSyncService
 import com.davidgcd.backlog.data.library.LibraryAccount
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
@@ -19,12 +19,13 @@ import kotlinx.coroutines.launch
 class PlatformsViewModel(
     private val accounts: LibraryAccountStore,
     private val sourceDao: GameSourceDao,
+    private val tmdbSync: TmdbSyncService,
 ) : ViewModel() {
     val steam: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.STEAM)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** IMDb account (films & séries): signed in through the login WebView, imported on demand. */
-    val imdb: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.IMDB)
+    /** TMDB account (films & séries): signed in through the login WebView, imported on demand. */
+    val tmdb: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.TMDB)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val android: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.ANDROID)
@@ -43,8 +44,8 @@ class PlatformsViewModel(
         viewModelScope.launch {
             accounts.disconnect(providerId)
             sourceDao.deleteForProvider(providerId)
-            // Signing out of IMDb also forgets the session the login WebView opened.
-            if (providerId == LibraryProviders.IMDB) WebViewCookieJar.clearSession()
+            // Signing out of TMDB also ends the session it granted (on TMDB and on this device).
+            if (providerId == LibraryProviders.TMDB) tmdbSync.signOut()
         }
     }
 }
@@ -52,10 +53,11 @@ class PlatformsViewModel(
 class PlatformsViewModelFactory(
     private val accounts: LibraryAccountStore,
     private val sourceDao: GameSourceDao,
+    private val tmdbSync: TmdbSyncService,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == PlatformsViewModel::class.java)
-        return PlatformsViewModel(accounts, sourceDao) as T
+        return PlatformsViewModel(accounts, sourceDao, tmdbSync) as T
     }
 }

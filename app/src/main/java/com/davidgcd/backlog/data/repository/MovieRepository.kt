@@ -1,50 +1,49 @@
 package com.davidgcd.backlog.data.repository
 
-import com.davidgcd.backlog.data.imdb.ImdbClient
+import com.davidgcd.backlog.data.tmdb.TmdbClient
 import com.davidgcd.backlog.data.local.MovieDao
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
-import com.davidgcd.backlog.model.ImdbTitle
+import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.MovieRanking
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Single source of truth for films & series: Room locally, IMDb for search / discovery / details —
+ * Single source of truth for films & series: Room locally, TMDB for search / discovery / details —
  * the movie-side twin of [BacklogRepository].
  */
 class MovieRepository(
     private val dao: MovieDao,
-    private val imdb: ImdbClient,
+    private val tmdb: TmdbClient,
 ) {
     /**
      * Titles seen in a search or a chart, kept for the session: opening one shows what the list
-     * already knew even if IMDb's title page can't be read.
+     * already knew even if TMDB's title page can't be read.
      */
-    private val seen = ConcurrentHashMap<String, ImdbTitle>()
+    private val seen = ConcurrentHashMap<String, MediaTitle>()
 
     fun observeAll(): Flow<List<MovieEntity>> = dao.observeAll()
 
     suspend fun allMovies(): List<MovieEntity> = dao.allMovies()
 
-    fun observe(imdbId: String): Flow<MovieEntity?> = dao.observeById(imdbId)
+    fun observe(titleKey: String): Flow<MovieEntity?> = dao.observeById(titleKey)
 
-    suspend fun find(imdbId: String): MovieEntity? = dao.findById(imdbId)
+    suspend fun find(titleKey: String): MovieEntity? = dao.findById(titleKey)
 
-    suspend fun search(query: String): List<ImdbTitle> = imdb.search(query).also(::remember)
+    suspend fun search(query: String): List<MediaTitle> = tmdb.search(query).also(::remember)
 
-    suspend fun chart(chart: MovieChart): List<ImdbTitle> = imdb.chart(chart).also(::remember)
+    suspend fun chart(chart: MovieChart): List<MediaTitle> = tmdb.chart(chart).also(::remember)
 
-    /** Details from IMDb merged over what the lists already showed; null only if IMDb knows nothing of [imdbId]. */
-    suspend fun fetchRemote(imdbId: String): ImdbTitle? {
-        val known = seen[imdbId]
+    /** Details from TMDB merged over what the lists already showed; null only if TMDB knows nothing of [titleKey]. */
+    suspend fun fetchRemote(titleKey: String): MediaTitle? {
+        val known = seen[titleKey]
         val fresh = try {
-            imdb.title(imdbId)
+            tmdb.details(titleKey)
         } catch (e: CancellationException) {
             throw e
         } catch (t: Throwable) {
@@ -59,22 +58,31 @@ class MovieRepository(
                 cast = fresh.cast ?: known.cast,
             )
         }
-        merged?.let { seen[imdbId] = it }
+        merged?.let { seen[titleKey] = it }
         return merged
     }
 
-    suspend fun add(title: ImdbTitle, status: WatchStatus = WatchStatus.TO_WATCH) {
+    suspend fun add(title: MediaTitle, status: WatchStatus = WatchStatus.TO_WATCH) {
         if (dao.findById(title.id) != null) return
         dao.upsert(title.toEntity(status))
     }
 
     suspend fun setArchived(entity: MovieEntity, archived: Boolean) = dao.update(entity.copy(isArchived = archived))
 
-    suspend fun setStatus(entity: MovieEntity, status: WatchStatus) = dao.update(entity.copy(status = status.name))
+    suspend fun setStatus(entity: MovieEntity, status: WatchStatus) {
+        dao.update(entity.copy(status = status.name))
+        // The TMDB watchlist mirrors "to watch": entering it adds the title, leaving it removes it.
+        if (status == WatchStatus.TO_WATCH) bestEffort { tmdb.setWatchlist(entity.titleKey, true) }
+        else if (entity.status == WatchStatus.TO_WATCH.name) bestEffort { tmdb.setWatchlist(entity.titleKey, false) }
+    }
 
     /** 1–10, or null to clear. */
-    suspend fun setUserRating(entity: MovieEntity, rating: Int?) =
-        dao.update(entity.copy(userRating = rating?.coerceIn(1, 10)))
+    suspend fun setUserRating(entity: MovieEntity, rating: Int?) {
+        val value = rating?.coerceIn(1, 10)
+        dao.update(entity.copy(userRating = value))
+        // Mirrors the rating to the user's TMDB account when one is linked; offline / signed out just keeps it local.
+        bestEffort { tmdb.rate(entity.titleKey, value) }
+    }
 
     suspend fun applyRanking(newOrder: List<MovieEntity>) {
         MovieRanking.changes(newOrder).forEach { (id, rank) -> dao.setRank(id, rank) }
@@ -84,7 +92,7 @@ class MovieRepository(
 
     /** Pulls the latest rating / plot / poster of one saved title, keeping everything the user set. */
     suspend fun refresh(entity: MovieEntity) {
-        val fresh = fetchRemote(entity.imdbId) ?: return
+        val fresh = fetchRemote(entity.titleKey) ?: return
         val updated = entity.copy(
             title = fresh.title.ifBlank { entity.title },
             year = fresh.year ?: entity.year,
@@ -92,38 +100,31 @@ class MovieRepository(
             posterUrl = fresh.posterUrl ?: entity.posterUrl,
             genres = fresh.genres.takeIf { it.isNotEmpty() }?.joinToString(";") ?: entity.genres,
             plot = fresh.plot ?: entity.plot,
-            imdbRating = fresh.rating ?: entity.imdbRating,
+            tmdbRating = fresh.rating ?: entity.tmdbRating,
             runtimeMinutes = fresh.runtimeMinutes ?: entity.runtimeMinutes,
             directors = fresh.directors ?: entity.directors,
         )
         if (updated != entity) dao.update(updated)
     }
 
-    /**
-     * Imported rows (IMDb's CSV export) carry no poster. Fills a few at a time, gently: one small
-     * request each, and a failure just leaves the poster for the next pass.
-     */
-    suspend fun backfillPosters(limit: Int = 12) {
-        for (movie in dao.withoutPoster(limit)) {
-            try {
-                // "" = IMDb answered and has no poster: don't ask again on every pass.
-                dao.setPoster(movie.imdbId, imdb.poster(movie.imdbId).orEmpty())
-            } catch (e: CancellationException) {
-                throw e
-            } catch (t: Throwable) {
-                return
-            }
-            delay(250)
+    /** Account write-backs never fail the local action: no session, no network or a TMDB hiccup is silently skipped. */
+    private suspend fun bestEffort(block: suspend () -> Unit) {
+        try {
+            if (tmdb.currentSession() != null) block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            // Local data is the source of truth; the next import reconciles.
         }
     }
 
-    private fun remember(titles: List<ImdbTitle>) {
+    private fun remember(titles: List<MediaTitle>) {
         titles.forEach { seen[it.id] = it }
     }
 }
 
-fun ImdbTitle.toEntity(status: WatchStatus = WatchStatus.TO_WATCH, userRating: Int? = null) = MovieEntity(
-    imdbId = id,
+fun MediaTitle.toEntity(status: WatchStatus = WatchStatus.TO_WATCH, userRating: Int? = null) = MovieEntity(
+    titleKey = id,
     title = title,
     kind = kind.name,
     year = year,
@@ -131,15 +132,15 @@ fun ImdbTitle.toEntity(status: WatchStatus = WatchStatus.TO_WATCH, userRating: I
     posterUrl = posterUrl,
     genres = genres.takeIf { it.isNotEmpty() }?.joinToString(";"),
     plot = plot,
-    imdbRating = rating,
+    tmdbRating = rating,
     runtimeMinutes = runtimeMinutes,
     directors = directors,
     status = status.name,
     userRating = userRating,
 )
 
-fun MovieEntity.toImdbTitle() = ImdbTitle(
-    id = imdbId,
+fun MovieEntity.toMediaTitle() = MediaTitle(
+    id = titleKey,
     title = title,
     kind = titleKind,
     year = year,
@@ -147,7 +148,7 @@ fun MovieEntity.toImdbTitle() = ImdbTitle(
     posterUrl = posterUrl,
     genres = genreList,
     plot = plot,
-    rating = imdbRating,
+    rating = tmdbRating,
     runtimeMinutes = runtimeMinutes,
     directors = directors,
 )

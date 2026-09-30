@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
                         gameSourceDao = app.gameSourceDao,
                         shareLinkService = app.shareLinkService,
                         movieRepository = app.movieRepository,
-                        imdbSyncService = app.imdbSyncService,
+                        tmdbSyncService = app.tmdbSyncService,
                     )
                 }
             }

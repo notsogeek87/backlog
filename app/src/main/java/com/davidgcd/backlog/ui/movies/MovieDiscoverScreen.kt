@@ -39,7 +39,7 @@ import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.theme.Glass
 import kotlinx.coroutines.launch
 
-/** Discover for films & séries: the IMDb charts as pills, same layout as the games' Discover. */
+/** Discover for films & séries: the TMDB charts as pills, same layout as the games' Discover. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MovieDiscoverScreen(
@@ -103,7 +103,7 @@ fun MovieDiscoverScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(current.titles, key = { it.id }) { title ->
-                            ImdbTitleListItem(
+                            MediaTitleListItem(
                                 title = title,
                                 saved = title.id in savedIds,
                                 onAdd = {

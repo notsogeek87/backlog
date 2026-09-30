@@ -46,7 +46,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.davidgcd.backlog.data.csv.CsvExportService
-import com.davidgcd.backlog.data.imdb.ImdbSyncService
+import com.davidgcd.backlog.data.tmdb.TmdbSyncService
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.ui.components.MediaSwitch
 import com.davidgcd.backlog.ui.components.MediaType
@@ -62,12 +62,12 @@ import com.davidgcd.backlog.ui.movies.MovieRankingViewModelFactory
 import com.davidgcd.backlog.ui.movies.MoviesScreen
 import com.davidgcd.backlog.ui.movies.MoviesViewModel
 import com.davidgcd.backlog.ui.movies.MoviesViewModelFactory
-import com.davidgcd.backlog.ui.platforms.ImdbImportScreen
-import com.davidgcd.backlog.ui.platforms.ImdbImportViewModel
-import com.davidgcd.backlog.ui.platforms.ImdbImportViewModelFactory
-import com.davidgcd.backlog.ui.platforms.ImdbLoginScreen
-import com.davidgcd.backlog.ui.platforms.ImdbLoginViewModel
-import com.davidgcd.backlog.ui.platforms.ImdbLoginViewModelFactory
+import com.davidgcd.backlog.ui.platforms.TmdbImportScreen
+import com.davidgcd.backlog.ui.platforms.TmdbImportViewModel
+import com.davidgcd.backlog.ui.platforms.TmdbImportViewModelFactory
+import com.davidgcd.backlog.ui.platforms.TmdbLoginScreen
+import com.davidgcd.backlog.ui.platforms.TmdbLoginViewModel
+import com.davidgcd.backlog.ui.platforms.TmdbLoginViewModelFactory
 import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
@@ -115,10 +115,10 @@ private object Routes {
     fun libraryImport(provider: String) = "platforms/$provider/import"
     const val MOVIES = "movies"
     const val MOVIE_RANKING = "movies/ranking"
-    const val MOVIE_DETAIL = "movie/{imdbId}"
-    fun movieDetail(imdbId: String) = "movie/$imdbId"
-    const val IMDB_LOGIN = "platforms/imdb/login"
-    const val IMDB_IMPORT = "platforms/imdb/import"
+    const val MOVIE_DETAIL = "movie/{titleKey}"
+    fun movieDetail(titleKey: String) = "movie/$titleKey"
+    const val TMDB_LOGIN = "platforms/tmdb/login"
+    const val TMDB_IMPORT = "platforms/tmdb/import"
     const val GAME_DETAIL = "game/{gameId}"
     fun gameDetail(gameId: Long) = "game/$gameId"
 }
@@ -155,12 +155,12 @@ fun BacklogNavHost(
     gameSourceDao: GameSourceDao,
     shareLinkService: ShareLinkService,
     movieRepository: MovieRepository,
-    imdbSyncService: ImdbSyncService,
+    tmdbSyncService: TmdbSyncService,
 ) {
     val navController = rememberNavController()
     // Discover serves both worlds; which one is showing survives rotation and tab switches.
     var discoverMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
-    val imdbAccount by libraryAccountStore.observe(LibraryProviders.IMDB).collectAsState(initial = null)
+    val tmdbAccount by libraryAccountStore.observe(LibraryProviders.TMDB).collectAsState(initial = null)
     val navEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
     // The bar only shows on the three top-level surfaces; game detail is a pushed screen with a back arrow.
@@ -248,7 +248,7 @@ fun BacklogNavHost(
                 val viewModel: MovieDiscoverViewModel = viewModel(factory = MovieDiscoverViewModelFactory(movieRepository))
                 MovieDiscoverScreen(
                     viewModel = viewModel,
-                    onMovieClick = { imdbId -> navController.navigate(Routes.movieDetail(imdbId)) },
+                    onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
                     mediaSwitch = mediaSwitch,
                 )
             }
@@ -257,10 +257,10 @@ fun BacklogNavHost(
             val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository))
             MoviesScreen(
                 viewModel = viewModel,
-                onMovieClick = { imdbId -> navController.navigate(Routes.movieDetail(imdbId)) },
+                onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
                 onOpenRanking = { navController.navigate(Routes.MOVIE_RANKING) },
-                onOpenImdbImport = {
-                    navController.navigate(if (imdbAccount != null) Routes.IMDB_IMPORT else Routes.IMDB_LOGIN)
+                onOpenTmdbImport = {
+                    navController.navigate(if (tmdbAccount != null) Routes.TMDB_IMPORT else Routes.TMDB_LOGIN)
                 },
             )
         }
@@ -269,41 +269,41 @@ fun BacklogNavHost(
             MovieRankingScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
-                onMovieClick = { imdbId -> navController.navigate(Routes.movieDetail(imdbId)) },
+                onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
             )
         }
         composable(
             route = Routes.MOVIE_DETAIL,
-            arguments = listOf(navArgument("imdbId") { type = NavType.StringType }),
+            arguments = listOf(navArgument("titleKey") { type = NavType.StringType }),
         ) { backStackEntry ->
-            val imdbId = backStackEntry.arguments?.getString("imdbId") ?: return@composable
+            val titleKey = backStackEntry.arguments?.getString("titleKey") ?: return@composable
             val viewModel: MovieDetailViewModel = viewModel(
-                factory = MovieDetailViewModelFactory(imdbId, movieRepository),
-                key = "movie_detail_$imdbId",
+                factory = MovieDetailViewModelFactory(titleKey, movieRepository),
+                key = "movie_detail_$titleKey",
             )
             MovieDetailScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
-        composable(Routes.IMDB_LOGIN) {
-            val viewModel: ImdbLoginViewModel = viewModel(factory = ImdbLoginViewModelFactory(imdbSyncService, libraryAccountStore))
-            ImdbLoginScreen(
+        composable(Routes.TMDB_LOGIN) {
+            val viewModel: TmdbLoginViewModel = viewModel(factory = TmdbLoginViewModelFactory(tmdbSyncService))
+            TmdbLoginScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 // Connected: replace the login screen with the import screen (back returns to where we came from).
                 onConnected = {
-                    navController.navigate(Routes.IMDB_IMPORT) {
-                        popUpTo(Routes.IMDB_LOGIN) { inclusive = true }
+                    navController.navigate(Routes.TMDB_IMPORT) {
+                        popUpTo(Routes.TMDB_LOGIN) { inclusive = true }
                     }
                 },
             )
         }
-        composable(Routes.IMDB_IMPORT) {
-            val viewModel: ImdbImportViewModel = viewModel(factory = ImdbImportViewModelFactory(imdbSyncService))
-            ImdbImportScreen(
+        composable(Routes.TMDB_IMPORT) {
+            val viewModel: TmdbImportViewModel = viewModel(factory = TmdbImportViewModelFactory(tmdbSyncService))
+            TmdbImportScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onReconnect = {
-                    navController.navigate(Routes.IMDB_LOGIN) {
-                        popUpTo(Routes.IMDB_IMPORT) { inclusive = true }
+                    navController.navigate(Routes.TMDB_LOGIN) {
+                        popUpTo(Routes.TMDB_IMPORT) { inclusive = true }
                     }
                 },
             )
@@ -333,7 +333,7 @@ fun BacklogNavHost(
                 ),
             )
             val platformsViewModel: PlatformsViewModel = viewModel(
-                factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao),
+                factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao, tmdbSyncService),
             )
             SettingsScreen(
                 viewModel = viewModel,
@@ -343,8 +343,8 @@ fun BacklogNavHost(
                         onConnectSteam = { navController.navigate(Routes.STEAM_LOGIN) },
                         onSyncSteam = { navController.navigate(Routes.libraryImport(LibraryProviders.STEAM)) },
                         onSyncAndroid = { navController.navigate(Routes.libraryImport(LibraryProviders.ANDROID)) },
-                        onConnectImdb = { navController.navigate(Routes.IMDB_LOGIN) },
-                        onSyncImdb = { navController.navigate(Routes.IMDB_IMPORT) },
+                        onConnectTmdb = { navController.navigate(Routes.TMDB_LOGIN) },
+                        onSyncTmdb = { navController.navigate(Routes.TMDB_IMPORT) },
                     )
                 },
             )

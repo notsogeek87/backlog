@@ -26,8 +26,8 @@ object LibraryProviders {
     const val STEAM = "steam"
     const val ANDROID = "android"
 
-    /** IMDb account (films & séries, not games): shares the account store, has no [GameLibraryProvider]. */
-    const val IMDB = "imdb"
+    /** TMDB account (films & séries, not games): shares the account store, has no [GameLibraryProvider]. */
+    const val TMDB = "tmdb"
 }
 
 data class LibraryGame(

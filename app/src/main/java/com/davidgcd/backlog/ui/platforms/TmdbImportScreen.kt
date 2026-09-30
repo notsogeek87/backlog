@@ -28,10 +28,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.R
-import com.davidgcd.backlog.data.imdb.ImdbError
-import com.davidgcd.backlog.data.imdb.ImdbException
-import com.davidgcd.backlog.data.imdb.ImdbSyncResult
-import com.davidgcd.backlog.data.imdb.ImdbSyncService
+import com.davidgcd.backlog.data.tmdb.TmdbError
+import com.davidgcd.backlog.data.tmdb.TmdbException
+import com.davidgcd.backlog.data.tmdb.TmdbSyncResult
+import com.davidgcd.backlog.data.tmdb.TmdbSyncService
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassCard
 import com.davidgcd.backlog.ui.components.GradientButton
@@ -43,49 +43,49 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-sealed interface ImdbImportState {
-    data object Running : ImdbImportState
-    data class Done(val result: ImdbSyncResult) : ImdbImportState
-    data class Failed(val error: ImdbError) : ImdbImportState
+sealed interface TmdbImportState {
+    data object Running : TmdbImportState
+    data class Done(val result: TmdbSyncResult) : TmdbImportState
+    data class Failed(val error: TmdbError) : TmdbImportState
 }
 
-/** Imports the IMDb watchlist and ratings as soon as the screen opens; the result stays on screen. */
-class ImdbImportViewModel(private val sync: ImdbSyncService) : ViewModel() {
-    private val _state = MutableStateFlow<ImdbImportState>(ImdbImportState.Running)
-    val state: StateFlow<ImdbImportState> = _state
+/** Imports the TMDB watchlist and ratings as soon as the screen opens; the result stays on screen. */
+class TmdbImportViewModel(private val sync: TmdbSyncService) : ViewModel() {
+    private val _state = MutableStateFlow<TmdbImportState>(TmdbImportState.Running)
+    val state: StateFlow<TmdbImportState> = _state
 
     init {
         run()
     }
 
     fun run() {
-        _state.value = ImdbImportState.Running
+        _state.value = TmdbImportState.Running
         viewModelScope.launch {
             _state.value = try {
-                ImdbImportState.Done(sync.sync())
+                TmdbImportState.Done(sync.sync())
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
-                val error = (t as? ImdbException)?.error ?: ImdbError.UNKNOWN
-                AppLogger.network.warn("IMDb import failed: $error — ${t.message}")
-                ImdbImportState.Failed(error)
+                val error = (t as? TmdbException)?.error ?: TmdbError.UNKNOWN
+                AppLogger.network.warn("TMDB import failed: $error — ${t.message}")
+                TmdbImportState.Failed(error)
             }
         }
     }
 }
 
-class ImdbImportViewModelFactory(private val sync: ImdbSyncService) : ViewModelProvider.Factory {
+class TmdbImportViewModelFactory(private val sync: TmdbSyncService) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        require(modelClass == ImdbImportViewModel::class.java)
-        return ImdbImportViewModel(sync) as T
+        require(modelClass == TmdbImportViewModel::class.java)
+        return TmdbImportViewModel(sync) as T
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImdbImportScreen(
-    viewModel: ImdbImportViewModel,
+fun TmdbImportScreen(
+    viewModel: TmdbImportViewModel,
     onBack: () -> Unit,
     onReconnect: () -> Unit,
 ) {
@@ -97,7 +97,7 @@ fun ImdbImportScreen(
         topBar = {
             TopAppBar(
                 colors = glassTopAppBarColors(),
-                title = { Text(stringResource(R.string.imdb_import_title)) },
+                title = { Text(stringResource(R.string.tmdb_import_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
@@ -112,20 +112,20 @@ fun ImdbImportScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             when (val current = state) {
-                is ImdbImportState.Running -> {
+                is TmdbImportState.Running -> {
                     CircularProgressIndicator(color = Glass.Cyan)
                     Text(
-                        stringResource(R.string.imdb_import_running),
+                        stringResource(R.string.tmdb_import_running),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 16.dp),
                     )
                 }
 
-                is ImdbImportState.Failed -> {
+                is TmdbImportState.Failed -> {
                     Text(stringResource(current.error.messageRes()), textAlign = TextAlign.Center)
-                    if (current.error == ImdbError.NOT_SIGNED_IN) {
+                    if (current.error == TmdbError.NOT_SIGNED_IN) {
                         GradientButton(
-                            text = stringResource(R.string.imdb_reconnect),
+                            text = stringResource(R.string.tmdb_reconnect),
                             onClick = onReconnect,
                             modifier = Modifier.padding(top = 16.dp),
                         )
@@ -138,25 +138,21 @@ fun ImdbImportScreen(
                     }
                 }
 
-                is ImdbImportState.Done -> {
+                is TmdbImportState.Done -> {
                     val r = current.result
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                if (r.added == 0 && r.updated == 0) stringResource(R.string.imdb_import_up_to_date)
-                                else pluralText(R.plurals.imdb_import_added, r.added, r.added),
+                                if (r.added == 0 && r.updated == 0) stringResource(R.string.tmdb_import_up_to_date)
+                                else pluralText(R.plurals.tmdb_import_added, r.added, r.added),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Glass.Text,
                             )
                             if (r.updated > 0) {
-                                Text(pluralText(R.plurals.imdb_import_updated, r.updated, r.updated), color = Glass.TextMuted)
+                                Text(pluralText(R.plurals.tmdb_import_updated, r.updated, r.updated), color = Glass.TextMuted)
                             }
-                            Text(stringResource(R.string.imdb_import_rated, r.ratedCount), color = Glass.TextMuted)
-                            Text(
-                                if (r.watchlistFound) stringResource(R.string.imdb_import_watchlist, r.watchlistCount)
-                                else stringResource(R.string.imdb_import_watchlist_missing),
-                                color = Glass.TextMuted,
-                            )
+                            Text(stringResource(R.string.tmdb_import_rated, r.ratedCount), color = Glass.TextMuted)
+                            Text(stringResource(R.string.tmdb_import_watchlist, r.watchlistCount), color = Glass.TextMuted)
                         }
                     }
                     GlassButton(

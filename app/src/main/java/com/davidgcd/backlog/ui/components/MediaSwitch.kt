@@ -9,7 +9,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
 
-/** The two worlds of the app: games (IGDB) and films & séries (IMDb). */
+/** The two worlds of the app: games (IGDB) and films & séries (TMDB). */
 enum class MediaType { GAMES, MOVIES }
 
 /** Jeux / Films & séries switch, shown above the lists of screens that serve both (Discover). */

@@ -16,14 +16,11 @@ interface MovieDao {
     @Query("SELECT * FROM movies ORDER BY addedAt DESC")
     suspend fun allMovies(): List<MovieEntity>
 
-    @Query("SELECT * FROM movies WHERE imdbId = :imdbId LIMIT 1")
-    suspend fun findById(imdbId: String): MovieEntity?
+    @Query("SELECT * FROM movies WHERE titleKey = :titleKey LIMIT 1")
+    suspend fun findById(titleKey: String): MovieEntity?
 
-    @Query("SELECT * FROM movies WHERE imdbId = :imdbId LIMIT 1")
-    fun observeById(imdbId: String): Flow<MovieEntity?>
-
-    @Query("SELECT * FROM movies WHERE posterUrl IS NULL LIMIT :limit")
-    suspend fun withoutPoster(limit: Int): List<MovieEntity>
+    @Query("SELECT * FROM movies WHERE titleKey = :titleKey LIMIT 1")
+    fun observeById(titleKey: String): Flow<MovieEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(movie: MovieEntity)
@@ -31,11 +28,8 @@ interface MovieDao {
     @Update
     suspend fun update(movie: MovieEntity)
 
-    @Query("UPDATE movies SET userRank = :rank WHERE imdbId = :imdbId")
-    suspend fun setRank(imdbId: String, rank: Int?)
-
-    @Query("UPDATE movies SET posterUrl = :posterUrl WHERE imdbId = :imdbId")
-    suspend fun setPoster(imdbId: String, posterUrl: String)
+    @Query("UPDATE movies SET userRank = :rank WHERE titleKey = :titleKey")
+    suspend fun setRank(titleKey: String, rank: Int?)
 
     @Delete
     suspend fun delete(movie: MovieEntity)

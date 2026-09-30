@@ -137,9 +137,9 @@ sur Android avec des briques Android natives.
 Réglages → *Mes plateformes*. Voir [ADR](docs/architecture/2026-09-29-library-providers.md),
 [API providers](docs/api/library-providers.md) et [guide](docs/guides/steam-import.md).
 
-Films & séries (onglet dédié, données IMDb, connexion au compte IMDb pour importer watchlist et
-notes) : voir [ADR](docs/architecture/2026-09-30-films-series-imdb.md) et
-[guide](docs/guides/imdb-import.md).
+Films & séries (onglet dédié, API officielle TMDB, connexion au compte TMDB pour importer/écrire
+watchlist et notes) : voir [ADR](docs/architecture/2026-09-30-films-series-tmdb.md) et
+[guide](docs/guides/tmdb-import.md).
 Nécessite `STEAM_API_KEY` dans `Secrets.kt` (voir `Secrets.kt.example`).
 
 ## Notes Metacritic : scaffold, pas branché

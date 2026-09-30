@@ -20,5 +20,5 @@ object MovieRanking {
 
     /** Ranks 1..n for the new order, only for the titles whose rank actually changes. */
     fun changes(newOrder: List<MovieEntity>): Map<String, Int> =
-        newOrder.mapIndexedNotNull { i, m -> (i + 1).takeIf { it != m.userRank }?.let { m.imdbId to it } }.toMap()
+        newOrder.mapIndexedNotNull { i, m -> (i + 1).takeIf { it != m.userRank }?.let { m.titleKey to it } }.toMap()
 }

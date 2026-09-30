@@ -4,9 +4,9 @@ import android.app.Application
 import com.davidgcd.backlog.config.Secrets
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.csv.CsvImportService
-import com.davidgcd.backlog.data.imdb.ImdbClient
-import com.davidgcd.backlog.data.imdb.ImdbSyncService
-import com.davidgcd.backlog.data.imdb.WebViewCookieJar
+import com.davidgcd.backlog.data.tmdb.TmdbClient
+import com.davidgcd.backlog.data.tmdb.TmdbSyncService
+import com.davidgcd.backlog.data.tmdb.FileTmdbSessionStore
 import com.davidgcd.backlog.data.library.DataStoreLibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
@@ -81,7 +81,7 @@ class BacklogApplication : Application() {
     lateinit var movieRepository: MovieRepository
         private set
 
-    lateinit var imdbSyncService: ImdbSyncService
+    lateinit var tmdbSyncService: TmdbSyncService
         private set
 
     override fun onCreate() {
@@ -185,16 +185,15 @@ class BacklogApplication : Application() {
         csvExportService = CsvExportService(this)
         csvImportService = CsvImportService(this, repository)
 
-        // Films & séries: IMDb has no public API, so the client talks to its website endpoints and
-        // replays the session the user opened in the login WebView (never their password).
-        val imdbClient = ImdbClient(
-            OkHttpClient.Builder()
-                .cookieJar(WebViewCookieJar())
-                .callTimeout(20, TimeUnit.SECONDS)
-                .build(),
+        // Films & séries: the official TMDB API. The key ships in the APK like the other keys (Secrets.kt);
+        // a user's session (their account access) lives in no-backup storage, never in the key.
+        val tmdbClient = TmdbClient(
+            http = OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build(),
+            apiKey = Secrets.TMDB_API_KEY,
+            sessions = FileTmdbSessionStore(this),
         )
-        movieRepository = MovieRepository(database.movieDao(), imdbClient)
-        imdbSyncService = ImdbSyncService(imdbClient, database.movieDao(), libraryAccountStore)
+        movieRepository = MovieRepository(database.movieDao(), tmdbClient)
+        tmdbSyncService = TmdbSyncService(tmdbClient, database.movieDao(), libraryAccountStore)
 
         ReleaseReminderScheduler.schedule(this)
     }

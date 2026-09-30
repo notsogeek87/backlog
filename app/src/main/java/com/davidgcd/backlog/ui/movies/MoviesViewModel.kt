@@ -8,7 +8,7 @@ import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.local.watchStatus
 import com.davidgcd.backlog.data.repository.MovieRepository
-import com.davidgcd.backlog.model.ImdbTitle
+import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieRanking
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchStatus
@@ -19,9 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,7 +28,7 @@ enum class MovieSort {
     RECENTLY_ADDED,
     NAME,
     RELEASE_DATE,
-    IMDB_RATING,
+    TMDB_RATING,
     MY_RATING,
     MY_RANKING,
 }
@@ -46,7 +44,7 @@ data class MovieFilter(
     val isActive: Boolean get() = showArchived || status != null || genre != null
 }
 
-/** State of the films & séries tab: the saved list (sorted / filtered) and the IMDb search. */
+/** State of the films & séries tab: the saved list (sorted / filtered) and the TMDB search. */
 class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
 
     private val movies: StateFlow<List<MovieEntity>> = repository.observeAll()
@@ -59,7 +57,7 @@ class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
     val filter: StateFlow<MovieFilter> = _filter
 
     val savedIds: StateFlow<Set<String>> = movies
-        .map { list -> list.map { it.imdbId }.toSet() }
+        .map { list -> list.map { it.titleKey }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Per-status counts for the header tiles: archived titles excluded, never narrowed by filters. */
@@ -91,16 +89,6 @@ class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
             .sortedWith(sort.comparator())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    init {
-        // Imported titles have no poster yet: fill them in a few at a time while the tab is open.
-        viewModelScope.launch {
-            repository.observeAll()
-                .map { list -> list.count { it.posterUrl == null } }
-                .distinctUntilChanged()
-                .collectLatest { missing -> if (missing > 0) repository.backfillPosters() }
-        }
-    }
-
     fun setSort(sort: MovieSort) {
         _sort.value = sort
     }
@@ -114,8 +102,8 @@ class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
 
     // --- search ------------------------------------------------------------------------------
 
-    private val _searchResults = MutableStateFlow<List<ImdbTitle>>(emptyList())
-    val searchResults: StateFlow<List<ImdbTitle>> = _searchResults
+    private val _searchResults = MutableStateFlow<List<MediaTitle>>(emptyList())
+    val searchResults: StateFlow<List<MediaTitle>> = _searchResults
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching
@@ -143,8 +131,8 @@ class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
                 throw t
             } catch (t: java.io.IOException) {
                 _searchError.value = SearchError.Network
-            } catch (t: com.davidgcd.backlog.data.imdb.ImdbException) {
-                // The client wraps I/O failures: an offline phone is a network problem, an odd answer is IMDb's.
+            } catch (t: com.davidgcd.backlog.data.tmdb.TmdbException) {
+                // The client wraps I/O failures: an offline phone is a network problem, an odd answer is TMDB's.
                 _searchError.value = if (t.cause is java.io.IOException) SearchError.Network else SearchError.Server
             } catch (t: Throwable) {
                 _searchError.value = SearchError.Unknown
@@ -154,7 +142,7 @@ class MoviesViewModel(private val repository: MovieRepository) : ViewModel() {
         }
     }
 
-    fun add(title: ImdbTitle) {
+    fun add(title: MediaTitle) {
         viewModelScope.launch { repository.add(title) }
     }
 
@@ -169,7 +157,7 @@ private fun MovieSort.comparator(): Comparator<MovieEntity> = when (this) {
     MovieSort.RECENTLY_ADDED -> compareByDescending { it.addedAt }
     MovieSort.NAME -> compareBy { it.title.lowercase() }
     MovieSort.RELEASE_DATE -> nullsLast(descending = true) { it.releaseDate ?: it.year?.let { y -> (y - 1970) * SECONDS_PER_YEAR } }
-    MovieSort.IMDB_RATING -> nullsLast(descending = true) { it.imdbRating }
+    MovieSort.TMDB_RATING -> nullsLast(descending = true) { it.tmdbRating }
     MovieSort.MY_RATING -> nullsLast(descending = true) { it.userRating }
     MovieSort.MY_RANKING -> nullsLast(descending = false) { it.userRank }.thenBy { it.addedAt }
 }

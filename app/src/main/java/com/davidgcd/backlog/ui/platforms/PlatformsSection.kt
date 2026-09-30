@@ -51,12 +51,12 @@ fun PlatformsSection(
     onConnectSteam: () -> Unit,
     onSyncSteam: () -> Unit,
     onSyncAndroid: () -> Unit,
-    onConnectImdb: () -> Unit,
-    onSyncImdb: () -> Unit,
+    onConnectTmdb: () -> Unit,
+    onSyncTmdb: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val steam by viewModel.steam.collectAsState()
-    val imdb by viewModel.imdb.collectAsState()
+    val tmdb by viewModel.tmdb.collectAsState()
     val android by viewModel.android.collectAsState()
     var confirmDisconnect by remember { mutableStateOf<String?>(null) }
 
@@ -74,17 +74,17 @@ fun PlatformsSection(
             onSync = onSyncAndroid,
             onDisconnect = { confirmDisconnect = LibraryProviders.ANDROID },
         )
-        ImdbCard(imdb, onConnectImdb, onSyncImdb, onDisconnect = { confirmDisconnect = LibraryProviders.IMDB })
+        TmdbCard(tmdb, onConnectTmdb, onSyncTmdb, onDisconnect = { confirmDisconnect = LibraryProviders.TMDB })
     }
 
     confirmDisconnect?.let { providerId ->
         val isAndroid = providerId == LibraryProviders.ANDROID
-        val isImdb = providerId == LibraryProviders.IMDB
+        val isTmdb = providerId == LibraryProviders.TMDB
         AlertDialog(
             onDismissRequest = { confirmDisconnect = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            title = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_title else if (isImdb) R.string.platform_imdb_disconnect_title else R.string.platform_disconnect_title)) },
-            text = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_message else if (isImdb) R.string.platform_imdb_disconnect_message else R.string.platform_disconnect_message)) },
+            title = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_title else if (isTmdb) R.string.platform_tmdb_disconnect_title else R.string.platform_disconnect_title)) },
+            text = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_message else if (isTmdb) R.string.platform_tmdb_disconnect_message else R.string.platform_disconnect_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDisconnect = null
@@ -141,9 +141,9 @@ private fun SteamCard(
     }
 }
 
-/** IMDb account: films & séries (watchlist + ratings). Connect opens the IMDb sign-in page. */
+/** TMDB account: films & séries (watchlist + ratings). Connect opens the TMDB sign-in page. */
 @Composable
-private fun ImdbCard(
+private fun TmdbCard(
     account: LibraryAccount?,
     onConnect: () -> Unit,
     onSync: () -> Unit,
@@ -154,25 +154,26 @@ private fun ImdbCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Movie, contentDescription = null, tint = Glass.Amber, modifier = Modifier.size(28.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.platform_imdb), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Glass.Text)
+                    Text(stringResource(R.string.platform_tmdb), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Glass.Text)
                     Text(
-                        text = if (account == null) stringResource(R.string.platform_imdb_hint) else stringResource(R.string.platform_imdb_connected_as, account.accountId),
+                        text = if (account == null) stringResource(R.string.platform_tmdb_hint) else stringResource(R.string.platform_tmdb_connected_as, account.displayName ?: account.accountId),
                         style = MaterialTheme.typography.bodySmall,
                         color = Glass.TextMuted,
                     )
                 }
                 if (account != null) GlassBadge(stringResource(R.string.platform_connected), tint = Glass.Green)
             }
+            Text(stringResource(R.string.tmdb_attribution), style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
 
             if (account == null) {
                 GradientButton(
-                    text = stringResource(R.string.platform_connect_imdb),
+                    text = stringResource(R.string.platform_connect_tmdb),
                     onClick = onConnect,
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
                 account.ownedCount?.let {
-                    Text(pluralText(R.plurals.platform_imdb_titles, it, it), style = MaterialTheme.typography.bodyMedium, color = Glass.Text)
+                    Text(pluralText(R.plurals.platform_tmdb_titles, it, it), style = MaterialTheme.typography.bodyMedium, color = Glass.Text)
                 }
                 Text(
                     text = account.lastSyncedAt?.let { last ->

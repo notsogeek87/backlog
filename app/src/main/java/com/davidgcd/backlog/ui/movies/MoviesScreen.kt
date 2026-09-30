@@ -82,7 +82,7 @@ import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.local.watchStatus
-import com.davidgcd.backlog.model.ImdbTitle
+import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchStatus
 import com.davidgcd.backlog.ui.backlog.SearchError
@@ -95,7 +95,7 @@ import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.labelRes
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
-import com.davidgcd.backlog.util.ImdbImage
+import com.davidgcd.backlog.util.TmdbImage
 import com.davidgcd.backlog.util.MovieShareText
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 import kotlinx.coroutines.launch
@@ -106,7 +106,7 @@ fun MoviesScreen(
     viewModel: MoviesViewModel,
     onMovieClick: (String) -> Unit,
     onOpenRanking: () -> Unit,
-    onOpenImdbImport: () -> Unit,
+    onOpenTmdbImport: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -240,7 +240,7 @@ fun MoviesScreen(
                         text = stringResource(
                             when (error) {
                                 SearchError.Network -> R.string.search_error_network
-                                SearchError.Server -> R.string.movies_search_error_imdb
+                                SearchError.Server -> R.string.movies_search_error_tmdb
                                 SearchError.Unknown -> R.string.search_error_unknown
                             },
                         ),
@@ -278,7 +278,7 @@ fun MoviesScreen(
                     actionLabel = stringResource(R.string.movies_empty_cta),
                     onAction = { showSearch = true },
                     secondaryLabel = stringResource(R.string.movies_empty_import),
-                    onSecondary = onOpenImdbImport,
+                    onSecondary = onOpenTmdbImport,
                 )
             } else {
                 MovieGrid(
@@ -303,7 +303,7 @@ fun MoviesScreen(
                             if (result == SnackbarResult.ActionPerformed) viewModel.setArchived(movie, !archive)
                         }
                     },
-                    onClick = { onMovieClick(it.imdbId) },
+                    onClick = { onMovieClick(it.titleKey) },
                 )
             }
         }
@@ -356,10 +356,10 @@ private fun MovieGrid(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(vertical = 10.dp, horizontal = 4.dp),
                     ) {
-                        items(recentlyAdded, key = { it.imdbId }) { movie ->
+                        items(recentlyAdded, key = { it.titleKey }) { movie ->
                             com.davidgcd.backlog.ui.components.GameCover(
                                 imageId = null,
-                                imageUrl = ImdbImage.poster(movie.posterUrl),
+                                imageUrl = TmdbImage.poster(movie.posterUrl),
                                 width = 112.dp,
                                 modifier = Modifier.clickable { onClick(movie) },
                             )
@@ -382,7 +382,7 @@ private fun MovieGrid(
                 )
             }
         }
-        items(movies, key = { it.imdbId }) { movie ->
+        items(movies, key = { it.titleKey }) { movie ->
             MovieListItem(
                 movie = movie,
                 onClick = { onClick(movie) },
@@ -417,11 +417,11 @@ fun MovieListItem(
     GameListItem(
         name = movie.title,
         coverImageId = null,
-        coverUrl = ImdbImage.poster(movie.posterUrl, height = 240),
+        coverUrl = TmdbImage.poster(movie.posterUrl, width = 185),
         modifier = modifier,
         meta = meta,
-        rating = movie.imdbRating?.let { it * 10 },
-        ratingText = movie.imdbRating?.let { "%.1f".format(java.util.Locale.FRENCH, it) },
+        rating = movie.tmdbRating?.let { it * 10 },
+        ratingText = movie.tmdbRating?.let { "%.1f".format(java.util.Locale.FRENCH, it) },
         dimmed = movie.isArchived,
         statusLabel = movie.watchStatus.label(),
         statusTint = movie.watchStatus.tint(),
@@ -445,7 +445,7 @@ private fun SectionHeader(text: String) {
 private fun ActiveFilterChips(filter: MovieFilter, onChange: (MovieFilter) -> Unit) {
     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         filter.status?.let { RemovableChip(it.label()) { onChange(filter.copy(status = null)) } }
-        filter.genre?.let { RemovableChip(com.davidgcd.backlog.util.FrenchLabels.movieGenre(it)) { onChange(filter.copy(genre = null)) } }
+        filter.genre?.let { RemovableChip(it) { onChange(filter.copy(genre = null)) } }
         if (filter.showArchived) RemovableChip(stringResource(R.string.filter_show_archived)) { onChange(filter.copy(showArchived = false)) }
     }
 }
@@ -523,7 +523,7 @@ private fun MovieSort.labelRes(): Int = when (this) {
     MovieSort.RECENTLY_ADDED -> R.string.sort_recently_added
     MovieSort.NAME -> R.string.sort_name
     MovieSort.RELEASE_DATE -> R.string.sort_release_date
-    MovieSort.IMDB_RATING -> R.string.sort_imdb_rating
+    MovieSort.TMDB_RATING -> R.string.sort_tmdb_rating
     MovieSort.MY_RATING -> R.string.sort_my_rating
     MovieSort.MY_RANKING -> R.string.sort_my_ranking
 }
@@ -558,7 +558,7 @@ private fun FilterMenuButton(current: MovieFilter, availableGenres: List<String>
             MenuTitle(stringResource(R.string.filter_genre))
             (listOf<String?>(null) + availableGenres).forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option?.let(com.davidgcd.backlog.util.FrenchLabels::movieGenre) ?: stringResource(R.string.filter_any)) },
+                    text = { Text(option ?: stringResource(R.string.filter_any)) },
                     leadingIcon = { RadioButton(selected = current.genre == option, onClick = null) },
                     onClick = { onChange(current.copy(genre = option)) },
                 )
@@ -589,24 +589,24 @@ private fun MenuTitle(text: String) {
 
 @Composable
 private fun SearchResults(
-    results: List<ImdbTitle>,
+    results: List<MediaTitle>,
     savedIds: Set<String>,
-    onAdd: (ImdbTitle) -> Unit,
-    onClick: (ImdbTitle) -> Unit,
+    onAdd: (MediaTitle) -> Unit,
+    onClick: (MediaTitle) -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(results, key = { it.id }) { title ->
-            ImdbTitleListItem(title = title, saved = title.id in savedIds, onAdd = { onAdd(title) }, onClick = { onClick(title) })
+            MediaTitleListItem(title = title, saved = title.id in savedIds, onAdd = { onAdd(title) }, onClick = { onClick(title) })
         }
     }
 }
 
 /** A not-yet-saved title (search hit, chart entry) with the add / already-saved affordance. */
 @Composable
-fun ImdbTitleListItem(title: ImdbTitle, saved: Boolean, onAdd: () -> Unit, onClick: () -> Unit) {
+fun MediaTitleListItem(title: MediaTitle, saved: Boolean, onAdd: () -> Unit, onClick: () -> Unit) {
     val meta = listOfNotNull(
         title.kind.label(),
         title.year?.toString(),
@@ -615,7 +615,7 @@ fun ImdbTitleListItem(title: ImdbTitle, saved: Boolean, onAdd: () -> Unit, onCli
     GameListItem(
         name = title.title,
         coverImageId = null,
-        coverUrl = ImdbImage.poster(title.posterUrl, height = 240),
+        coverUrl = TmdbImage.poster(title.posterUrl, width = 185),
         meta = meta,
         rating = title.rating?.let { it * 10 },
         ratingText = title.rating?.let { "%.1f".format(java.util.Locale.FRENCH, it) },

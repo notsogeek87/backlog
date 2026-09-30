@@ -3,6 +3,7 @@ package com.davidgcd.backlog.ui.platforms
 import android.annotation.SuppressLint
 import android.graphics.Color as AndroidColor
 import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,12 +35,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.R
-import com.davidgcd.backlog.data.imdb.ImdbError
-import com.davidgcd.backlog.data.imdb.ImdbException
-import com.davidgcd.backlog.data.imdb.ImdbSyncService
-import com.davidgcd.backlog.data.imdb.WebViewCookieJar
-import com.davidgcd.backlog.data.library.LibraryAccountStore
-import com.davidgcd.backlog.data.library.LibraryProviders
+import com.davidgcd.backlog.data.tmdb.TmdbError
+import com.davidgcd.backlog.data.tmdb.TmdbException
+import com.davidgcd.backlog.data.tmdb.TmdbSyncService
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.theme.Glass
@@ -48,64 +47,96 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-data class ImdbLoginState(
-    val verifying: Boolean = false,
-    val error: ImdbError? = null,
+data class TmdbLoginState(
+    /** True while the token is requested / the session is opened. */
+    val working: Boolean = true,
+    /** The TMDB approval page to show, once the request token exists. */
+    val approvalUrl: String? = null,
+    val error: TmdbError? = null,
     val connected: Boolean = false,
 )
 
-class ImdbLoginViewModel(
-    private val sync: ImdbSyncService,
-    private val accounts: LibraryAccountStore,
+class TmdbLoginViewModel(
+    private val sync: TmdbSyncService,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(ImdbLoginState())
-    val state: StateFlow<ImdbLoginState> = _state
+    private val _state = MutableStateFlow(TmdbLoginState())
+    val state: StateFlow<TmdbLoginState> = _state
 
-    /** Called when the WebView shows a signed-in IMDb page: confirms the session and stores the `ur…` id. */
-    fun onSignedIn() {
-        if (_state.value.verifying || _state.value.connected) return
-        _state.value = ImdbLoginState(verifying = true)
+    private var requestToken: String? = null
+
+    init {
+        start()
+    }
+
+    /** Step 1: a request token, then the TMDB page where the user signs in and approves. */
+    fun start() {
+        _state.value = TmdbLoginState(working = true)
         viewModelScope.launch {
             try {
-                val userId = sync.currentUserId() ?: throw ImdbException(ImdbError.NOT_SIGNED_IN)
-                accounts.connect(LibraryProviders.IMDB, userId, displayName = null)
-                _state.value = ImdbLoginState(connected = true)
+                if (!sync.isConfigured) throw TmdbException(TmdbError.NOT_CONFIGURED)
+                val (token, url) = sync.startLogin(REDIRECT_URL)
+                requestToken = token
+                _state.value = TmdbLoginState(working = false, approvalUrl = url)
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
-                val error = (t as? ImdbException)?.error ?: ImdbError.UNKNOWN
-                AppLogger.network.warn("IMDb login: verification failed: $error — ${t.message}")
-                _state.value = ImdbLoginState(error = error)
+                fail(t)
             }
         }
     }
 
-    fun retry() {
-        _state.value = ImdbLoginState()
+    /** Called when TMDB redirected back to [REDIRECT_URL]: [approved] tells whether the user allowed access. */
+    fun onRedirect(approved: Boolean) {
+        val token = requestToken
+        if (!approved || token == null) {
+            _state.value = TmdbLoginState(working = false, error = TmdbError.NOT_SIGNED_IN)
+            return
+        }
+        requestToken = null
+        _state.value = TmdbLoginState(working = true)
+        viewModelScope.launch {
+            try {
+                sync.finishLogin(token)
+                _state.value = TmdbLoginState(working = false, connected = true)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                fail(t)
+            }
+        }
+    }
+
+    private fun fail(t: Throwable) {
+        val error = (t as? TmdbException)?.error ?: TmdbError.UNKNOWN
+        AppLogger.network.warn("TMDB login failed: $error — ${t.message}")
+        _state.value = TmdbLoginState(working = false, error = error)
+    }
+
+    companion object {
+        /** Never actually loaded: the WebView intercepts it (same trick as the Steam login). */
+        const val REDIRECT_URL = "https://backlog.invalid/tmdb-approved"
     }
 }
 
-class ImdbLoginViewModelFactory(
-    private val sync: ImdbSyncService,
-    private val accounts: LibraryAccountStore,
+class TmdbLoginViewModelFactory(
+    private val sync: TmdbSyncService,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        require(modelClass == ImdbLoginViewModel::class.java)
-        return ImdbLoginViewModel(sync, accounts) as T
+        require(modelClass == TmdbLoginViewModel::class.java)
+        return TmdbLoginViewModel(sync) as T
     }
 }
 
 /**
- * IMDb's own sign-in page (IMDb, Amazon, Google… whichever the user has) in a WebView. Backlog never
- * sees the credentials: it only notices that the WebView holds a signed-in session and then reads
- * the user's own exports with it. The session stays in the WebView's app-private cookie store until
- * the account is disconnected in Settings.
+ * TMDB's own approval page (sign in with a TMDB account, then "Approve") in a WebView. Backlog never
+ * sees the credentials: it only gets a session TMDB grants once the user approves, kept in the app's
+ * no-backup storage. The WebView's cookies are wiped on exit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImdbLoginScreen(
-    viewModel: ImdbLoginViewModel,
+fun TmdbLoginScreen(
+    viewModel: TmdbLoginViewModel,
     onBack: () -> Unit,
     onConnected: () -> Unit,
 ) {
@@ -118,7 +149,7 @@ fun ImdbLoginScreen(
         topBar = {
             TopAppBar(
                 colors = glassTopAppBarColors(),
-                title = { Text(stringResource(R.string.imdb_login_title)) },
+                title = { Text(stringResource(R.string.tmdb_login_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
@@ -129,25 +160,25 @@ fun ImdbLoginScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
-                stringResource(R.string.imdb_login_hint),
+                stringResource(R.string.tmdb_login_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = Glass.TextMuted,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
-                    state.verifying -> Centered { CircularProgressIndicator(color = Glass.Cyan) }
+                    state.working -> Centered { CircularProgressIndicator(color = Glass.Cyan) }
                     state.error != null -> Centered {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                             Text(stringResource(state.error!!.messageRes()), color = Glass.Text)
                             GlassButton(
                                 text = stringResource(R.string.action_retry),
-                                onClick = viewModel::retry,
+                                onClick = viewModel::start,
                                 modifier = Modifier.padding(top = 16.dp),
                             )
                         }
                     }
-                    else -> ImdbWebView(onSignedIn = viewModel::onSignedIn)
+                    state.approvalUrl != null -> TmdbWebView(url = state.approvalUrl!!, onRedirect = viewModel::onRedirect)
                 }
             }
         }
@@ -161,39 +192,42 @@ private fun Centered(content: @Composable () -> Unit) {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun ImdbWebView(onSignedIn: () -> Unit) {
+private fun TmdbWebView(url: String, onRedirect: (approved: Boolean) -> Unit) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
             WebView(context).apply {
                 setBackgroundColor(AndroidColor.TRANSPARENT)
-                settings.javaScriptEnabled = true // the sign-in pages don't work without it
+                settings.javaScriptEnabled = true // TMDB's sign-in page doesn't work without it
                 settings.domStorageEnabled = true
                 settings.allowFileAccess = false
                 settings.allowContentAccess = false
-                CookieManager.getInstance().setAcceptCookie(true)
-                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                 webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView, url: String?) {
-                        // Back on a normal imdb.com page (not the sign-in / Amazon auth ones) with a session cookie = signed in.
-                        val onImdb = url != null && url.contains("imdb.com") && !url.contains("/registration") && !url.contains("/ap/")
-                        if (onImdb && WebViewCookieJar.hasSignInCookie()) onSignedIn()
+                    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                        val target = request.url
+                        if (target.toString().startsWith(TmdbLoginViewModel.REDIRECT_URL)) {
+                            onRedirect(target.getQueryParameter("approved") == "true")
+                            return true // never actually load the return address
+                        }
+                        return false
                     }
                 }
-                loadUrl(SIGN_IN_URL)
+                loadUrl(url)
             }
         },
         onRelease = { webView ->
+            CookieManager.getInstance().removeAllCookies(null)
             webView.stopLoading()
             webView.destroy()
         },
     )
+    // Also drop the TMDB web session if the composable leaves before the view is released.
+    DisposableEffect(Unit) { onDispose { CookieManager.getInstance().removeAllCookies(null) } }
 }
 
-private const val SIGN_IN_URL = "https://www.imdb.com/registration/signin"
-
-fun ImdbError.messageRes(): Int = when (this) {
-    ImdbError.NOT_SIGNED_IN -> R.string.imdb_error_not_signed_in
-    ImdbError.UNAVAILABLE -> R.string.imdb_error_unavailable
-    ImdbError.UNKNOWN -> R.string.imdb_error_unknown
+fun TmdbError.messageRes(): Int = when (this) {
+    TmdbError.NOT_CONFIGURED -> R.string.tmdb_error_not_configured
+    TmdbError.NOT_SIGNED_IN -> R.string.tmdb_error_not_signed_in
+    TmdbError.UNAVAILABLE -> R.string.tmdb_error_unavailable
+    TmdbError.UNKNOWN -> R.string.tmdb_error_unknown
 }

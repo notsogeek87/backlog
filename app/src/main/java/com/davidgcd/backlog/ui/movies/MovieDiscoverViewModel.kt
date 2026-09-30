@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.repository.MovieRepository
-import com.davidgcd.backlog.model.ImdbTitle
+import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -17,11 +17,11 @@ import kotlinx.coroutines.launch
 
 sealed interface MovieDiscoverState {
     data object Loading : MovieDiscoverState
-    data class Loaded(val titles: List<ImdbTitle>) : MovieDiscoverState
+    data class Loaded(val titles: List<MediaTitle>) : MovieDiscoverState
     data object Error : MovieDiscoverState
 }
 
-/** IMDb charts (popular / top rated, films / séries), one fetch per selected chart — the twin of the games' DiscoverViewModel. */
+/** TMDB charts (popular / top rated, films / séries), one fetch per selected chart — the twin of the games' DiscoverViewModel. */
 class MovieDiscoverViewModel(private val repository: MovieRepository) : ViewModel() {
     private val _state = MutableStateFlow<MovieDiscoverState>(MovieDiscoverState.Loading)
     val state: StateFlow<MovieDiscoverState> = _state
@@ -32,7 +32,7 @@ class MovieDiscoverViewModel(private val repository: MovieRepository) : ViewMode
     private var loadJob: Job? = null
 
     val savedIds: StateFlow<Set<String>> = repository.observeAll()
-        .map { list -> list.map { it.imdbId }.toSet() }
+        .map { list -> list.map { it.titleKey }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     init {
@@ -64,7 +64,7 @@ class MovieDiscoverViewModel(private val repository: MovieRepository) : ViewMode
         }
     }
 
-    fun add(title: ImdbTitle) {
+    fun add(title: MediaTitle) {
         viewModelScope.launch { repository.add(title) }
     }
 

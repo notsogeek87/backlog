@@ -7,7 +7,7 @@ import org.junit.Test
 
 class MovieRankingTest {
     private fun movie(id: String, rank: Int? = null, added: Long = 0, archived: Boolean = false) =
-        MovieEntity(imdbId = id, title = id, userRank = rank, addedAt = added, isArchived = archived)
+        MovieEntity(titleKey = id, title = id, userRank = rank, addedAt = added, isArchived = archived)
 
     @Test
     fun `ranked first, then unranked by date, archived never`() {
@@ -18,17 +18,17 @@ class MovieRankingTest {
             movie("d", added = 1),
             movie("e", rank = 1, added = 1, archived = true),
         )
-        assertEquals(listOf("c", "b", "d", "a"), MovieRanking.order(list).map { it.imdbId })
+        assertEquals(listOf("c", "b", "d", "a"), MovieRanking.order(list).map { it.titleKey })
     }
 
     @Test
     fun `move and changes`() {
         val ordered = listOf(movie("a", 1), movie("b", 2), movie("c", 3))
         val moved = MovieRanking.move(ordered, 2, -1)
-        assertEquals(listOf("a", "c", "b"), moved.map { it.imdbId })
+        assertEquals(listOf("a", "c", "b"), moved.map { it.titleKey })
         assertEquals(mapOf("c" to 2, "b" to 3), MovieRanking.changes(moved))
         assertSame(ordered, MovieRanking.move(ordered, 0, -1))
-        assertEquals(listOf("c", "a", "b"), MovieRanking.moveTo(ordered, 2, 0).map { it.imdbId })
+        assertEquals(listOf("c", "a", "b"), MovieRanking.moveTo(ordered, 2, 0).map { it.titleKey })
     }
 
     @Test

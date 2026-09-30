@@ -36,7 +36,7 @@ object Migrations {
         }
     }
 
-    /** Films & séries (IMDb): a table of their own, keyed by the text IMDb id. */
+    /** Films & séries, first shape (IMDb ids). Superseded by 6→7, kept as it shipped. */
     val MIGRATION_5_6 = object : Migration(5, 6) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(
@@ -50,5 +50,24 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+    /**
+     * Films & séries move from IMDb ids (`tt…`) to TMDB keys (`movie:603` / `tv:1396`). The two id spaces
+     * can't be mapped onto each other and the IMDb version was live for a few hours only, so the table is
+     * rebuilt (SQLite of Android 8 can't rename a column).
+     */
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS `movies`")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `movies` (" +
+                    "`titleKey` TEXT NOT NULL, `title` TEXT NOT NULL, `kind` TEXT NOT NULL, " +
+                    "`year` INTEGER, `releaseDate` INTEGER, `posterUrl` TEXT, `genres` TEXT, `plot` TEXT, " +
+                    "`tmdbRating` REAL, `runtimeMinutes` INTEGER, `directors` TEXT, " +
+                    "`isArchived` INTEGER NOT NULL, `status` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, " +
+                    "`userRank` INTEGER, `userRating` INTEGER, PRIMARY KEY(`titleKey`))",
+            )
+        }
+    }
+
+    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
 }

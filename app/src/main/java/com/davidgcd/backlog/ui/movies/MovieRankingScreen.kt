@@ -82,7 +82,7 @@ fun MovieRankingScreen(
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
-            itemsIndexed(ordered, key = { _, movie -> movie.imdbId }) { index, movie ->
+            itemsIndexed(ordered, key = { _, movie -> movie.titleKey }) { index, movie ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         "${index + 1}",
@@ -95,7 +95,7 @@ fun MovieRankingScreen(
                     MovieListItem(
                         movie = movie,
                         modifier = Modifier.weight(1f),
-                        onClick = { onMovieClick(movie.imdbId) },
+                        onClick = { onMovieClick(movie.titleKey) },
                         trailing = {
                             Column {
                                 IconButton(modifier = Modifier.size(36.dp), enabled = index > 0, onClick = { viewModel.moveToTop(index) }) {

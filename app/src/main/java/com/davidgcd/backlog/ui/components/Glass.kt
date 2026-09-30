@@ -101,7 +101,7 @@ fun GlassCard(
 
 /**
  * Cover art as a first-class element: rounded, hairline border, soft drop shadow.
- * Games pass an IGDB [imageId]; films & séries pass a full [imageUrl] (an IMDb poster) instead.
+ * Games pass an IGDB [imageId]; films & séries pass a full [imageUrl] (an TMDB poster) instead.
  */
 @Composable
 fun GameCover(
@@ -276,7 +276,7 @@ fun GameListItem(
     statusLabel: String? = null,
     statusTint: Color = Color.White,
     coverUrl: String? = null,
-    /** Replaces the number next to the rating bar (IMDb's 0–10 scale); [rating] still drives the bar (0–100). */
+    /** Replaces the number next to the rating bar (TMDB's 0–10 scale); [rating] still drives the bar (0–100). */
     ratingText: String? = null,
     onClick: () -> Unit,
     trailing: @Composable () -> Unit = {},
