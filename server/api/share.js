@@ -1,17 +1,20 @@
 import { sql } from '../lib/db.js';
-import { hashToken, newId, newToken, tokenMatches, validatePayload } from '../lib/shareCore.js';
+import { PURGE_AFTER_DAYS, hashToken, newId, newToken, tokenMatches, validatePayload } from '../lib/shareCore.js';
 
 const baseUrl = (req) => `https://${req.headers['x-forwarded-host'] ?? req.headers.host}`;
 
 /**
  * POST /api/share            body {title?, items[]}  → 201 {id, token, url}
- * PUT  /api/share?id=<id>    header x-share-token    → 200 {id, url}   (same link, new content)
+ * PUT  /api/share?id=<id>    header x-share-token    → 200 {id, url}   (same link, new content, expiry renewed)
+ * Links expire after SHARE_TTL_HOURS (lib/shareCore.js) without a publish.
  * DELETE /api/share?id=<id>  header x-share-token    → 204            (link stops working)
  */
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const payload = validatePayload(req.body);
+      // Housekeeping: drop links that expired long ago (recent ones can still be renewed by their owner).
+      await sql`DELETE FROM shares WHERE updated_at < now() - make_interval(days => ${PURGE_AFTER_DAYS})`;
       const id = newId();
       const token = newToken();
       await sql`INSERT INTO shares (id, token_hash, payload) VALUES (${id}, ${hashToken(token)}, ${JSON.stringify(payload)}::jsonb)`;
