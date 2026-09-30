@@ -171,7 +171,7 @@ class BacklogApplication : Application() {
         steamAuthService = SteamAuthService(steamOpenIdApi, steamProvider)
         steamService = SteamService(steamApi)
         metacriticService = MetacriticService(metacriticApi)
-        shareLinkService = ShareLinkService(this, OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build())
+        shareLinkService = ShareLinkService(this, OkHttpClient.Builder().callTimeout(12, TimeUnit.SECONDS).build())
         csvExportService = CsvExportService(this)
         csvImportService = CsvImportService(this, repository)
 

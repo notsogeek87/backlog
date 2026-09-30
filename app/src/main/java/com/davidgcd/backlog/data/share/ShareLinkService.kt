@@ -33,6 +33,26 @@ class ShareLinkService(
 ) {
     private val idKey = stringPreferencesKey("share_id")
     private val tokenKey = stringPreferencesKey("share_token")
+    private val urlsKey = stringPreferencesKey("igdb_urls")
+
+    /** igdb.com pages already looked up, so a share only asks IGDB about games it hasn't seen. */
+    suspend fun cachedUrls(): Map<Long, String> {
+        val raw = context.shareLinkDataStore.data.first()[urlsKey] ?: return emptyMap()
+        return try {
+            val json = JSONObject(raw)
+            json.keys().asSequence().mapNotNull { key -> key.toLongOrNull()?.let { it to json.getString(key) } }.toMap()
+        } catch (e: org.json.JSONException) {
+            emptyMap()
+        }
+    }
+
+    suspend fun rememberUrls(urls: Map<Long, String>) {
+        if (urls.isEmpty()) return
+        val merged = cachedUrls() + urls
+        context.shareLinkDataStore.edit { prefs ->
+            prefs[urlsKey] = JSONObject().apply { merged.forEach { (id, url) -> put(id.toString(), url) } }.toString()
+        }
+    }
 
     /** Throws [IOException] on any network / server failure; the caller falls back to a plain-text share. */
     suspend fun publish(title: String, items: List<ShareItem>): String = withContext(Dispatchers.IO) {

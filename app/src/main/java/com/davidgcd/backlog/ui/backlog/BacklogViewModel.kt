@@ -89,13 +89,25 @@ class BacklogViewModel(
     /** Everything the share sheet sends: the whole backlog, never narrowed by the current filter. */
     suspend fun gamesToShare(): List<GameEntity> = repository.allGames()
 
-    /** igdb.com links for the shared games; an offline / failing IGDB just means a list without links. */
-    suspend fun linksToShare(games: List<GameEntity>): Map<Long, String> = try {
-        repository.gameUrls(games.filter { !it.isArchived }.map { it.igdbId })
-    } catch (t: CancellationException) {
-        throw t
-    } catch (t: Throwable) {
-        emptyMap()
+    /**
+     * igdb.com links for the shared games. Already-known ones come from the on-device cache; only the
+     * missing ones are asked of IGDB (bounded by a timeout). Offline / failing IGDB just means fewer links.
+     */
+    suspend fun linksToShare(games: List<GameEntity>): Map<Long, String> {
+        val ids = games.filter { !it.isArchived }.map { it.igdbId }
+        val cached = shareLinkService?.cachedUrls().orEmpty()
+        val missing = ids.filter { it !in cached }
+        if (missing.isEmpty()) return cached
+        return try {
+            // null = timed out; keep what we have rather than making the user wait longer.
+            val fetched = kotlinx.coroutines.withTimeoutOrNull(10_000) { repository.gameUrls(missing) } ?: return cached
+            shareLinkService?.rememberUrls(fetched)
+            cached + fetched
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            cached
+        }
     }
 
     /**

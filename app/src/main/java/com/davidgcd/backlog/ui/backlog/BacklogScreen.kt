@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Unarchive
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -196,7 +197,11 @@ fun BacklogScreen(
                                 }
                             }
                         }) {
-                            Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))
+                            if (sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))
+                            }
                         }
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
                         FilterMenuButton(
