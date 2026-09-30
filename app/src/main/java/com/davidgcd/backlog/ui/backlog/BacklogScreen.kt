@@ -109,6 +109,7 @@ fun BacklogScreen(
 
     var query by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
 
     val visibleBacklog by viewModel.visibleBacklog.collectAsState()
@@ -160,22 +161,39 @@ fun BacklogScreen(
                 },
                 actions = {
                     if (!showSearch) {
-                        IconButton(onClick = {
+                        IconButton(enabled = !sharing, onClick = {
                             scope.launch {
-                                val games = viewModel.gamesToShare()
-                                val text = BacklogShareText.build(
-                                    games,
-                                    BacklogShareText.Labels(
-                                        header = { count -> context.resources.getQuantityString(R.plurals.share_backlog_header, count, count) },
-                                        status = { status -> context.getString(status.labelRes()) },
-                                    ),
-                                    links = viewModel.linksToShare(games),
-                                )
-                                val send = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, text)
+                                sharing = true
+                                try {
+                                    val games = viewModel.gamesToShare()
+                                    val links = viewModel.linksToShare(games)
+                                    val header = context.resources.getQuantityString(
+                                        R.plurals.share_backlog_header,
+                                        games.count { !it.isArchived },
+                                        games.count { !it.isArchived },
+                                    )
+                                    // A public page when the server answers; otherwise the plain-text list, still with IGDB links.
+                                    val publicLink = viewModel.publishShareLink(header, games, links)
+                                    val text = if (publicLink != null) {
+                                        "$header\n$publicLink"
+                                    } else {
+                                        BacklogShareText.build(
+                                            games,
+                                            BacklogShareText.Labels(
+                                                header = { header },
+                                                status = { status -> context.getString(status.labelRes()) },
+                                            ),
+                                            links = links,
+                                        )
+                                    }
+                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, text)
+                                    }
+                                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
+                                } finally {
+                                    sharing = false
                                 }
-                                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_backlog_chooser)))
                             }
                         }) {
                             Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))

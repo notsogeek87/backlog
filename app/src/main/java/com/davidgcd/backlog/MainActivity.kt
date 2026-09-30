@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
                         librarySyncService = app.librarySyncService,
                         steamAuthService = app.steamAuthService,
                         gameSourceDao = app.gameSourceDao,
+                        shareLinkService = app.shareLinkService,
                     )
                 }
             }

@@ -48,6 +48,7 @@ import com.davidgcd.backlog.data.library.LibrarySyncService
 import com.davidgcd.backlog.data.library.steam.SteamAuthService
 import com.davidgcd.backlog.data.local.GameSourceDao
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.notifications.NotificationPreferences
@@ -114,6 +115,7 @@ fun BacklogNavHost(
     librarySyncService: LibrarySyncService,
     steamAuthService: SteamAuthService,
     gameSourceDao: GameSourceDao,
+    shareLinkService: ShareLinkService,
 ) {
     val navController = rememberNavController()
     val navEntry by navController.currentBackStackEntryAsState()
@@ -175,7 +177,7 @@ fun BacklogNavHost(
         modifier = Modifier.padding(outerPadding).consumeWindowInsets(outerPadding),
     ) {
         composable(Routes.BACKLOG) {
-            val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository))
+            val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository, shareLinkService))
             BacklogScreen(
                 viewModel = viewModel,
                 onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },

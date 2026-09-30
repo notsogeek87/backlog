@@ -6,6 +6,8 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.share.ShareItem
+import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +30,10 @@ import kotlinx.coroutines.launch
 /** Coarse search failure kinds; the screen maps them to localized copy. */
 enum class SearchError { Network, Server, Unknown }
 
-class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() {
+class BacklogViewModel(
+    private val repository: BacklogRepository,
+    private val shareLinkService: ShareLinkService? = null,
+) : ViewModel() {
 
     private val backlog: StateFlow<List<GameEntity>> = repository.observeBacklog()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -90,6 +95,22 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
         throw t
     } catch (t: Throwable) {
         emptyMap()
+    }
+
+    /**
+     * Publishes the backlog to the share server and returns its public link, or null when there is
+     * no server configured or it can't be reached — the caller then shares plain text instead.
+     */
+    suspend fun publishShareLink(title: String, games: List<GameEntity>, links: Map<Long, String>): String? {
+        val service = shareLinkService ?: return null
+        val items = games.filter { !it.isArchived }.map { ShareItem(it.name, it.status, it.coverImageId, links[it.igdbId]) }
+        return try {
+            service.publish(title, items)
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            null
+        }
     }
 
     fun setSort(sort: BacklogSort) {

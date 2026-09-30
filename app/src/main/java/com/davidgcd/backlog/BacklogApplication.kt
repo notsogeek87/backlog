@@ -27,6 +27,7 @@ import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.data.repository.IgdbService
 import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.SteamService
+import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.notifications.ReleaseReminderScheduler
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -68,6 +69,9 @@ class BacklogApplication : Application() {
         private set
 
     lateinit var gameSourceDao: GameSourceDao
+        private set
+
+    lateinit var shareLinkService: ShareLinkService
         private set
 
     override fun onCreate() {
@@ -167,6 +171,7 @@ class BacklogApplication : Application() {
         steamAuthService = SteamAuthService(steamOpenIdApi, steamProvider)
         steamService = SteamService(steamApi)
         metacriticService = MetacriticService(metacriticApi)
+        shareLinkService = ShareLinkService(this, OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build())
         csvExportService = CsvExportService(this)
         csvImportService = CsvImportService(this, repository)
 
