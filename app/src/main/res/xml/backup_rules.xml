@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 6 à 11 (API 23-30) : sauvegarde automatique Google et Samsung Smart Switch / Samsung
+  Cloud (qui respectent allowBackup + fullBackupContent). Voir data_extraction_rules.xml pour
+  Android 12+ ; garder les deux fichiers en phase.
+-->
+<full-backup-content>
+    <include domain="database" path="backlog.db" />
+    <include domain="database" path="backlog.db-wal" />
+    <include domain="database" path="backlog.db-shm" />
+    <include domain="file" path="datastore/notification_prefs.preferences_pb" />
+    <include domain="file" path="datastore/library_accounts.preferences_pb" />
+    <include domain="file" path="datastore/share_link.preferences_pb" />
+</full-backup-content>

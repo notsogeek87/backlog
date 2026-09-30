@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31+) : sauvegarde Google (cloud-backup) et transfert d'appareil à appareil
+  (device-transfer : câble / Wi-Fi Direct, y compris Samsung Smart Switch). Mêmes règles pour les
+  deux : la bibliothèque et les réglages suivent l'utilisateur sur son nouveau téléphone.
+  Dès qu'un <include> est présent, tout ce qui n'est pas listé est exclu (cache Coil, base de
+  WorkManager, dossier d'export auto : son URI SAF n'est pas restaurable sur un autre appareil).
+  Garder en phase avec backup_rules.xml.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="backlog.db" />
+        <include domain="database" path="backlog.db-wal" />
+        <include domain="database" path="backlog.db-shm" />
+        <include domain="file" path="datastore/notification_prefs.preferences_pb" />
+        <include domain="file" path="datastore/library_accounts.preferences_pb" />
+        <include domain="file" path="datastore/share_link.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="backlog.db" />
+        <include domain="database" path="backlog.db-wal" />
+        <include domain="database" path="backlog.db-shm" />
+        <include domain="file" path="datastore/notification_prefs.preferences_pb" />
+        <include domain="file" path="datastore/library_accounts.preferences_pb" />
+        <include domain="file" path="datastore/share_link.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>
