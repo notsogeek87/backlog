@@ -10,6 +10,7 @@ import com.davidgcd.backlog.data.share.ShareItem
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -109,6 +110,7 @@ class BacklogViewModel(
         } catch (t: CancellationException) {
             throw t
         } catch (t: Throwable) {
+            AppLogger.network.error("Share link: publish failed, sharing plain text instead", t)
             null
         }
     }
