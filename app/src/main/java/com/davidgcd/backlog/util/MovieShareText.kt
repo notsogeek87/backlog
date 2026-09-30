@@ -8,7 +8,7 @@ import com.davidgcd.backlog.model.WatchStatus
 
 /**
  * Plain-text version of the films & séries list for the share sheet — the movie twin of
- * [BacklogShareText]: ranked titles first as a numbered "Mon classement", the rest grouped by status,
+ * [BacklogShareText]: ranked titles first as a numbered "Mon classement", the rest grouped by status and, inside each, best user note first,
  * each with its themoviedb.org link.
  */
 object MovieShareText {
@@ -29,7 +29,7 @@ object MovieShareText {
             ranked.forEachIndexed { i, m -> lines += "${i + 1}. ${line(m)}" }
         }
         WatchStatus.entries.forEach { status ->
-            val group = active.filter { it.watchStatus == status && it.titleKey !in rankedIds }.sortedBy { it.title.lowercase() }
+            val group = active.filter { it.watchStatus == status && it.titleKey !in rankedIds }.sortedWith(compareByDescending<MovieEntity> { it.userRating ?: 0 }.thenBy { it.title.lowercase() })
             if (group.isNotEmpty()) {
                 lines += ""
                 lines += labels.status(status)
@@ -41,6 +41,7 @@ object MovieShareText {
 
     private fun line(m: MovieEntity): String {
         val year = m.year?.let { " ($it)" }.orEmpty()
-        return "${m.title}$year — ${TitleKey.url(m.titleKey)}"
+        val note = m.userRating?.let { " — $it/10" }.orEmpty()
+        return "${m.title}$year$note — ${TitleKey.url(m.titleKey)}"
     }
 }

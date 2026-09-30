@@ -34,4 +34,22 @@ class MovieShareTextTest {
         """.trimIndent()
         assertEquals(expected, MovieShareText.build(movies, labels))
     }
+
+    @Test
+    fun `inside a status, best user note first and the note is shown`() {
+        val movies = listOf(
+            MovieEntity("movie:1", "Alpha", status = WatchStatus.WATCHED.name, userRating = 6),
+            MovieEntity("movie:2", "Beta", status = WatchStatus.WATCHED.name),
+            MovieEntity("movie:3", "Zulu", status = WatchStatus.WATCHED.name, userRating = 9),
+        )
+        val expected = """
+            Ma liste
+
+            Vu
+            - Zulu — 9/10 — https://www.themoviedb.org/movie/3
+            - Alpha — 6/10 — https://www.themoviedb.org/movie/1
+            - Beta — https://www.themoviedb.org/movie/2
+        """.trimIndent()
+        assertEquals(expected, MovieShareText.build(movies, labels))
+    }
 }

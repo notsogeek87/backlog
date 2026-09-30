@@ -173,6 +173,7 @@ private fun MovieContent(
     onAdd: () -> Unit,
 ) {
     var confirmRemove by remember { mutableStateOf(false) }
+    var askRating by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -214,7 +215,11 @@ private fun MovieContent(
                     Text(stringResource(R.string.status_title), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         WatchStatus.entries.forEach { option ->
-                            GlassBadgeButton(option.label(), option.tint(), selected = option == saved.watchStatus) { onStatusChange(option) }
+                            GlassBadgeButton(option.label(), option.tint(), selected = option == saved.watchStatus) {
+                                // Marking something seen is the moment to note it (skippable, only while unrated).
+                                if (option == WatchStatus.WATCHED && saved.watchStatus != WatchStatus.WATCHED && saved.userRating == null) askRating = true
+                                onStatusChange(option)
+                            }
                         }
                     }
                 }
@@ -290,6 +295,31 @@ private fun MovieContent(
                 }
             }
         }
+    }
+
+    if (askRating) {
+        AlertDialog(
+            onDismissRequest = { askRating = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = { Text(stringResource(R.string.movie_rate_prompt_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.movie_rate_prompt_message, title.title))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        (1..10).forEach { n ->
+                            GlassPill(text = "$n", selected = false, onClick = {
+                                askRating = false
+                                onRate(n)
+                            })
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { askRating = false }) { Text(stringResource(R.string.action_skip)) }
+            },
+        )
     }
 
     if (confirmRemove) {

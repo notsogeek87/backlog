@@ -278,6 +278,8 @@ fun GameListItem(
     coverUrl: String? = null,
     /** Replaces the number next to the rating bar (TMDB's 0–10 scale); [rating] still drives the bar (0–100). */
     ratingText: String? = null,
+    /** The user's own note, shown as a badge beside the status. */
+    userRatingLabel: String? = null,
     onClick: () -> Unit,
     trailing: @Composable () -> Unit = {},
 ) {
@@ -303,7 +305,12 @@ fun GameListItem(
                         if (platforms.size > 2) GlassBadge("+${platforms.size - 2}")
                     }
                 }
-                if (statusLabel != null) GlassBadge(statusLabel, tint = statusTint)
+                if (statusLabel != null || userRatingLabel != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (statusLabel != null) GlassBadge(statusLabel, tint = statusTint)
+                        if (userRatingLabel != null) GlassBadge(userRatingLabel, tint = Glass.Amber)
+                    }
+                }
                 if (!meta.isNullOrEmpty()) {
                     Text(meta, style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }

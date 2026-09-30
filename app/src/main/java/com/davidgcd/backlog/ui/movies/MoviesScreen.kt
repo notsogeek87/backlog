@@ -425,6 +425,7 @@ fun MovieListItem(
         dimmed = movie.isArchived,
         statusLabel = movie.watchStatus.label(),
         statusTint = movie.watchStatus.tint(),
+        userRatingLabel = movie.userRating?.let { stringResource(R.string.movie_my_rating_badge, it) },
         onClick = onClick,
         trailing = trailing,
     )

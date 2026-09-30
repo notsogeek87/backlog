@@ -267,6 +267,10 @@
     <string name="movie_runtime_minutes">%1$d min</string>
     <string name="movie_not_found">Titre introuvable</string>
     <string name="movie_my_rating">Ma note (sur 10)</string>
+    <string name="movie_my_rating_badge">★ %1$d/10</string>
+    <string name="movie_rate_prompt_title">Ta note ?</string>
+    <string name="movie_rate_prompt_message">Quelle note sur 10 donnes-tu à « %1$s » ?</string>
+    <string name="action_skip">Passer</string>
     <string name="movie_directors">De %1$s</string>
     <string name="movie_cast">Avec %1$s</string>
     <string name="ratings_tmdb">TMDB</string>
