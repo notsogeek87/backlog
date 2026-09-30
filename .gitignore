@@ -12,7 +12,3 @@
 
 # Local secrets — copy Secrets.kt.example to Secrets.kt and fill it in
 app/src/main/java/com/davidgcd/backlog/config/Secrets.kt
-
-# Share server (Vercel)
-node_modules/
-.vercel/
