@@ -75,6 +75,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
+import com.davidgcd.backlog.data.local.gameStatus
+import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.util.FrenchLabels
 import com.davidgcd.backlog.model.Game
@@ -379,6 +382,7 @@ private fun BacklogGrid(
         items(games, key = { it.igdbId }) { game ->
             val supporting = listOfNotNull(
                 ReleaseDateFormatting.format(game.firstReleaseDate),
+                game.gameStatus.takeIf { it != GameStatus.BACKLOG }?.label(),
                 if (game.isArchived) stringResource(R.string.label_archived) else null,
             ).joinToString(" · ")
             GameListItem(
@@ -413,6 +417,7 @@ private fun ActiveFilterChips(filter: BacklogFilter, onChange: (BacklogFilter) -
         modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        filter.status?.let { RemovableChip(it.label()) { onChange(filter.copy(status = null)) } }
         filter.genre?.let { RemovableChip(FrenchLabels.genre(it)) { onChange(filter.copy(genre = null)) } }
         filter.platform?.let { RemovableChip(FrenchLabels.platform(it)) { onChange(filter.copy(platform = null)) } }
         if (filter.showArchived) {
@@ -518,6 +523,20 @@ private fun FilterMenuButton(
             },
             onClick = { onChange(current.copy(showArchived = !current.showArchived)) },
         )
+        HorizontalDivider()
+        Text(
+            stringResource(R.string.filter_status),
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        (listOf<GameStatus?>(null) + GameStatus.entries).forEach { option ->
+            DropdownMenuItem(
+                text = { Text(option?.label() ?: stringResource(R.string.filter_any)) },
+                leadingIcon = { RadioButton(selected = current.status == option, onClick = null) },
+                onClick = { onChange(current.copy(status = option)) },
+            )
+        }
         // Genre/platform values stay IGDB's raw names (filter identity); only the label is French.
         // Every option is listed (the menu scrolls) rather than truncated to a few chips.
         if (availableGenres.isNotEmpty()) {

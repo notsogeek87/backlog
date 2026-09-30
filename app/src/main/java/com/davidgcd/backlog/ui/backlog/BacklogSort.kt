@@ -1,5 +1,7 @@
 package com.davidgcd.backlog.ui.backlog
 
+import com.davidgcd.backlog.model.GameStatus
+
 /**
  * Mirrors the iOS app's SortOption: a stable name, never a translated or
  * positional value. The display label lives at the UI layer (see
@@ -22,6 +24,7 @@ data class BacklogFilter(
     val showArchived: Boolean = false,
     val genre: String? = null,
     val platform: String? = null,
+    val status: GameStatus? = null,
 ) {
-    val isActive: Boolean get() = showArchived || genre != null || platform != null
+    val isActive: Boolean get() = showArchived || genre != null || platform != null || status != null
 }

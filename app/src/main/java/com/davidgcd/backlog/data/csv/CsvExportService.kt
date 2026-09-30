@@ -29,6 +29,7 @@ class CsvExportService(private val context: Context) {
             CsvColumn.PLATFORMS -> GameJsonCache.platformNames(game).joinToString(";")
             CsvColumn.ARCHIVED -> game.isArchived.toString()
             CsvColumn.STEAM_APP_ID -> game.steamAppId?.toString() ?: ""
+            CsvColumn.STATUS -> game.status
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
+import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.model.Game
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +74,7 @@ class BacklogViewModel(private val repository: BacklogRepository) : ViewModel() 
     val visibleBacklog: StateFlow<List<GameEntity>> = combine(backlog, _sort, _filter) { list, sort, filter ->
         list
             .filter { entity -> filter.showArchived || !entity.isArchived }
+            .filter { entity -> filter.status == null || entity.gameStatus == filter.status }
             .filter { entity -> filter.genre == null || GameJsonCache.genreNames(entity).contains(filter.genre) }
             .filter { entity -> filter.platform == null || GameJsonCache.platformNames(entity).contains(filter.platform) }
             .sortedWith(sort.comparator())

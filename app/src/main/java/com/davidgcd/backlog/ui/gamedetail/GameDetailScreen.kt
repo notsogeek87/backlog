@@ -48,6 +48,10 @@ import coil.compose.AsyncImage
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
+import com.davidgcd.backlog.data.local.gameStatus
+import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.ui.components.GlassPill
+import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.data.repository.MetacriticScore
 import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.util.FrenchLabels
@@ -119,6 +123,8 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         ratings = ratings,
                         inBacklog = true,
                         isArchived = current.entity.isArchived,
+                        status = current.entity.gameStatus,
+                        onStatusChange = { viewModel.setStatus(current.entity, it) },
                         onArchiveToggle = { viewModel.setArchived(current.entity, !current.entity.isArchived) },
                         onRemove = { viewModel.remove(current.entity, onDone = onBack) },
                         onAdd = {},
@@ -128,6 +134,8 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         ratings = ratings,
                         inBacklog = false,
                         isArchived = false,
+                        status = GameStatus.BACKLOG,
+                        onStatusChange = {},
                         onArchiveToggle = {},
                         onRemove = {},
                         onAdd = { viewModel.addToBacklog(current.game) },
@@ -154,6 +162,8 @@ private fun GameDetailContent(
     ratings: RatingsState,
     inBacklog: Boolean,
     isArchived: Boolean,
+    status: GameStatus,
+    onStatusChange: (GameStatus) -> Unit,
     onArchiveToggle: () -> Unit,
     onRemove: () -> Unit,
     onAdd: () -> Unit,
@@ -195,6 +205,21 @@ private fun GameDetailContent(
             if (display.genres.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     display.genres.forEach { GlassBadge(FrenchLabels.genre(it), tint = Glass.Purple) }
+                }
+            }
+
+            if (inBacklog) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.status_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Glass.TextMuted,
+                    )
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GameStatus.entries.forEach { option ->
+                            GlassPill(text = option.label(), selected = option == status, onClick = { onStatusChange(option) })
+                        }
+                    }
                 }
             }
 

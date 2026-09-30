@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.davidgcd.backlog.model.GameStatus
 
 /**
  * The persisted row (Room's equivalent of the SwiftData @Model on the iOS app).
@@ -21,5 +22,9 @@ data class GameEntity(
     val totalRating: Double? = null,
     val steamAppId: Long? = null,
     val isArchived: Boolean = false,
+    /** [com.davidgcd.backlog.model.GameStatus] name; stored as text so a new status never needs a type converter. */
+    val status: String = GameStatus.BACKLOG.name,
     val addedAt: Long = System.currentTimeMillis(),
 )
+
+val GameEntity.gameStatus: GameStatus get() = GameStatus.fromName(status)

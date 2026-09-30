@@ -76,6 +76,10 @@ sur Android avec des briques Android natives.
   (une ligne avec `igdbId` résout directement, une ligne nom-seul passe par
   une recherche classée avec `TitleSimilarity`, une ligne non résolue est
   ignorée sans jamais annuler tout l'import).
+- Statut d'un jeu (`model/GameStatus`, colonne `status` de `games`, migration 3→4) :
+  `BACKLOG` (défaut), `PLAYED_UNFINISHED` (joué, pas terminé), `COMPLETED`
+  (terminé). Modifiable sur la fiche du jeu, filtrable dans le backlog, et
+  exporté/importé dans la colonne CSV `status`.
 - `notifications/` — `NotificationPreferences` (DataStore, équivalent
   `UserDefaults`/`NotificationPolicyStore` — délai configurable via
   `ReleaseReminderSchedule`, heure, et les deux alertes de dérive),

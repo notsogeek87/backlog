@@ -10,6 +10,7 @@ import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.util.DebugLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -139,6 +140,10 @@ class GameDetailViewModel(
     }
 
     /** [onDone] runs once the row is deleted, so leaving the screen can't cancel the delete mid-flight. */
+    fun setStatus(entity: GameEntity, status: GameStatus) {
+        viewModelScope.launch { repository.setStatus(entity, status) }
+    }
+
     fun remove(entity: GameEntity, onDone: () -> Unit = {}) {
         viewModelScope.launch {
             repository.remove(entity)

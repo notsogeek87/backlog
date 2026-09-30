@@ -3,6 +3,7 @@ package com.davidgcd.backlog.data.csv
 import android.content.Context
 import android.net.Uri
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.util.AppLogger
 import com.davidgcd.backlog.util.TitleSimilarity
 import java.io.BufferedReader
@@ -32,6 +33,7 @@ class CsvImportService(
         val nameIndex = header.indexOf(CsvColumn.NAME.header)
         val idIndex = header.indexOf(CsvColumn.IGDB_ID.header)
         val archivedIndex = header.indexOf(CsvColumn.ARCHIVED.header)
+        val statusIndex = header.indexOf(CsvColumn.STATUS.header)
 
         var added = 0
         var skipped = 0
@@ -43,6 +45,8 @@ class CsvImportService(
             val igdbId = idIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toLongOrNull()
             val archived = archivedIndex.takeIf { it >= 0 }
                 ?.let { fields.getOrNull(it) }?.trim()?.toBooleanStrictOrNull() ?: false
+            val status = statusIndex.takeIf { it >= 0 }
+                ?.let { fields.getOrNull(it) }?.let(GameStatus::fromName) ?: GameStatus.BACKLOG
 
             try {
                 val game = when {
@@ -60,6 +64,9 @@ class CsvImportService(
                 repository.addToBacklog(game)
                 if (archived) {
                     repository.findEntity(game.id)?.let { repository.setArchived(it, archived = true) }
+                }
+                if (status != GameStatus.BACKLOG) {
+                    repository.findEntity(game.id)?.let { repository.setStatus(it, status) }
                 }
                 added++
             } catch (t: Throwable) {

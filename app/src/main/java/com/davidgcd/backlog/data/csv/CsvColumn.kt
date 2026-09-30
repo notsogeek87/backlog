@@ -14,9 +14,10 @@ enum class CsvColumn(val header: String) {
     PLATFORMS("platforms"),
     ARCHIVED("archived"),
     STEAM_APP_ID("steamAppId"),
+    STATUS("status"),
     ;
 
     companion object {
-        val EXPORT_ORDER = listOf(NAME, IGDB_ID, RELEASE_DATE, GENRES, PLATFORMS, ARCHIVED, STEAM_APP_ID)
+        val EXPORT_ORDER = listOf(NAME, IGDB_ID, RELEASE_DATE, GENRES, PLATFORMS, ARCHIVED, STEAM_APP_ID, STATUS)
     }
 }

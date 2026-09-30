@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.repository
 
 import com.davidgcd.backlog.data.local.GameDao
 import com.davidgcd.backlog.data.local.GameEntity
+import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.Genre
@@ -46,6 +47,10 @@ class BacklogRepository(
 
     suspend fun setArchived(entity: GameEntity, archived: Boolean) {
         gameDao.update(entity.copy(isArchived = archived))
+    }
+
+    suspend fun setStatus(entity: GameEntity, status: GameStatus) {
+        gameDao.update(entity.copy(status = status.name))
     }
 
     suspend fun remove(entity: GameEntity) {
@@ -95,6 +100,7 @@ class BacklogRepository(
 
         val updated = fresh.toEntity(moshi).copy(
             isArchived = entity.isArchived,
+            status = entity.status,
             addedAt = entity.addedAt,
             steamAppId = fresh.steamAppId ?: entity.steamAppId,
         )

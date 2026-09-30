@@ -21,6 +21,11 @@
     <string name="action_unarchive">Désarchiver</string>
     <string name="action_add_to_backlog">Ajouter au backlog</string>
     <string name="label_archived">Archivé</string>
+    <string name="status_title">Statut</string>
+    <string name="status_backlog">Backlog</string>
+    <string name="status_played_unfinished">Joué, pas terminé</string>
+    <string name="status_completed">Terminé</string>
+    <string name="filter_status">Statut</string>
 
     <string name="sort_recently_added">Ajoutés récemment</string>
     <string name="sort_name">Nom (A-Z)</string>
