@@ -9,7 +9,7 @@ import com.davidgcd.backlog.model.GameStatus
 fun GameStatus.label(): String = stringResource(
     when (this) {
         GameStatus.BACKLOG -> R.string.status_backlog
-        GameStatus.PLAYED_UNFINISHED -> R.string.status_played_unfinished
+        GameStatus.PLAYED -> R.string.status_played
         GameStatus.COMPLETED -> R.string.status_completed
     },
 )

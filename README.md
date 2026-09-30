@@ -77,7 +77,7 @@ sur Android avec des briques Android natives.
   une recherche classée avec `TitleSimilarity`, une ligne non résolue est
   ignorée sans jamais annuler tout l'import).
 - Statut d'un jeu (`model/GameStatus`, colonne `status` de `games`, migration 3→4) :
-  `BACKLOG` (défaut), `PLAYED_UNFINISHED` (joué, pas terminé), `COMPLETED`
+  `BACKLOG` (défaut), `PLAYED` (joué), `COMPLETED`
   (terminé). Modifiable sur la fiche du jeu, filtrable dans le backlog, et
   exporté/importé dans la colonne CSV `status`.
 - `notifications/` — `NotificationPreferences` (DataStore, équivalent
