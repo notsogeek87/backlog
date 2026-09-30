@@ -55,6 +55,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.data.csv.AutoExportFrequency
+import com.davidgcd.backlog.data.csv.AutoExportStatus
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassCard
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
@@ -95,6 +97,16 @@ fun SettingsScreen(
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv"),
     ) { uri -> uri?.let { viewModel.exportCsv(it) } }
+
+    val autoExportEnabled by viewModel.autoExportEnabled.collectAsState()
+    val autoExportFrequency by viewModel.autoExportFrequency.collectAsState()
+    val autoExportStatus by viewModel.autoExportStatus.collectAsState()
+    val autoExportFolderName by viewModel.autoExportFolderName.collectAsState()
+    // Enabling (or changing folder) always goes through the system folder picker so the app gets a
+    // persistable read+write grant; cancelling the picker leaves the switch off.
+    val folderLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri -> uri?.let { viewModel.enableAutoExport(it) } }
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -182,6 +194,28 @@ fun SettingsScreen(
                     },
                     modifier = Modifier.weight(1f),
                 )
+            }
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_auto_export_title),
+                        subtitle = stringResource(R.string.settings_auto_export_subtitle),
+                        checked = autoExportEnabled,
+                        onCheckedChange = { on ->
+                            if (on) folderLauncher.launch(null) else viewModel.disableAutoExport()
+                        },
+                    )
+                    if (autoExportEnabled) {
+                        HorizontalDivider(color = Glass.Border)
+                        AutoExportFolderRow(
+                            folderName = autoExportFolderName,
+                            onClick = { folderLauncher.launch(null) },
+                        )
+                        HorizontalDivider(color = Glass.Border)
+                        AutoExportFrequencyRow(current = autoExportFrequency, onSelect = viewModel::setAutoExportFrequency)
+                        AutoExportStatusText(autoExportStatus)
+                    }
+                }
             }
             if (isImporting) {
                 LinearProgressIndicator(
@@ -325,6 +359,76 @@ private fun ReleaseReminderSchedule.label(): String = stringResource(
         ReleaseReminderSchedule.WEEK_BEFORE -> R.string.schedule_week_before
     },
 )
+
+@Composable
+private fun AutoExportFolderRow(folderName: String?, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.settings_auto_export_folder), modifier = Modifier.weight(1f))
+        TextButton(onClick = onClick) {
+            Text(folderName ?: stringResource(R.string.settings_auto_export_folder_unavailable))
+        }
+    }
+}
+
+@Composable
+private fun AutoExportFrequencyRow(current: AutoExportFrequency, onSelect: (AutoExportFrequency) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.settings_auto_export_frequency), modifier = Modifier.weight(1f))
+        TextButton(onClick = { expanded = true }) { Text(current.label()) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            AutoExportFrequency.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label()) },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AutoExportFrequency.label(): String = stringResource(
+    when (this) {
+        AutoExportFrequency.DAILY -> R.string.settings_auto_export_daily
+        AutoExportFrequency.WEEKLY -> R.string.settings_auto_export_weekly
+        AutoExportFrequency.MONTHLY -> R.string.settings_auto_export_monthly
+    },
+)
+
+@Composable
+private fun AutoExportStatusText(status: AutoExportStatus?) {
+    val text = when {
+        status == null -> stringResource(R.string.settings_auto_export_pending)
+        else -> {
+            val whenText = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT)
+                .format(java.util.Date(status.at))
+            stringResource(
+                if (status.succeeded) R.string.settings_auto_export_last_ok else R.string.settings_auto_export_last_failed,
+                whenText,
+            )
+        }
+    }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (status?.succeeded == false) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+    )
+}
 
 @Composable
 private fun TimeRow(hour: Int, minute: Int, onClick: () -> Unit) {

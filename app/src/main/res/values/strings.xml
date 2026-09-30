@@ -63,6 +63,17 @@
     <string name="settings_platform_change_subtitle">Me notifier si un jeu sort sur une nouvelle plateforme</string>
     <string name="settings_section_data">Données</string>
     <string name="settings_export_csv">Exporter en CSV</string>
+    <string name="settings_auto_export_title">Export automatique</string>
+    <string name="settings_auto_export_subtitle">Enregistrer régulièrement backlog.csv dans un dossier de l\'appareil</string>
+    <string name="settings_auto_export_folder">Dossier</string>
+    <string name="settings_auto_export_folder_unavailable">Dossier inaccessible — choisis-en un autre</string>
+    <string name="settings_auto_export_frequency">Fréquence</string>
+    <string name="settings_auto_export_daily">Tous les jours</string>
+    <string name="settings_auto_export_weekly">Toutes les semaines</string>
+    <string name="settings_auto_export_monthly">Tous les mois</string>
+    <string name="settings_auto_export_last_ok">Dernier export : %1$s</string>
+    <string name="settings_auto_export_last_failed">Échec du dernier export (%1$s) — vérifie le dossier</string>
+    <string name="settings_auto_export_pending">Premier export en attente</string>
     <string name="settings_import_csv">Importer un CSV</string>
     <string name="settings_import_done_title">Import terminé</string>
     <string name="settings_import_done_summary">%1$d ajoutés, %2$d ignorés.</string>
