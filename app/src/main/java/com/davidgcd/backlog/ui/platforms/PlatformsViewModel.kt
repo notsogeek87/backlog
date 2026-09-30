@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.davidgcd.backlog.data.imdb.WebViewCookieJar
 import com.davidgcd.backlog.data.library.LibraryAccount
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
@@ -22,6 +23,10 @@ class PlatformsViewModel(
     val steam: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.STEAM)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** IMDb account (films & séries): signed in through the login WebView, imported on demand. */
+    val imdb: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.IMDB)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val android: StateFlow<LibraryAccount?> = accounts.observe(LibraryProviders.ANDROID)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -38,6 +43,8 @@ class PlatformsViewModel(
         viewModelScope.launch {
             accounts.disconnect(providerId)
             sourceDao.deleteForProvider(providerId)
+            // Signing out of IMDb also forgets the session the login WebView opened.
+            if (providerId == LibraryProviders.IMDB) WebViewCookieJar.clearSession()
         }
     }
 }

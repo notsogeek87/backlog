@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.AlertDialog
@@ -50,9 +51,12 @@ fun PlatformsSection(
     onConnectSteam: () -> Unit,
     onSyncSteam: () -> Unit,
     onSyncAndroid: () -> Unit,
+    onConnectImdb: () -> Unit,
+    onSyncImdb: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val steam by viewModel.steam.collectAsState()
+    val imdb by viewModel.imdb.collectAsState()
     val android by viewModel.android.collectAsState()
     var confirmDisconnect by remember { mutableStateOf<String?>(null) }
 
@@ -70,15 +74,17 @@ fun PlatformsSection(
             onSync = onSyncAndroid,
             onDisconnect = { confirmDisconnect = LibraryProviders.ANDROID },
         )
+        ImdbCard(imdb, onConnectImdb, onSyncImdb, onDisconnect = { confirmDisconnect = LibraryProviders.IMDB })
     }
 
     confirmDisconnect?.let { providerId ->
         val isAndroid = providerId == LibraryProviders.ANDROID
+        val isImdb = providerId == LibraryProviders.IMDB
         AlertDialog(
             onDismissRequest = { confirmDisconnect = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            title = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_title else R.string.platform_disconnect_title)) },
-            text = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_message else R.string.platform_disconnect_message)) },
+            title = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_title else if (isImdb) R.string.platform_imdb_disconnect_title else R.string.platform_disconnect_title)) },
+            text = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_message else if (isImdb) R.string.platform_imdb_disconnect_message else R.string.platform_disconnect_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDisconnect = null
@@ -126,6 +132,58 @@ private fun SteamCard(
                 )
             } else {
                 LibraryStats(account)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    GradientButton(stringResource(R.string.platform_sync), onSync, Modifier.weight(1f))
+                    GlassButton(stringResource(R.string.platform_disconnect), onDisconnect, Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+/** IMDb account: films & séries (watchlist + ratings). Connect opens the IMDb sign-in page. */
+@Composable
+private fun ImdbCard(
+    account: LibraryAccount?,
+    onConnect: () -> Unit,
+    onSync: () -> Unit,
+    onDisconnect: () -> Unit,
+) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.Movie, contentDescription = null, tint = Glass.Amber, modifier = Modifier.size(28.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.platform_imdb), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Glass.Text)
+                    Text(
+                        text = if (account == null) stringResource(R.string.platform_imdb_hint) else stringResource(R.string.platform_imdb_connected_as, account.accountId),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Glass.TextMuted,
+                    )
+                }
+                if (account != null) GlassBadge(stringResource(R.string.platform_connected), tint = Glass.Green)
+            }
+
+            if (account == null) {
+                GradientButton(
+                    text = stringResource(R.string.platform_connect_imdb),
+                    onClick = onConnect,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                account.ownedCount?.let {
+                    Text(pluralText(R.plurals.platform_imdb_titles, it, it), style = MaterialTheme.typography.bodyMedium, color = Glass.Text)
+                }
+                Text(
+                    text = account.lastSyncedAt?.let { last ->
+                        stringResource(
+                            R.string.platform_last_sync,
+                            DateUtils.getRelativeTimeSpanString(last, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),
+                        )
+                    } ?: stringResource(R.string.platform_never_synced),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Glass.TextMuted,
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     GradientButton(stringResource(R.string.platform_sync), onSync, Modifier.weight(1f))
                     GlassButton(stringResource(R.string.platform_disconnect), onDisconnect, Modifier.weight(1f))

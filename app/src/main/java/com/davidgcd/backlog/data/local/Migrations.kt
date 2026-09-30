@@ -36,5 +36,19 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    /** Films & séries (IMDb): a table of their own, keyed by the text IMDb id. */
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `movies` (" +
+                    "`imdbId` TEXT NOT NULL, `title` TEXT NOT NULL, `kind` TEXT NOT NULL, " +
+                    "`year` INTEGER, `releaseDate` INTEGER, `posterUrl` TEXT, `genres` TEXT, `plot` TEXT, " +
+                    "`imdbRating` REAL, `runtimeMinutes` INTEGER, `directors` TEXT, " +
+                    "`isArchived` INTEGER NOT NULL, `status` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, " +
+                    "`userRank` INTEGER, `userRating` INTEGER, PRIMARY KEY(`imdbId`))",
+            )
+        }
+    }
+
+    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
 }

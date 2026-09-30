@@ -5,10 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [GameEntity::class, GameSourceEntity::class], version = 5, exportSchema = false)
+@Database(entities = [GameEntity::class, GameSourceEntity::class, MovieEntity::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun gameSourceDao(): GameSourceDao
+    abstract fun movieDao(): MovieDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null
