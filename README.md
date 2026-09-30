@@ -77,7 +77,13 @@ sur Android avec des briques Android natives.
   écriture RFC 4180 minimale), `CsvExportService`, `CsvImportService`
   (une ligne avec `igdbId` résout directement, une ligne nom-seul passe par
   une recherche classée avec `TitleSimilarity`, une ligne non résolue est
-  ignorée sans jamais annuler tout l'import).
+  ignorée sans jamais annuler tout l'import). Export automatique en plus de
+  l'export manuel : à l'activation (Réglages › Données) l'utilisateur choisit un
+  dossier via le sélecteur système (`OpenDocumentTree`, permission lecture+écriture
+  persistée) et une fréquence (`AutoExportFrequency` : jour/semaine/mois) ;
+  `AutoExportWorker` (WorkManager périodique) réécrit `backlog.csv` dans ce dossier
+  et `AutoExportPreferences` mémorise le résultat du dernier passage (affiché dans
+  Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
 - Statut d'un jeu (`model/GameStatus`, colonne `status` de `games`, migration 3→4) :
   `BACKLOG` (défaut), `PLAYED` (joué), `COMPLETED`
   (terminé). Modifiable sur la fiche du jeu, filtrable dans le backlog, et

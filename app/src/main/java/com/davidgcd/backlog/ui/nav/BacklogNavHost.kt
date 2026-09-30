@@ -69,6 +69,7 @@ import com.davidgcd.backlog.ui.platforms.PlatformsViewModelFactory
 import com.davidgcd.backlog.ui.platforms.SteamLoginScreen
 import com.davidgcd.backlog.ui.platforms.SteamLoginViewModel
 import com.davidgcd.backlog.ui.platforms.SteamLoginViewModelFactory
+import com.davidgcd.backlog.data.csv.AutoExportPreferences
 import com.davidgcd.backlog.ui.settings.SettingsScreen
 import com.davidgcd.backlog.ui.settings.SettingsViewModel
 import com.davidgcd.backlog.ui.settings.SettingsViewModelFactory
@@ -207,6 +208,7 @@ fun BacklogNavHost(
                     repository,
                     csvExportService,
                     csvImportService,
+                    AutoExportPreferences(appContext),
                 ),
             )
             val platformsViewModel: PlatformsViewModel = viewModel(
