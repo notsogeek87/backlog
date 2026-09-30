@@ -43,6 +43,7 @@ import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.library.ImportResult
 import com.davidgcd.backlog.data.library.ItemStatus
 import com.davidgcd.backlog.data.library.LibraryImportItem
+import com.davidgcd.backlog.data.library.LibraryProviders
 import com.davidgcd.backlog.data.library.LibraryProgress
 import com.davidgcd.backlog.data.library.SyncPreview
 import com.davidgcd.backlog.ui.components.GlassBadge
@@ -56,7 +57,8 @@ import com.davidgcd.backlog.ui.theme.Glass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryImportScreen(viewModel: LibraryImportViewModel, onBack: () -> Unit) {
+fun LibraryImportScreen(viewModel: LibraryImportViewModel, providerId: String, onBack: () -> Unit) {
+    val isAndroid = providerId == LibraryProviders.ANDROID
     val state by viewModel.state.collectAsState()
 
     Scaffold(
@@ -65,7 +67,7 @@ fun LibraryImportScreen(viewModel: LibraryImportViewModel, onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 colors = glassTopAppBarColors(),
-                title = { Text(stringResource(R.string.library_import_title)) },
+                title = { Text(stringResource(if (isAndroid) R.string.library_import_title_android else R.string.library_import_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
@@ -87,7 +89,7 @@ fun LibraryImportScreen(viewModel: LibraryImportViewModel, onBack: () -> Unit) {
                 )
                 ImportPhase.DONE -> DonePanel(state.result!!, state.preview, onDone = onBack)
                 ImportPhase.ERROR -> MessagePanel(
-                    message = stringResource(state.error?.messageRes() ?: R.string.library_error_no_games),
+                    message = stringResource(state.error?.messageRes() ?: if (isAndroid) R.string.library_error_no_games_android else R.string.library_error_no_games),
                     onRetry = viewModel::start,
                     onBack = onBack,
                 )
@@ -265,13 +267,15 @@ private fun ItemRow(item: LibraryImportItem, checked: Boolean, onToggle: ((Strin
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val playtime = formatPlaytime(item.game.playtimeMinutes) ?: stringResource(R.string.library_never_played)
+                // Null = the source gave no figure (Android without usage access): say nothing rather than "never played".
+                val playtime = formatPlaytime(item.game.playtimeMinutes)
+                    ?: if (item.game.playtimeMinutes == null) null else stringResource(R.string.library_never_played)
                 val status = when {
                     item.status == ItemStatus.UNCERTAIN -> stringResource(R.string.library_status_looks_like, item.matchedName.orEmpty())
                     item.status == ItemStatus.NEW -> stringResource(R.string.library_status_new)
                     else -> stringResource(R.string.library_status_present)
                 }
-                Text("$playtime · $status", style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(listOfNotNull(playtime, status).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (item.previouslyRemoved) GlassBadge(stringResource(R.string.library_status_removed_earlier), tint = Glass.Amber)
             }
         }

@@ -24,6 +24,7 @@ interface GameLibraryProvider {
 
 object LibraryProviders {
     const val STEAM = "steam"
+    const val ANDROID = "android"
 }
 
 data class LibraryGame(

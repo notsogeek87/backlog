@@ -1,5 +1,7 @@
 package com.davidgcd.backlog.ui.platforms
 
+import android.content.Intent
+import android.provider.Settings
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -15,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,27 +26,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.library.LibraryAccount
+import com.davidgcd.backlog.data.library.LibraryProviders
+import com.davidgcd.backlog.data.library.android.PackageManagerInstalledApps
 import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassCard
 import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.theme.Glass
 
-/** Settings block: one card per store. Only Steam exists today; add a card here per future provider. */
+/** Settings block: one card per source (Steam, this phone). Add a card here per future provider. */
 @Composable
 fun PlatformsSection(
     viewModel: PlatformsViewModel,
     onConnectSteam: () -> Unit,
     onSyncSteam: () -> Unit,
+    onSyncAndroid: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val steam by viewModel.steam.collectAsState()
-    var confirmDisconnect by remember { mutableStateOf(false) }
+    val android by viewModel.android.collectAsState()
+    var confirmDisconnect by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -51,23 +63,30 @@ fun PlatformsSection(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 4.dp),
         )
-        SteamCard(steam, onConnectSteam, onSyncSteam, onDisconnect = { confirmDisconnect = true })
+        SteamCard(steam, onConnectSteam, onSyncSteam, onDisconnect = { confirmDisconnect = LibraryProviders.STEAM })
+        AndroidCard(
+            account = android,
+            onConnect = { viewModel.connectAndroid(onReady = onSyncAndroid) },
+            onSync = onSyncAndroid,
+            onDisconnect = { confirmDisconnect = LibraryProviders.ANDROID },
+        )
     }
 
-    if (confirmDisconnect) {
+    confirmDisconnect?.let { providerId ->
+        val isAndroid = providerId == LibraryProviders.ANDROID
         AlertDialog(
-            onDismissRequest = { confirmDisconnect = false },
+            onDismissRequest = { confirmDisconnect = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            title = { Text(stringResource(R.string.platform_disconnect_title)) },
-            text = { Text(stringResource(R.string.platform_disconnect_message)) },
+            title = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_title else R.string.platform_disconnect_title)) },
+            text = { Text(stringResource(if (isAndroid) R.string.platform_android_disconnect_message else R.string.platform_disconnect_message)) },
             confirmButton = {
                 TextButton(onClick = {
-                    confirmDisconnect = false
-                    viewModel.disconnectSteam()
+                    confirmDisconnect = null
+                    viewModel.disconnect(providerId)
                 }) { Text(stringResource(R.string.platform_disconnect)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDisconnect = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { confirmDisconnect = null }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -106,7 +125,7 @@ private fun SteamCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
-                SteamStats(account)
+                LibraryStats(account)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     GradientButton(stringResource(R.string.platform_sync), onSync, Modifier.weight(1f))
                     GlassButton(stringResource(R.string.platform_disconnect), onDisconnect, Modifier.weight(1f))
@@ -117,7 +136,7 @@ private fun SteamCard(
 }
 
 @Composable
-private fun SteamStats(account: LibraryAccount) {
+private fun LibraryStats(account: LibraryAccount) {
     val owned = account.ownedCount
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (owned != null) {
@@ -147,5 +166,69 @@ private fun SteamStats(account: LibraryAccount) {
             style = MaterialTheme.typography.bodySmall,
             color = Glass.TextMuted,
         )
+    }
+}
+
+/** Games installed on this phone. No login; optionally reads usage stats (special access) for time played. */
+@Composable
+private fun AndroidCard(
+    account: LibraryAccount?,
+    onConnect: () -> Unit,
+    onSync: () -> Unit,
+    onDisconnect: () -> Unit,
+) {
+    val context = LocalContext.current
+    // The grant happens in system settings: re-check every time the user comes back to the app.
+    var usageAccess by remember { mutableStateOf(PackageManagerInstalledApps.hasUsageAccess(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) usageAccess = PackageManagerInstalledApps.hasUsageAccess(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.PhoneAndroid, contentDescription = null, tint = Glass.Green, modifier = Modifier.size(28.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.platform_android), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Glass.Text)
+                    Text(
+                        text = if (account == null) stringResource(R.string.platform_android_hint) else account.displayName ?: stringResource(R.string.platform_connected),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Glass.TextMuted,
+                    )
+                }
+                if (account != null) GlassBadge(stringResource(R.string.platform_connected), tint = Glass.Green)
+            }
+
+            if (account == null) {
+                GradientButton(
+                    text = stringResource(R.string.platform_android_scan),
+                    onClick = onConnect,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                LibraryStats(account)
+                Text(
+                    text = stringResource(if (usageAccess) R.string.platform_android_usage_on else R.string.platform_android_usage_off),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Glass.TextMuted,
+                )
+                if (!usageAccess) {
+                    GlassButton(
+                        text = stringResource(R.string.platform_android_usage_grant),
+                        onClick = { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    GradientButton(stringResource(R.string.platform_sync), onSync, Modifier.weight(1f))
+                    GlassButton(stringResource(R.string.platform_disconnect), onDisconnect, Modifier.weight(1f))
+                }
+            }
+        }
     }
 }

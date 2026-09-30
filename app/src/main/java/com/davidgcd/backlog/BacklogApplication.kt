@@ -8,6 +8,8 @@ import com.davidgcd.backlog.data.library.DataStoreLibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryAccountStore
 import com.davidgcd.backlog.data.library.LibraryProviders
 import com.davidgcd.backlog.data.library.LibrarySyncService
+import com.davidgcd.backlog.data.library.android.AndroidLibraryProvider
+import com.davidgcd.backlog.data.library.android.PackageManagerInstalledApps
 import com.davidgcd.backlog.data.library.steam.SteamAuthService
 import com.davidgcd.backlog.data.library.steam.SteamLibraryProvider
 import com.davidgcd.backlog.data.local.AppDatabase
@@ -153,7 +155,10 @@ class BacklogApplication : Application() {
         val steamProvider = SteamLibraryProvider(steamWebApi, isConfigured = steamUsable)
         libraryAccountStore = DataStoreLibraryAccountStore(this)
         librarySyncService = LibrarySyncService(
-            providers = mapOf(LibraryProviders.STEAM to steamProvider),
+            providers = mapOf(
+                LibraryProviders.STEAM to steamProvider,
+                LibraryProviders.ANDROID to AndroidLibraryProvider(PackageManagerInstalledApps(this)),
+            ),
             catalog = igdbService,
             repository = repository,
             sourceDao = gameSourceDao,

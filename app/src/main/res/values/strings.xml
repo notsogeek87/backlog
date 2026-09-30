@@ -150,11 +150,21 @@
     <string name="platform_stats_present">%1$d déjà dans Backlog</string>
     <string name="platform_stats_new">%1$d nouveaux jeux détectés</string>
 
+    <string name="platform_android">Jeux installés sur ce téléphone</string>
+    <string name="platform_android_hint">Détecte vos jeux Android, sans compte à connecter</string>
+    <string name="platform_android_scan">Analyser mon téléphone</string>
+    <string name="platform_android_usage_on">Temps de jeu : lu depuis Android (historique limité à environ un an).</string>
+    <string name="platform_android_usage_off">Temps de jeu non disponible : il faut autoriser l\'accès aux données d\'utilisation.</string>
+    <string name="platform_android_usage_grant">Autoriser le temps de jeu</string>
+    <string name="platform_android_disconnect_title">Ne plus suivre ce téléphone ?</string>
+    <string name="platform_android_disconnect_message">Vos jeux restent dans votre backlog. Seul le lien avec les jeux installés est supprimé.</string>
+
     <string name="steam_login_title">Connecter Steam</string>
     <string name="steam_login_hint">Vous vous connectez sur la page de Steam. Backlog ne voit jamais votre mot de passe.</string>
     <string name="steam_login_verifying">Vérification auprès de Steam…</string>
 
     <string name="library_import_title">Importer ma bibliothèque Steam</string>
+    <string name="library_import_title_android">Importer mes jeux Android</string>
     <plurals name="library_games_found">
         <item quantity="one">%1$d jeu trouvé</item>
         <item quantity="other">%1$d jeux trouvés</item>
@@ -179,7 +189,7 @@
         <item quantity="one">Importer %1$d jeu</item>
         <item quantity="other">Importer %1$d jeux</item>
     </plurals>
-    <string name="library_up_to_date">Votre backlog est à jour avec Steam.</string>
+    <string name="library_up_to_date">Votre backlog est à jour.</string>
     <plurals name="library_done_added">
         <item quantity="one">✓ %1$d jeu ajouté à votre backlog</item>
         <item quantity="other">✓ %1$d jeux ajoutés à votre backlog</item>
@@ -196,6 +206,7 @@
     <string name="library_error_private">Impossible d\'accéder à votre bibliothèque Steam. Vérifiez que les détails de vos jeux sont visibles publiquement sur Steam.</string>
     <string name="library_error_unavailable">Steam est temporairement indisponible. Réessayez dans quelques instants.</string>
     <string name="library_error_no_games">Aucun jeu n\'a été trouvé dans votre bibliothèque Steam.</string>
+    <string name="library_error_no_games_android">Aucun jeu n\'a été détecté sur ce téléphone.</string>
     <string name="library_error_not_connected">Connectez votre compte Steam pour importer votre bibliothèque.</string>
     <string name="library_error_account_not_found">Ce compte Steam est introuvable.</string>
     <string name="library_error_rate_limited">Trop de requêtes. Patientez une minute puis réessayez.</string>

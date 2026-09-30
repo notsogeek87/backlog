@@ -221,6 +221,7 @@ fun BacklogNavHost(
                         viewModel = platformsViewModel,
                         onConnectSteam = { navController.navigate(Routes.STEAM_LOGIN) },
                         onSyncSteam = { navController.navigate(Routes.libraryImport(LibraryProviders.STEAM)) },
+                        onSyncAndroid = { navController.navigate(Routes.libraryImport(LibraryProviders.ANDROID)) },
                     )
                 },
             )
@@ -249,7 +250,7 @@ fun BacklogNavHost(
                 factory = LibraryImportViewModelFactory(provider, librarySyncService),
                 key = "library_import_$provider",
             )
-            LibraryImportScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            LibraryImportScreen(viewModel = viewModel, providerId = provider, onBack = { navController.popBackStack() })
         }
     }
     }
