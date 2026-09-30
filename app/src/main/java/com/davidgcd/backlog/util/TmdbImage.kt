@@ -18,6 +18,9 @@ object TmdbImage {
     /** A provider logo (`logo_path`), small: they are shown at about 48 dp. */
     fun logo(logoPath: String?): String? = logoPath?.takeIf { it.startsWith("/") }?.let { "${BASE}w92$it" }
 
+    /** A person's photo (`profile_path`), shown at about 72 dp. */
+    fun profile(profilePath: String?): String? = profilePath?.takeIf { it.startsWith("/") }?.let { "${BASE}w185$it" }
+
     /** What gets stored: the reference-size URL of a `poster_path`. */
     fun stored(posterPath: String?): String? = posterPath?.takeIf { it.startsWith("/") }?.let { "${BASE}w500$it" }
 }

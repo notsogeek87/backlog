@@ -85,6 +85,26 @@ class TmdbParsersTest {
     }
 
     @Test
+    fun `credits carry photos, directors first`() {
+        val json = """{"id":27205,"title":"Inception","credits":{"cast":[{"name":"Leonardo DiCaprio","character":"Cobb","profile_path":"/leo.jpg"},{"name":"Elliot Page","character":"Ariadne","profile_path":null}],
+          "crew":[{"name":"Christopher Nolan","job":"Director","profile_path":"/nolan.jpg"},{"name":"Hans Zimmer","job":"Composer"}]}}"""
+        val people = TmdbParsers.parseCredits(json, TitleKind.MOVIE)
+        assertEquals(listOf("Christopher Nolan", "Leonardo DiCaprio", "Elliot Page"), people.map { it.name })
+        assertEquals(listOf(true, false, false), people.map { it.isDirector })
+        assertEquals("/nolan.jpg", people[0].photoPath)
+        assertEquals("Cobb", people[1].role)
+        assertNull(people[2].photoPath)
+    }
+
+    @Test
+    fun `series credits list the creators first`() {
+        val json = """{"id":1396,"name":"Breaking Bad","created_by":[{"name":"Vince Gilligan","profile_path":"/vg.jpg"}],"credits":{"cast":[{"name":"Bryan Cranston","character":"Walter White"}]}}"""
+        val people = TmdbParsers.parseCredits(json, TitleKind.SERIES)
+        assertEquals(listOf("Vince Gilligan", "Bryan Cranston"), people.map { it.name })
+        assertEquals(emptyList<Any>(), TmdbParsers.parseCredits("nope", TitleKind.MOVIE))
+    }
+
+    @Test
     fun `details of garbage are null`() {
         assertNull(TmdbParsers.parseDetails("nope", TitleKind.MOVIE))
         assertNull(TmdbParsers.parseDetails("""{"status_code":34}""", TitleKind.MOVIE))

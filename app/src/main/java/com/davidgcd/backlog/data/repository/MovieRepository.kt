@@ -5,6 +5,7 @@ import com.davidgcd.backlog.data.local.MovieDao
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
+import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.MovieRanking
@@ -62,6 +63,9 @@ class MovieRepository(
         merged?.let { seen[titleKey] = it }
         return merged
     }
+
+    /** Live photos of the director and actors; never cached. */
+    suspend fun credits(titleKey: String): List<CastMember> = tmdb.credits(titleKey)
 
     /** Live "where to watch" for France; never cached, since availability changes. */
     suspend fun watchProviders(titleKey: String): WatchProviders? = tmdb.watchProviders(titleKey)

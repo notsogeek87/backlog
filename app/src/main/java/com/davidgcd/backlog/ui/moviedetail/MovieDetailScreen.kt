@@ -3,6 +3,10 @@ package com.davidgcd.backlog.ui.moviedetail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import com.davidgcd.backlog.model.CastMember
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchProvider
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,6 +86,7 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val providers by viewModel.providers.collectAsState()
+    val credits by viewModel.credits.collectAsState()
 
     val backdrop = when (val s = state) {
         is MovieDetailState.Saved -> s.movie.posterUrl
@@ -128,6 +133,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                     is MovieDetailState.NotFound -> Centered { Text(stringResource(R.string.movie_not_found)) }
                     is MovieDetailState.Saved -> MovieContent(
                         providers = providers,
+                        credits = credits,
                         title = current.movie.toMediaTitle(),
                         saved = current.movie,
                         onStatusChange = { viewModel.setStatus(current.movie, it) },
@@ -138,6 +144,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                     )
                     is MovieDetailState.Remote -> MovieContent(
                         providers = providers,
+                        credits = credits,
                         title = current.title,
                         saved = null,
                         onStatusChange = {},
@@ -146,6 +153,61 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                         onRemove = {},
                         onAdd = { viewModel.add(current.title) },
                     )
+                }
+            }
+        }
+    }
+}
+
+/** The director (creator for a series) then the top-billed actors, each with their photo, in a swipeable row. */
+@Composable
+private fun CastRow(people: List<CastMember>, kind: TitleKind) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.cast_title), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted)
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            people.forEach { person ->
+                Column(modifier = Modifier.width(80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val photo = TmdbImage.profile(person.photoPath)
+                    val photoModifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, if (person.isDirector) Glass.Cyan else Glass.Border, CircleShape)
+                    if (photo != null) {
+                        AsyncImage(model = photo, contentDescription = person.name, contentScale = ContentScale.Crop, modifier = photoModifier)
+                    } else {
+                        Box(photoModifier, contentAlignment = Alignment.Center) {
+                            Text(person.name.first().uppercase(), style = MaterialTheme.typography.titleMedium, color = Glass.TextMuted)
+                        }
+                    }
+                    Text(
+                        person.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Glass.Text,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                    val role = if (person.isDirector) {
+                        stringResource(if (kind == TitleKind.SERIES) R.string.credit_creator else R.string.credit_director)
+                    } else {
+                        person.role
+                    }
+                    role?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (person.isDirector) Glass.Cyan else Glass.TextMuted,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
@@ -165,6 +227,7 @@ private fun Centered(content: @Composable () -> Unit) {
 @Composable
 private fun MovieContent(
     providers: ProvidersState,
+    credits: List<CastMember>,
     title: MediaTitle,
     saved: MovieEntity?,
     onStatusChange: (WatchStatus) -> Unit,
@@ -245,12 +308,16 @@ private fun MovieContent(
                 }
             }
 
-            listOfNotNull(
-                title.directors?.let { stringResource(if (title.kind == TitleKind.SERIES) R.string.series_creators else R.string.movie_directors, it) },
-                title.cast?.let { stringResource(R.string.movie_cast, it) },
-            ).takeIf { it.isNotEmpty() }?.let { lines ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    lines.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted) }
+            if (credits.isNotEmpty()) {
+                CastRow(credits, title.kind)
+            } else {
+                listOfNotNull(
+                    title.directors?.let { stringResource(if (title.kind == TitleKind.SERIES) R.string.series_creators else R.string.movie_directors, it) },
+                    title.cast?.let { stringResource(R.string.movie_cast, it) },
+                ).takeIf { it.isNotEmpty() }?.let { lines ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        lines.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted) }
+                    }
                 }
             }
 

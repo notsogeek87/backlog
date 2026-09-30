@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.data.tmdb
 
+import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.TitleKey
@@ -65,6 +66,14 @@ class TmdbClient(
             if (e.message?.startsWith("HTTP 404") == true) return null else throw e
         }
         return TmdbParsers.parseDetails(body, kind)
+    }
+
+    /** Director(s) and top-billed actors of [key], with their photos; empty when TMDB lists none. */
+    suspend fun credits(key: String): List<CastMember> {
+        val kind = TitleKey.kind(key) ?: return emptyList()
+        val id = TitleKey.tmdbId(key) ?: return emptyList()
+        val body = call("GET", "/${TitleKey.prefix(kind)}/$id", mapOf("append_to_response" to "credits"))
+        return TmdbParsers.parseCredits(body, kind)
     }
 
     /**

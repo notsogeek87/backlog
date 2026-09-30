@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.repository.MovieRepository
+import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
@@ -42,11 +43,16 @@ class MovieDetailViewModel(
     private val _providers = MutableStateFlow<ProvidersState>(ProvidersState.Loading)
     val providers: StateFlow<ProvidersState> = _providers
 
+    /** Photos of the director and actors, fetched live; empty when unavailable (the text lines stay). */
+    private val _credits = MutableStateFlow<List<CastMember>>(emptyList())
+    val credits: StateFlow<List<CastMember>> = _credits
+
     private var refreshed = false
     private var remoteLoadStarted = false
 
     init {
         loadProviders()
+        loadCredits()
         repository.observe(titleKey)
             .onEach { movie ->
                 if (movie != null) {
@@ -71,6 +77,18 @@ class MovieDetailViewModel(
                 throw e
             } catch (t: Throwable) {
                 ProvidersState.Unavailable
+            }
+        }
+    }
+
+    private fun loadCredits() {
+        viewModelScope.launch {
+            _credits.value = try {
+                repository.credits(titleKey)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                emptyList()
             }
         }
     }

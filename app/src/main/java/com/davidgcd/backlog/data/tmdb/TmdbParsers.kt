@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.data.tmdb
 
+import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
@@ -99,6 +100,28 @@ object TmdbParsers {
             directors = directors?.takeIf { it.isNotEmpty() }?.joinToString(", "),
             cast = credits?.optJSONArray("cast")?.objects()?.mapNotNull { it.optString("name").ifEmpty { null } }?.take(6)?.takeIf { it.isNotEmpty() }?.joinToString(", "),
         )
+    }
+
+    /**
+     * The people of a `/movie|tv/{id}?append_to_response=credits` answer, with their photos:
+     * directors (the creators for a series) first, then the [maxCast] top-billed actors.
+     */
+    fun parseCredits(json: String, kind: TitleKind, maxCast: Int = 12): List<CastMember> {
+        val o = runCatching { JSONObject(json) }.getOrNull() ?: return emptyList()
+        val credits = o.optJSONObject("credits")
+        val directorObjects = if (kind == TitleKind.SERIES) {
+            o.optJSONArray("created_by")?.objects()
+        } else {
+            credits?.optJSONArray("crew")?.objects()?.filter { it.optString("job") == "Director" }
+        }.orEmpty()
+        fun JSONObject.photo() = optString("profile_path").ifEmpty { null }
+        val directors = directorObjects.mapNotNull { d ->
+            d.optString("name").ifEmpty { null }?.let { CastMember(it, null, d.photo(), isDirector = true) }
+        }.distinctBy { it.name }
+        val actors = credits?.optJSONArray("cast")?.objects().orEmpty().mapNotNull { a ->
+            a.optString("name").ifEmpty { null }?.let { CastMember(it, a.optString("character").ifEmpty { null }, a.photo(), isDirector = false) }
+        }.take(maxCast)
+        return directors + actors
     }
 
     /**
