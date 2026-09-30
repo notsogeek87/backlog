@@ -67,7 +67,9 @@ class WishlistSyncService(
             when {
                 existing == null -> {
                     val game = fetched[igdbId] ?: continue // IGDB hiccup: picked up by the next sync
-                    repository.addToBacklog(game.copy(steamAppId = game.steamAppId ?: appId.toLongOrNull()), GameStatus.WISHLIST)
+                    repository.addToBacklog(game, GameStatus.WISHLIST)
+                    // IGDB may not list the Steam page: the wishlist itself knows the app id (French blurb on the detail screen).
+                    appId.toLongOrNull()?.let { id -> repository.findEntity(igdbId)?.let { repository.updateSteamAppId(it, id) } }
                     added++
                 }
                 previous[appId]?.missingFromLibrary == true && existing.gameStatus == GameStatus.WISHLIST && existing.isArchived -> {
