@@ -84,6 +84,10 @@ sur Android avec des briques Android natives.
   `AutoExportWorker` (WorkManager périodique) réécrit `backlog.csv` dans ce dossier
   et `AutoExportPreferences` mémorise le résultat du dernier passage (affiché dans
   Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
+- Partage du backlog : bouton Partager dans la barre du Backlog → feuille de partage
+  Android (`Intent.ACTION_SEND`, `text/plain`) avec la liste des jeux non archivés (+ lien igdb.com de chaque jeu via `IgdbService.getGameUrls`, sans lien si IGDB est injoignable)
+  groupés par statut, texte construit par `util/BacklogShareText` (indépendant du
+  filtre/tri en cours). Pas de compte ni de lien en ligne : l'app reste 100 % locale.
 - Statut d'un jeu (`model/GameStatus`, colonne `status` de `games`, migration 3→4) :
   `BACKLOG` (défaut), `PLAYED` (joué), `COMPLETED`
   (terminé). Modifiable sur la fiche du jeu, filtrable dans le backlog, et

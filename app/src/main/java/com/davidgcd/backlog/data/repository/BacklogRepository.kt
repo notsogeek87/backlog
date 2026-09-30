@@ -34,6 +34,8 @@ class BacklogRepository(
 
     suspend fun findEntity(igdbId: Long): GameEntity? = gameDao.findById(igdbId)
 
+    suspend fun gameUrls(ids: List<Long>): Map<Long, String> = igdbService.getGameUrls(ids)
+
     suspend fun searchGames(query: String): List<Game> = igdbService.searchGames(query, partial = true)
 
     suspend fun getPopularGames(limit: Int = 20): List<Game> = igdbService.getPopularGames(limit)

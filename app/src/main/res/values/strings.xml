@@ -7,6 +7,12 @@
     <string name="action_search">Rechercher</string>
     <string name="action_discover">Découvrir</string>
     <string name="action_settings">Réglages</string>
+    <string name="action_share_backlog">Partager mon backlog</string>
+    <string name="share_backlog_chooser">Partager mon backlog avec…</string>
+    <plurals name="share_backlog_header">
+        <item quantity="one">Mon backlog (%1$d jeu)</item>
+        <item quantity="other">Mon backlog (%1$d jeux)</item>
+    </plurals>
     <string name="action_sort">Trier</string>
     <string name="action_filter">Filtrer</string>
     <string name="search_placeholder">Rechercher sur IGDB…</string>

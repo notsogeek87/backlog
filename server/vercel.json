@@ -1,0 +1,4 @@
+{
+  "regions": ["fra1"],
+  "rewrites": [{ "source": "/b/:id", "destination": "/api/view?id=:id" }]
+}
