@@ -283,4 +283,50 @@ class BookRepositoryTest {
         assertTrue(Rig(openLibrary = { IOException("x") }).repository.editions(book(workId = "OL1W")).isEmpty())
         assertTrue(Rig().repository.editions(book()).isEmpty())
     }
+
+    // --- CSV import completion ---------------------------------------------------------------
+
+    private fun csvRow(title: String = "Dune", isbn13: String? = null) =
+        BookEntity(bookKey = "csv-key", title = title, authors = "Frank Herbert", isbn13 = isbn13, status = ReadStatus.READ.name, isFavorite = true, userRating = 5, addedAt = 42L)
+
+    @Test
+    fun `a title-only CSV row gets its cover and facts from the catalogue and keeps what the file said`() = runTest {
+        val rig = Rig(openLibrary = { url ->
+            when {
+                "search.json" in url -> Fixtures.DUNE_SEARCH
+                "/books/" in url -> Fixtures.DUNE_EDITION
+                "/works/" in url -> Fixtures.DUNE_WORK
+                else -> 404
+            }
+        })
+        val done = rig.repository.completeFromCatalog(csvRow())
+        assertEquals("https://covers.openlibrary.org/b/id/8231856-M.jpg", done.coverUrl)
+        assertEquals("Sur Arrakis.", done.description)
+        assertEquals("Pocket", done.publisher)
+        assertEquals("9782070368228", done.isbn13)
+        assertEquals("OL893415W", done.workId)
+        assertEquals("csv-key", done.bookKey)
+        assertEquals(ReadStatus.READ, done.readStatus)
+        assertTrue(done.isFavorite)
+        assertEquals(5, done.userRating)
+        assertEquals(42L, done.addedAt)
+    }
+
+    @Test
+    fun `an ISBN-only CSV row is looked up by ISBN`() = runTest {
+        val rig = Rig()
+        rig.repository.completeFromCatalog(csvRow(isbn13 = "9782070368228"))
+        assertTrue(rig.olHttp.requests.first(), "isbn" in rig.olHttp.requests.first())
+    }
+
+    @Test
+    fun `a complete row is not looked up, and offline or a different title leaves the row untouched`() = runTest {
+        val full = csvRow().copy(coverUrl = "c", description = "d")
+        val rig = Rig()
+        assertEquals(full, rig.repository.completeFromCatalog(full))
+        assertTrue(rig.olHttp.requests.isEmpty())
+        val offline = Rig(openLibrary = { IOException("x") }, google = { IOException("x") })
+        assertEquals(csvRow(), offline.repository.completeFromCatalog(csvRow()))
+        assertEquals(csvRow("Tout autre livre"), rig.repository.completeFromCatalog(csvRow("Tout autre livre")))
+    }
 }

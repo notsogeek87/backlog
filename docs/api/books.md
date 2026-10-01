@@ -29,4 +29,4 @@ GAME,Hades,113112,...,PLAYED,...,,,...,
 BOOK,Dune,,...,TO_READ,...,Frank Herbert,9782070368228,...,true
 ```
 
-L'import des livres ne contacte aucun catalogue (hors ligne possible) et ignore les doublons (comptés dans « ignorés »).
+L'import complète chaque livre depuis Open Library (couverture, description, éditeur, pages, ids : par ISBN, sinon titre + auteur ; Google Books en secours), en best effort : hors ligne ou sans correspondance, la ligne est importée telle quelle. Statut, favori, note et date de la ligne sont toujours conservés. Les doublons sont ignorés (comptés dans « ignorés »).

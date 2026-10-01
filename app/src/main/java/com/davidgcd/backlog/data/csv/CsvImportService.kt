@@ -64,11 +64,11 @@ class CsvImportService(
                 val fields = CsvFormat.parseRow(line)
                 val type = typeIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }
                 if (BookCsv.isBook(type)) {
-                    // Books are read entirely from the file: no catalogue call, an import works offline.
+                    // A book comes from the file; what it lacks (cover, description…) is completed from Open Library, best effort.
                     val book = BookCsv.fromRow { column ->
                         header.indexOf(column).takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.ifEmpty { null }
                     }
-                    if (book != null && bookRepository != null && bookRepository.addSaved(book) is BookAddResult.Added) added++ else skipped++
+                    if (book != null && bookRepository != null && bookRepository.addSaved(bookRepository.completeFromCatalog(book)) is BookAddResult.Added) added++ else skipped++
                     onProgress(CsvImportProgress(done = index + 1, total = rows.size))
                     return@forEachIndexed
                 }

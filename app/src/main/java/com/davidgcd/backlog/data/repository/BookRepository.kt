@@ -16,7 +16,9 @@ import com.davidgcd.backlog.model.BookDuplicates
 import com.davidgcd.backlog.model.BookKey
 import com.davidgcd.backlog.model.BookRanking
 import com.davidgcd.backlog.model.BookSource
+import com.davidgcd.backlog.model.BookText
 import com.davidgcd.backlog.model.ReadStatus
+import com.davidgcd.backlog.util.Isbn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.ConcurrentHashMap
@@ -187,6 +189,41 @@ class BookRepository(
         val updated = entity.toBook().enrichedWith(fresh).toEntity(entity.readStatus, entity.addedAt)
             .copy(isFavorite = entity.isFavorite, userRating = entity.userRating, updatedAt = now())
         if (updated.copy(updatedAt = entity.updatedAt) != entity) dao.update(updated)
+    }
+
+    /**
+     * A row read from a CSV, completed from the catalogue: a file with just a title, an author or an ISBN
+     * gets its cover, description, publisher, pages and ids from Open Library (Google Books as fallback),
+     * found by ISBN, else by title + author. The row keeps its key, status, favorite, rating and date.
+     * Best effort: offline, no match, or a match that isn't the same title returns the row untouched,
+     * so an import never fails (or waits) because of the catalogue.
+     */
+    suspend fun completeFromCatalog(entity: BookEntity): BookEntity {
+        if (entity.coverUrl != null && entity.description != null) return entity
+        val book = entity.toBook()
+        val hit = try {
+            val query = book.canonicalIsbn13 ?: "${book.title} ${book.authors.firstOrNull().orEmpty()}".trim()
+            search(query).books.firstOrNull { it.matches(book) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            null
+        } ?: return entity
+        val merged = book.enrichedWith(hit).let { first -> readFresh(first)?.let(first::enrichedWith) ?: first }
+        return merged.toEntity(entity.readStatus, entity.addedAt).copy(
+            bookKey = entity.bookKey,
+            isFavorite = entity.isFavorite,
+            userRating = entity.userRating,
+            updatedAt = entity.updatedAt,
+        )
+    }
+
+    /** The same book: same ISBN when both have one, else the same title (accents and case aside). */
+    private fun Book.matches(other: Book): Boolean {
+        val mine = canonicalIsbn13
+        val theirs = other.canonicalIsbn13
+        if (mine != null && theirs != null) return mine == theirs
+        return BookText.normalize(title) == BookText.normalize(other.title)
     }
 
     private companion object {
