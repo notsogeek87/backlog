@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed icon (Android 13+): single-tint silhouette of the shelf of books. -->
+<!-- Themed icon (Android 13+): single-tint silhouette of the shelf (book, game, film, book). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -9,10 +9,10 @@
         android:pathData="M30.16,76.77h47.68a1.26,1.26 0 0 1 1.26,1.26v-0.01a1.26,1.26 0 0 1 -1.26,1.26h-47.68a1.26,1.26 0 0 1 -1.26,-1.26v--0.01a1.26,1.26 0 0 1 1.26,-1.26z" />
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.75"
         android:pathData="M33.39,38.58h6.44a1.26,1.26 0 0 1 1.26,1.26v35.13a1.26,1.26 0 0 1 -1.26,1.26h-6.44a1.26,1.26 0 0 1 -1.26,-1.26v-35.13a1.26,1.26 0 0 1 1.26,-1.26z" />
-    <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M43.78,29.62h5.01a1.26,1.26 0 0 1 1.26,1.26v44.1a1.26,1.26 0 0 1 -1.26,1.26h-5.01a1.26,1.26 0 0 1 -1.26,-1.26v-44.1a1.26,1.26 0 0 1 1.26,-1.26z" />
-    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.9"
-        android:pathData="M52.75,34.99h7.34a1.26,1.26 0 0 1 1.26,1.26v38.72a1.26,1.26 0 0 1 -1.26,1.26h-7.34a1.26,1.26 0 0 1 -1.26,-1.26v-38.72a1.26,1.26 0 0 1 1.26,-1.26z" />
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="1" android:fillType="evenOdd"
+        android:pathData="M43.78,29.62h5.01a1.26,1.26 0 0 1 1.26,1.26v44.1a1.26,1.26 0 0 1 -1.26,1.26h-5.01a1.26,1.26 0 0 1 -1.26,-1.26v-44.1a1.26,1.26 0 0 1 1.26,-1.26zM45.75,38.58h1.08v1.97h1.97v1.08h-1.97v1.97h-1.08v-1.97h-1.97v-1.08h1.97z" />
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.9" android:fillType="evenOdd"
+        android:pathData="M52.75,34.99h7.34a1.26,1.26 0 0 1 1.26,1.26v38.72a1.26,1.26 0 0 1 -1.26,1.26h-7.34a1.26,1.26 0 0 1 -1.26,-1.26v-38.72a1.26,1.26 0 0 1 1.26,-1.26zM52.57,37.68h1.61v2.15h-1.61zM59.02,37.68h1.61v2.15h-1.61zM52.57,41.63h1.61v2.15h-1.61zM59.02,41.63h1.61v2.15h-1.61zM52.57,45.57h1.61v2.15h-1.61zM59.02,45.57h1.61v2.15h-1.61zM52.57,49.52h1.61v2.15h-1.61zM59.02,49.52h1.61v2.15h-1.61zM52.57,53.46h1.61v2.15h-1.61zM59.02,53.46h1.61v2.15h-1.61zM52.57,57.41h1.61v2.15h-1.61zM59.02,57.41h1.61v2.15h-1.61zM52.57,61.35h1.61v2.15h-1.61zM59.02,61.35h1.61v2.15h-1.61zM52.57,65.3h1.61v2.15h-1.61zM59.02,65.3h1.61v2.15h-1.61zM52.57,69.24h1.61v2.15h-1.61zM59.02,69.24h1.61v2.15h-1.61zM54.27,51.13L54.27,58.3L58.75,54.72z" />
     <group android:rotation="-12" android:pivotX="68.88" android:pivotY="76.23">
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.75"
         android:pathData="M70.14,36.79h5.55a1.26,1.26 0 0 1 1.26,1.26v36.93a1.26,1.26 0 0 1 -1.26,1.26h-5.55a1.26,1.26 0 0 1 -1.26,-1.26v-36.93a1.26,1.26 0 0 1 1.26,-1.26z" />
