@@ -21,6 +21,12 @@ toucher à `Game`/`GameEntity`.
 - **Classement des résultats** (`BookRanking`) : titre exact, puis préfixe, puis couverture, puis édition française ; l'ordre du catalogue départage. `lang=fr` est envoyé à Open Library.
 - **Performance** : debounce 300 ms, pages de 20 (« Voir plus »), cache mémoire des recherches (30 entrées, 10 min), Coil pour les images.
 
+## Français
+
+- **Genres** : `BookSubjects` retire le bruit du catalogue (« Accessible book », « nyt:… »…) et traduit les genres courants (Science-fiction, Policier…). Un sujet inhabituel sans traduction est conservé tel quel.
+- **Description** : si celle d'Open Library n'est pas en français (heuristique `BookText.looksFrench`), le dépôt cherche une description française sur Google Books (`langRestrict=fr`, par ISBN puis titre + auteur). Sans résultat, l'originale est conservée. Un échec réseau n'est pas mémorisé (nouvel essai à la prochaine ouverture).
+- Langue de l'édition : affichée par son nom français (« Anglais », « Français »).
+
 ## Limites connues
 
 - Open Library : un résultat de recherche ne dit pas quel ISBN/langue correspond à *quelle* édition ; ils sont lus

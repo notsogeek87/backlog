@@ -136,4 +136,15 @@ object BookText {
             .filter { it.isLetterOrDigit() || it.isWhitespace() }
             .trim()
             .replace(Regex("\\s+"), " ")
+
+    private val FRENCH_WORDS = setOf("le", "la", "les", "des", "un", "une", "et", "est", "dans", "qui", "que", "pour", "du", "au", "aux", "sur", "avec", "il", "elle", "son", "sa", "ses", "ce", "se", "ne", "pas", "par", "plus", "sont", "ont")
+    private val ENGLISH_WORDS = setOf("the", "and", "of", "is", "in", "to", "that", "with", "for", "his", "her", "by", "as", "on", "was", "are", "he", "she", "it", "who", "which", "from", "this", "their")
+
+    /** A rough "is this text French?" (more French than English function words) — enough to tell a description to replace. */
+    fun looksFrench(text: String): Boolean {
+        val words = normalize(text).split(' ')
+        val french = words.count { it in FRENCH_WORDS }
+        val english = words.count { it in ENGLISH_WORDS }
+        return french > english
+    }
 }

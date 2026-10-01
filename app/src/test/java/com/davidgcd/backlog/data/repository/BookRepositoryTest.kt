@@ -329,4 +329,47 @@ class BookRepositoryTest {
         assertEquals(csvRow(), offline.repository.completeFromCatalog(csvRow()))
         assertEquals(csvRow("Tout autre livre"), rig.repository.completeFromCatalog(csvRow("Tout autre livre")))
     }
+
+    // --- French --------------------------------------------------------------------------------
+
+    private val englishWork = """{"key":"/works/OL893415W","title":"Dune","description":"The story of a boy and the desert planet that is his home.","subjects":["Science fiction","Accessible book","Deserts"]}"""
+    private val frenchVolume = """{"items":[{"id":"fr1","volumeInfo":{"title":"Dune","authors":["Frank Herbert"],"language":"fr","description":"L'histoire d'un jeune homme et de la planète désertique qui est son foyer."}}]}"""
+
+    @Test
+    fun `an English description is replaced by the French one from Google Books`() = runTest {
+        val rig = Rig(
+            openLibrary = { url -> when { "search.json" in url -> Fixtures.DUNE_SEARCH; "/books/" in url -> Fixtures.DUNE_EDITION; "/works/" in url -> englishWork; else -> 404 } },
+            google = { frenchVolume },
+        )
+        val hit = rig.repository.search("dune").books.single()
+        val detail = rig.repository.fetchRemote(hit.key)!!
+        assertTrue(detail.description!!, detail.description!!.startsWith("L'histoire"))
+        assertTrue(rig.gbHttp.requests.first().contains("langRestrict=fr"))
+        // Asked once: the answer is remembered.
+        rig.repository.fetchRemote(hit.key)
+        assertEquals(1, rig.gbHttp.requests.size)
+    }
+
+    @Test
+    fun `a French description is kept without asking Google`() = runTest {
+        val rig = Rig(openLibrary = { url -> when { "search.json" in url -> Fixtures.DUNE_SEARCH; "/books/" in url -> Fixtures.DUNE_EDITION; "/works/" in url -> Fixtures.DUNE_WORK; else -> 404 } })
+        val hit = rig.repository.search("dune").books.single()
+        assertEquals("Sur Arrakis.", rig.repository.fetchRemote(hit.key)!!.description)
+        assertTrue(rig.gbHttp.requests.isEmpty())
+    }
+
+    @Test
+    fun `without a French description anywhere the English one is kept, and an offline miss is retried later`() = runTest {
+        var googleDown = true
+        val rig = Rig(
+            openLibrary = { url -> when { "search.json" in url -> Fixtures.DUNE_SEARCH; "/books/" in url -> Fixtures.DUNE_EDITION; "/works/" in url -> englishWork; else -> 404 } },
+            google = { if (googleDown) IOException("offline") else Fixtures.EMPTY_GOOGLE },
+        )
+        val hit = rig.repository.search("dune").books.single()
+        assertTrue(rig.repository.fetchRemote(hit.key)!!.description!!.startsWith("The story"))
+        googleDown = false
+        val before = rig.gbHttp.requests.size
+        assertTrue(rig.repository.fetchRemote(hit.key)!!.description!!.startsWith("The story"))
+        assertTrue(rig.gbHttp.requests.size > before)
+    }
 }

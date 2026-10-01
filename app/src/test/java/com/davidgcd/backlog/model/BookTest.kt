@@ -163,4 +163,19 @@ class BookTest {
         assertTrue(BookLanguages.isFrench("fre"))
         assertFalse(BookLanguages.isFrench("eng"))
     }
+
+    @Test
+    fun `French and English texts are told apart`() {
+        assertTrue(BookText.looksFrench("L'histoire d'un jeune homme dans le désert, et de sa famille."))
+        assertFalse(BookText.looksFrench("The story of a boy and his family in the desert."))
+        assertFalse(BookText.looksFrench(""))
+    }
+
+    @Test
+    fun `subjects lose the catalogue noise and are written in French when known`() {
+        val cleaned = com.davidgcd.backlog.util.BookSubjects.clean(
+            listOf("Science fiction", "Accessible book", "Protected DAISY", "nyt:hardcover-fiction=2020-01-01", "Fantasy", "science fiction", "Arrakis (Imaginary place)", "Deserts"),
+        )
+        assertEquals(listOf("Science-fiction", "Fantasy", "Arrakis (Imaginary place)", "Déserts"), cleaned)
+    }
 }

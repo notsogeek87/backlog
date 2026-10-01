@@ -5,6 +5,7 @@ import com.davidgcd.backlog.model.BookKey
 import com.davidgcd.backlog.model.BookPage
 import com.davidgcd.backlog.model.BookSource
 import com.davidgcd.backlog.util.BookImage
+import com.davidgcd.backlog.util.BookSubjects
 import com.davidgcd.backlog.util.Isbn
 import org.json.JSONArray
 import org.json.JSONObject
@@ -49,7 +50,7 @@ object OpenLibraryParsers {
             pageCount = doc.optInt("number_of_pages_median", 0).takeIf { it > 0 },
             // The list is every language the work exists in: only a single one says something about *this* edition.
             languages = languages.singleOrNull()?.let(::listOf) ?: emptyList(),
-            subjects = doc.optJSONArray("subject").strings().take(MAX_SUBJECTS),
+            subjects = BookSubjects.clean(doc.optJSONArray("subject").strings(), MAX_SUBJECTS),
             workId = workId,
             editionId = editionId,
             source = BookSource.OPEN_LIBRARY,
@@ -68,7 +69,7 @@ object OpenLibraryParsers {
             description = description(o.opt("description")),
             coverUrl = o.optJSONArray("covers")?.positiveLongs()?.firstOrNull()?.let(BookImage::byCoverId),
             publishedYear = year(o.optString("first_publish_date")),
-            subjects = o.optJSONArray("subjects").strings().take(MAX_SUBJECTS),
+            subjects = BookSubjects.clean(o.optJSONArray("subjects").strings(), MAX_SUBJECTS),
             workId = o.optString("key").substringAfterLast('/').takeIf { WORK_ID.matches(it) },
         )
     }
@@ -94,7 +95,7 @@ object OpenLibraryParsers {
             languages = o.optJSONArray("languages")?.objects()
                 ?.mapNotNull { it.optString("key").substringAfterLast('/').ifEmpty { null } }
                 ?: emptyList(),
-            subjects = o.optJSONArray("subjects").strings().take(MAX_SUBJECTS),
+            subjects = BookSubjects.clean(o.optJSONArray("subjects").strings(), MAX_SUBJECTS),
             workId = o.optJSONArray("works")?.objects()?.firstOrNull()?.optString("key")
                 ?.substringAfterLast('/')?.takeIf { WORK_ID.matches(it) },
             editionId = o.optString("key").substringAfterLast('/').takeIf { EDITION_ID.matches(it) },

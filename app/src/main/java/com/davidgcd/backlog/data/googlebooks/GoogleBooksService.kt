@@ -20,7 +20,7 @@ class GoogleBooksService(
     private val http: OkHttpClient,
     private val baseUrl: String = "https://www.googleapis.com/books/v1",
 ) {
-    suspend fun searchBooks(query: String, page: Int = 1, limit: Int = GoogleBooksParsers.PAGE_SIZE): BookPage {
+    suspend fun searchBooks(query: String, page: Int = 1, limit: Int = GoogleBooksParsers.PAGE_SIZE, langRestrict: String? = null): BookPage {
         val q = query.trim()
         if (q.isEmpty()) return BookPage(emptyList(), hasMore = false)
         val isbn = Isbn.fromQuery(q)
@@ -29,6 +29,7 @@ class GoogleBooksService(
             .addQueryParameter("startIndex", ((page - 1) * limit).toString())
             .addQueryParameter("maxResults", limit.toString())
             .addQueryParameter("printType", "books")
+            .apply { langRestrict?.let { addQueryParameter("langRestrict", it) } }
             .build()
         return GoogleBooksParsers.parseSearch(get(url))
     }

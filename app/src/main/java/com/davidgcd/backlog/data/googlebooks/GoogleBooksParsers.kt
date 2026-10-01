@@ -4,6 +4,7 @@ import com.davidgcd.backlog.model.Book
 import com.davidgcd.backlog.model.BookKey
 import com.davidgcd.backlog.model.BookPage
 import com.davidgcd.backlog.model.BookSource
+import com.davidgcd.backlog.util.BookSubjects
 import com.davidgcd.backlog.util.Isbn
 import org.json.JSONArray
 import org.json.JSONObject
@@ -41,7 +42,7 @@ object GoogleBooksParsers {
             isbn13 = isbn13,
             pageCount = info.optInt("pageCount", 0).takeIf { it > 0 },
             languages = info.optString("language").trim().ifEmpty { null }?.let(::listOf) ?: emptyList(),
-            subjects = info.optJSONArray("categories").strings(),
+            subjects = BookSubjects.clean(info.optJSONArray("categories").strings().flatMap { it.split(" / ") }),
             source = BookSource.GOOGLE_BOOKS,
         )
         // No ISBN: the Google volume id is the identity (an ISBN-ed volume is keyed by its ISBN like any other book).

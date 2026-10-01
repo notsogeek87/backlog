@@ -31,7 +31,7 @@ class OpenLibraryParsersTest {
         assertEquals("OL7353617M", dune.editionId)
         assertEquals("https://covers.openlibrary.org/b/id/8231856-M.jpg", dune.coverUrl)
         assertEquals(612, dune.pageCount)
-        assertEquals(listOf("Science fiction", "Deserts", "Arrakis"), dune.subjects)
+        assertEquals(listOf("Science-fiction", "Déserts", "Arrakis"), dune.subjects)
         assertEquals(BookSource.OPEN_LIBRARY, dune.source)
         assertEquals("ol:OL7353617M", dune.key)
     }
@@ -88,7 +88,7 @@ class OpenLibraryParsersTest {
                "subjects":["Science fiction"],"first_publish_date":"1965","covers":[-1,8231856]}""",
         )
         assertEquals("Sur Arrakis.", typed?.description)
-        assertEquals(listOf("Science fiction"), typed?.subjects)
+        assertEquals(listOf("Science-fiction"), typed?.subjects)
         assertEquals(1965, typed?.publishedYear)
         assertEquals("https://covers.openlibrary.org/b/id/8231856-M.jpg", typed?.coverUrl)
         assertNull(OpenLibraryParsers.parseWork("""{"key":"/works/OL1W","title":"X"}""")?.description)

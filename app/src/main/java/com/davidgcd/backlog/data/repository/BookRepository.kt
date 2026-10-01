@@ -21,6 +21,7 @@ import com.davidgcd.backlog.model.ReadStatus
 import com.davidgcd.backlog.util.Isbn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
 /** One page of search results; [fromFallback] is true when Open Library had nothing and Google Books answered. */
@@ -111,7 +112,7 @@ class BookRepository(
      */
     suspend fun fetchRemote(key: String): Book? {
         val known = seen[key] ?: return null
-        val merged = readFresh(known)?.let { known.enrichedWith(it) } ?: known
+        val merged = localize(readFresh(known)?.let { known.enrichedWith(it) } ?: known)
         seen[key] = merged
         return merged
     }
@@ -184,9 +185,11 @@ class BookRepository(
      */
     suspend fun enrich(bookKey: String) {
         val entity = dao.findById(bookKey) ?: return
-        if (entity.description != null && entity.publisher != null && entity.pageCount != null && entity.isbn13 != null && entity.languages != null) return
-        val fresh = readFresh(entity.toBook()) ?: return
-        val updated = entity.toBook().enrichedWith(fresh).toEntity(entity.readStatus, entity.addedAt)
+        val complete = entity.publisher != null && entity.pageCount != null && entity.isbn13 != null && entity.languages != null
+        if (complete && entity.description?.let(BookText::looksFrench) == true) return
+        val book = entity.toBook()
+        val enriched = readFresh(book)?.let { book.enrichedWith(it) } ?: book
+        val updated = localize(enriched).toEntity(entity.readStatus, entity.addedAt)
             .copy(isFavorite = entity.isFavorite, userRating = entity.userRating, updatedAt = now())
         if (updated.copy(updatedAt = entity.updatedAt) != entity) dao.update(updated)
     }
@@ -209,13 +212,53 @@ class BookRepository(
         } catch (t: Throwable) {
             null
         } ?: return entity
-        val merged = book.enrichedWith(hit).let { first -> readFresh(first)?.let(first::enrichedWith) ?: first }
+        val merged = localize(book.enrichedWith(hit).let { first -> readFresh(first)?.let(first::enrichedWith) ?: first })
         return merged.toEntity(entity.readStatus, entity.addedAt).copy(
             bookKey = entity.bookKey,
             isFavorite = entity.isFavorite,
             userRating = entity.userRating,
             updatedAt = entity.updatedAt,
         )
+    }
+
+    private val frenchDescriptions = ConcurrentHashMap<String, Optional<String>>()
+
+    /**
+     * The description in French: kept if it already is, else looked up on Google Books restricted to French
+     * (by ISBN, then by title + author). Open Library's descriptions are mostly English; when no French one
+     * exists the original is kept — better an English description than none.
+     */
+    private suspend fun localize(book: Book): Book {
+        val current = book.description
+        if (current != null && BookText.looksFrench(current)) return book
+        val answer = frenchDescriptions[book.key] ?: findFrenchDescription(book)?.also { frenchDescriptions[book.key] = it }
+        val french = answer?.orElse(null)
+        return if (french != null) book.copy(description = french) else book
+    }
+
+    /** Empty = Google has no French description for it (remembered); null = couldn't ask (offline: asked again next time). */
+    private suspend fun findFrenchDescription(book: Book): Optional<String>? {
+        val queries = listOfNotNull(
+            book.canonicalIsbn13?.let { "isbn:$it" },
+            "intitle:${book.title}" + book.authors.firstOrNull()?.let { " inauthor:$it" }.orEmpty(),
+        )
+        for (query in queries) {
+            val hits = try {
+                googleBooks.searchBooks(query, limit = FRENCH_LOOKUP_SIZE, langRestrict = "fr").books
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                return null
+            }
+            val found = hits.firstOrNull { hit ->
+                hit.description?.let(BookText::looksFrench) == true && BookText.normalize(hit.title).let { t ->
+                    val mine = BookText.normalize(book.title)
+                    t == mine || t.startsWith(mine) || mine.startsWith(t)
+                }
+            }
+            if (found != null) return Optional.ofNullable(found.description)
+        }
+        return Optional.empty()
     }
 
     /** The same book: same ISBN when both have one, else the same title (accents and case aside). */
@@ -228,6 +271,7 @@ class BookRepository(
 
     private companion object {
         const val SEARCH_CACHE_SIZE = 30
+        const val FRENCH_LOOKUP_SIZE = 5
         const val SEARCH_CACHE_TTL_MS = 10 * 60 * 1000L
     }
 }
