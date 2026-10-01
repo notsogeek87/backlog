@@ -67,6 +67,9 @@ import com.davidgcd.backlog.ui.moviedetail.MovieDetailScreen
 import com.davidgcd.backlog.ui.moviedetail.MovieDetailViewModel
 import com.davidgcd.backlog.ui.moviedetail.MovieDetailViewModelFactory
 import com.davidgcd.backlog.ui.movies.MovieDiscoverScreen
+import com.davidgcd.backlog.ui.person.PersonScreen
+import com.davidgcd.backlog.ui.person.PersonViewModel
+import com.davidgcd.backlog.ui.person.PersonViewModelFactory
 import com.davidgcd.backlog.ui.movies.MovieDiscoverViewModel
 import com.davidgcd.backlog.ui.movies.MovieDiscoverViewModelFactory
 import com.davidgcd.backlog.ui.movies.MoviesScreen
@@ -128,6 +131,8 @@ private object Routes {
     const val MOVIES = "movies"
     const val MOVIE_DETAIL = "movie/{titleKey}"
     fun movieDetail(titleKey: String) = "movie/$titleKey"
+    const val PERSON = "person/{personId}?director={director}"
+    fun person(personId: Long, director: Boolean) = "person/$personId?director=$director"
     const val BOOKS = "books"
     const val BOOK_DETAIL = "book/{bookKey}"
     fun bookDetail(bookKey: String) = "book/$bookKey"
@@ -308,7 +313,30 @@ fun BacklogNavHost(
                 factory = MovieDetailViewModelFactory(titleKey, movieRepository),
                 key = "movie_detail_$titleKey",
             )
-            MovieDetailScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            MovieDetailScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onPersonClick = { personId, director -> navController.navigate(Routes.person(personId, director)) },
+            )
+        }
+        composable(
+            route = Routes.PERSON,
+            arguments = listOf(
+                navArgument("personId") { type = NavType.LongType },
+                navArgument("director") { type = NavType.BoolType; defaultValue = false },
+            ),
+        ) { backStackEntry ->
+            val personId = backStackEntry.arguments?.getLong("personId") ?: return@composable
+            val director = backStackEntry.arguments?.getBoolean("director") ?: false
+            val viewModel: PersonViewModel = viewModel(
+                factory = PersonViewModelFactory(personId, director, movieRepository),
+                key = "person_${personId}_$director",
+            )
+            PersonScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onTitleClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
+            )
         }
         composable(Routes.BOOKS) {
             val viewModel: BooksViewModel = viewModel(factory = BooksViewModelFactory(bookRepository, shareLinkService, librarySharer))

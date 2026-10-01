@@ -3,6 +3,7 @@ package com.davidgcd.backlog.data.tmdb
 import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
+import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchProviders
@@ -74,6 +75,16 @@ class TmdbClient(
         val id = TitleKey.tmdbId(key) ?: return emptyList()
         val body = call("GET", "/${TitleKey.prefix(kind)}/$id", mapOf("append_to_response" to "credits"))
         return TmdbParsers.parseCredits(body, kind)
+    }
+
+    /** What [personId] acted in, or directed when [asDirector]; null if TMDB doesn't know the person. */
+    suspend fun personFilmography(personId: Long, asDirector: Boolean): PersonFilmography? {
+        val body = try {
+            call("GET", "/person/$personId", mapOf("append_to_response" to "combined_credits"))
+        } catch (e: TmdbException) {
+            if (e.message?.startsWith("HTTP 404") == true) return null else throw e
+        }
+        return TmdbParsers.parsePersonFilmography(body, asDirector, genres())
     }
 
     /**

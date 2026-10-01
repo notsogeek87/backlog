@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.tmdb
 
 import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
+import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchProvider
@@ -126,6 +127,31 @@ object TmdbParsers {
     }
 
     /**
+     * `/person/{id}?append_to_response=combined_credits`: the films & séries the person acted in
+     * ([asDirector] false) or directed ([asDirector] true), newest first, each title once.
+     * Talk shows and news (where people only appear as themselves) are left out of the acting list.
+     */
+    fun parsePersonFilmography(json: String, asDirector: Boolean, genreNames: Map<Int, String>): PersonFilmography? {
+        val o = runCatching { JSONObject(json) }.getOrNull() ?: return null
+        val name = o.optString("name").ifEmpty { null } ?: return null
+        val combined = o.optJSONObject("combined_credits")
+        val entries = if (asDirector) {
+            combined?.optJSONArray("crew")?.objects()?.filter { it.optString("job") == "Director" }
+        } else {
+            combined?.optJSONArray("cast")?.objects()?.filterNot { e ->
+                e.optJSONArray("genre_ids")?.let { ids -> (0 until ids.length()).any { ids.optInt(it) in NON_FICTION_GENRES } } == true
+            }
+        }.orEmpty()
+        val unique = entries
+            .filter { it.optString("media_type") == "movie" || it.optString("media_type") == "tv" }
+            .distinctBy { it.optString("media_type") + ":" + it.optLong("id", -1) }
+        val titles = parseList(JSONObject().put("results", JSONArray(unique)).toString(), forcedKind = null, genreNames = genreNames)
+            .map { it.title }
+            .sortedWith(compareByDescending<MediaTitle> { it.releaseDate != null }.thenByDescending { it.releaseDate ?: 0L })
+        return PersonFilmography(name, o.optString("profile_path").ifEmpty { null }, titles)
+    }
+
+    /**
      * `/movie|tv/{id}/watch/providers`: the offers for [region], or null when TMDB has none for it.
      * "free" and "ads" (free with advertising) are one list here; each list is ordered by TMDB's display priority.
      */
@@ -173,4 +199,7 @@ object TmdbParsers {
     private fun JSONObject.optDoubleOrNull(key: String): Double? = if (has(key) && !isNull(key)) optString(key).toDoubleOrNull() else null
 
     private const val SECONDS_PER_DAY = 86_400L
+
+    /** TMDB genre ids of news (10763) and talk shows (10767). */
+    private val NON_FICTION_GENRES = setOf(10763, 10767)
 }

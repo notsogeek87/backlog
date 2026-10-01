@@ -6,6 +6,7 @@ import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.model.CastMember
+import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.MovieRanking
@@ -66,6 +67,10 @@ class MovieRepository(
 
     /** Live photos of the director and actors; never cached. */
     suspend fun credits(titleKey: String): List<CastMember> = tmdb.credits(titleKey)
+
+    /** Live filmography of a person (acting, or directing); never cached. */
+    suspend fun personFilmography(personId: Long, asDirector: Boolean): PersonFilmography? =
+        tmdb.personFilmography(personId, asDirector)
 
     /** Live "where to watch" for France; never cached, since availability changes. */
     suspend fun watchProviders(titleKey: String): WatchProviders? = tmdb.watchProviders(titleKey)

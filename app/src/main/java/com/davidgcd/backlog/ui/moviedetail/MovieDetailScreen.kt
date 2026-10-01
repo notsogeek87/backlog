@@ -84,7 +84,7 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
+fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPersonClick: (personId: Long, director: Boolean) -> Unit) {
     val state by viewModel.state.collectAsState()
     val providers by viewModel.providers.collectAsState()
     val credits by viewModel.credits.collectAsState()
@@ -142,6 +142,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                         onArchiveToggle = { viewModel.setArchived(current.movie, !current.movie.isArchived) },
                         onRemove = { viewModel.remove(current.movie, onDone = onBack) },
                         onAdd = {},
+                        onPersonClick = onPersonClick,
                     )
                     is MovieDetailState.Remote -> MovieContent(
                         providers = providers,
@@ -153,6 +154,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
                         onArchiveToggle = {},
                         onRemove = {},
                         onAdd = { viewModel.add(current.title) },
+                        onPersonClick = onPersonClick,
                     )
                 }
             }
@@ -162,8 +164,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit) {
 
 /** The director (creator for a series) then the top-billed actors, each with their photo, in a swipeable row. */
 @Composable
-private fun CastRow(people: List<CastMember>, kind: TitleKind) {
-    val context = LocalContext.current
+private fun CastRow(people: List<CastMember>, kind: TitleKind, onPersonClick: (Long, Boolean) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.cast_title), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted)
         Row(
@@ -176,8 +177,8 @@ private fun CastRow(people: List<CastMember>, kind: TitleKind) {
                         .width(80.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .then(
-                            person.tmdbUrl?.let { url ->
-                                Modifier.clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                            person.personId?.let { id ->
+                                Modifier.clickable { onPersonClick(id, person.isDirector) }
                             } ?: Modifier,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -247,6 +248,7 @@ private fun MovieContent(
     onArchiveToggle: () -> Unit,
     onRemove: () -> Unit,
     onAdd: () -> Unit,
+    onPersonClick: (Long, Boolean) -> Unit,
 ) {
     var confirmRemove by remember { mutableStateOf(false) }
     var askRating by remember { mutableStateOf(false) }
@@ -321,7 +323,7 @@ private fun MovieContent(
             }
 
             if (credits.isNotEmpty()) {
-                CastRow(credits, title.kind)
+                CastRow(credits, title.kind, onPersonClick)
             } else {
                 listOfNotNull(
                     title.directors?.let { stringResource(if (title.kind == TitleKind.SERIES) R.string.series_creators else R.string.movie_directors, it) },

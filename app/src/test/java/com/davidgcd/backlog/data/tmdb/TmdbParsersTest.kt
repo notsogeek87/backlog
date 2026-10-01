@@ -164,4 +164,34 @@ class TmdbParsersTest {
         assertNull(TmdbParsers.parseWatchProviders("""{"results":{"FR":{"link":"x"}}}""", "FR"))
         assertNull(TmdbParsers.parseWatchProviders("nope", "FR"))
     }
+
+    @Test
+    fun `an actor's filmography lists what they played in, newest first, without talk shows`() {
+        val json = """{"name":"Leonardo DiCaprio","profile_path":"/leo.jpg","combined_credits":{
+          "cast":[
+            {"media_type":"movie","id":27205,"title":"Inception","release_date":"2010-07-15","vote_average":8.3,"vote_count":100,"genre_ids":[28]},
+            {"media_type":"movie","id":597,"title":"Titanic","release_date":"1997-11-18","vote_average":7.9,"vote_count":100,"genre_ids":[18]},
+            {"media_type":"tv","id":9,"name":"Un late show","first_air_date":"2015-01-01","genre_ids":[10767]},
+            {"media_type":"movie","id":27205,"title":"Inception","release_date":"2010-07-15","genre_ids":[28]}
+          ],
+          "crew":[{"media_type":"movie","id":1,"title":"Producteur seulement","job":"Producer","release_date":"2020-01-01"}]}}"""
+        val person = TmdbParsers.parsePersonFilmography(json, asDirector = false, genreNames = genres)!!
+        assertEquals("Leonardo DiCaprio", person.name)
+        assertEquals("/leo.jpg", person.photoPath)
+        assertEquals(listOf("movie:27205", "movie:597"), person.titles.map { it.id })
+    }
+
+    @Test
+    fun `a director's filmography keeps only the films they directed`() {
+        val json = """{"name":"Christopher Nolan","combined_credits":{
+          "cast":[{"media_type":"movie","id":3,"title":"Caméo","release_date":"2000-01-01"}],
+          "crew":[
+            {"media_type":"movie","id":27205,"title":"Inception","release_date":"2010-07-15","job":"Director"},
+            {"media_type":"movie","id":157336,"title":"Interstellar","release_date":"2014-11-05","job":"Director"},
+            {"media_type":"movie","id":157336,"title":"Interstellar","release_date":"2014-11-05","job":"Producer"}
+          ]}}"""
+        val person = TmdbParsers.parsePersonFilmography(json, asDirector = true, genreNames = genres)!!
+        assertEquals(listOf("movie:157336", "movie:27205"), person.titles.map { it.id })
+        assertNull(TmdbParsers.parsePersonFilmography("nope", asDirector = true, genreNames = genres))
+    }
 }

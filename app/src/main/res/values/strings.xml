@@ -387,6 +387,10 @@
     <string name="cast_title">Distribution</string>
     <string name="credit_director">Réalisation</string>
     <string name="credit_creator">Création</string>
+    <string name="person_acted_in">Joue dans</string>
+    <string name="person_directed">Réalise</string>
+    <string name="person_empty">Aucun titre trouvé.</string>
+    <string name="person_error">Impossible de charger la filmographie. Vérifie ta connexion et réessaie.</string>
     <string name="series_creators">Créée par %1$s</string>
     <string name="movie_cast">Avec %1$s</string>
     <string name="ratings_tmdb">TMDB</string>
