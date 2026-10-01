@@ -526,7 +526,7 @@ private fun SearchResults(
 
 /** A search hit: cover, title, "author · year · publisher", and the add / already-added affordance. */
 @Composable
-private fun BookHitItem(hit: BookHit, onAdd: () -> Unit, onClick: () -> Unit) {
+internal fun BookHitItem(hit: BookHit, onAdd: () -> Unit, onClick: () -> Unit) {
     val book = hit.book
     val meta = listOfNotNull(
         book.authorLine.ifEmpty { null },

@@ -26,7 +26,8 @@ object OpenLibraryParsers {
      */
     fun parseSearch(json: String, page: Int = 1, queryIsbn: String? = null): BookPage {
         val root = runCatching { JSONObject(json) }.getOrNull() ?: return BookPage(emptyList(), hasMore = false)
-        val docs = root.optJSONArray("docs") ?: return BookPage(emptyList(), hasMore = false)
+        // `search.json` answers `docs`; the trending and subject lists answer `works` (same hit, a few fields named differently).
+        val docs = root.optJSONArray("docs") ?: root.optJSONArray("works") ?: return BookPage(emptyList(), hasMore = false)
         val books = docs.objects().mapNotNull { parseSearchDoc(it, queryIsbn) }
         val total = root.optInt("numFound", 0)
         return BookPage(books, hasMore = page * PAGE_SIZE < total)
@@ -36,13 +37,14 @@ object OpenLibraryParsers {
         val title = doc.optString("title").trim().ifEmpty { return null }
         val workId = doc.optString("key").substringAfterLast('/').takeIf { WORK_ID.matches(it) }
         val editionId = doc.optString("cover_edition_key").trim().takeIf { EDITION_ID.matches(it) }
-        val coverId = doc.optLong("cover_i", -1).takeIf { it > 0 }
+        val coverId = (doc.optLong("cover_i", -1).takeIf { it > 0 } ?: doc.optLong("cover_id", -1)).takeIf { it > 0 }
         val languages = doc.optJSONArray("language").strings()
         val book = Book(
             key = "",
             title = title,
             subtitle = doc.optString("subtitle").trim().ifEmpty { null },
-            authors = doc.optJSONArray("author_name").strings(),
+            authors = doc.optJSONArray("author_name").strings()
+                .ifEmpty { doc.optJSONArray("authors")?.objects()?.mapNotNull { it.optString("name").trim().ifEmpty { null } } ?: emptyList() },
             coverUrl = coverId?.let(BookImage::byCoverId) ?: editionId?.let(BookImage::byEditionId),
             publishedYear = doc.optInt("first_publish_year", 0).takeIf { it > 0 },
             isbn10 = queryIsbn?.let(Isbn::toIsbn10),

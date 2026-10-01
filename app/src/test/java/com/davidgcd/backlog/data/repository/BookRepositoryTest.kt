@@ -372,4 +372,29 @@ class BookRepositoryTest {
         assertTrue(rig.repository.fetchRemote(hit.key)!!.description!!.startsWith("The story"))
         assertTrue(rig.gbHttp.requests.size > before)
     }
+
+    // --- Discover ------------------------------------------------------------------------------
+
+    @Test
+    fun `a Discover list is cached, and its books open as search hits do`() = runTest {
+        val rig = Rig(openLibrary = { """{"works":[{"key":"/works/OL1W","title":"Dune","authors":[{"name":"Frank Herbert"}],"cover_id":1}]}""" })
+        val books = rig.repository.chart(com.davidgcd.backlog.model.BookChart.TRENDING)
+        assertEquals(listOf("Dune"), books.map { it.title })
+        rig.repository.chart(com.davidgcd.backlog.model.BookChart.TRENDING)
+        assertEquals(1, rig.olHttp.requests.size)
+        rig.repository.chart(com.davidgcd.backlog.model.BookChart.FANTASY)
+        assertEquals(2, rig.olHttp.requests.size)
+        // Seen, so the detail screen can show it even before the catalogue answers again.
+        assertEquals("Dune", rig.repository.fetchRemote(books.single().key)?.title)
+    }
+
+    @Test
+    fun `a Discover list offline throws instead of showing an empty list`() = runTest {
+        try {
+            Rig(openLibrary = { IOException("offline") }).repository.chart(com.davidgcd.backlog.model.BookChart.TRENDING)
+            fail()
+        } catch (e: BookSourceException) {
+            assertTrue(e.isNetwork)
+        }
+    }
 }

@@ -143,4 +143,28 @@ class OpenLibraryParsersTest {
         assertNull(OpenLibraryParsers.year("n.d."))
         assertNull(OpenLibraryParsers.year(null))
     }
+
+    @Test
+    fun `the trending list answers works, with the same fields as a search`() {
+        val page = OpenLibraryParsers.parseSearch(
+            """{"query":"/trending/weekly","works":[{"key":"/works/OL1W","title":"Dune","author_name":["Frank Herbert"],"first_publish_year":1965,"cover_i":8231856,"cover_edition_key":"OL7353617M"}],"days":7}""",
+        )
+        val book = page.books.single()
+        assertEquals("Dune", book.title)
+        assertEquals(listOf("Frank Herbert"), book.authors)
+        assertEquals("https://covers.openlibrary.org/b/id/8231856-M.jpg", book.coverUrl)
+        assertFalse(page.hasMore)
+    }
+
+    @Test
+    fun `a subject list names its authors and cover differently`() {
+        val book = OpenLibraryParsers.parseSearch(
+            """{"name":"science fiction","work_count":10,"works":[{"key":"/works/OL2W","title":"Fondation","authors":[{"key":"/authors/OL1A","name":"Isaac Asimov"}],
+               "cover_id":555,"first_publish_year":1951,"subject":["Science fiction","Accessible book"]}]}""",
+        ).books.single()
+        assertEquals(listOf("Isaac Asimov"), book.authors)
+        assertEquals("https://covers.openlibrary.org/b/id/555-M.jpg", book.coverUrl)
+        assertEquals(listOf("Science-fiction"), book.subjects)
+        assertEquals("work:OL2W", book.key)
+    }
 }

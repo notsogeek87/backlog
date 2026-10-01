@@ -9,10 +9,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
 
-/** The two worlds of the app: games (IGDB) and films & séries (TMDB). */
-enum class MediaType { GAMES, MOVIES }
+/** The worlds of the app: games (IGDB), films & séries (TMDB) and books (Open Library). */
+enum class MediaType { GAMES, MOVIES, BOOKS }
 
-/** Jeux / Films & séries switch, shown above the lists of screens that serve both (Discover). */
+/** Jeux / Films & séries / Livres switch, shown above the lists of screens that serve both (Discover). */
 @Composable
 fun MediaSwitch(selected: MediaType, onSelect: (MediaType) -> Unit, modifier: Modifier = Modifier) {
     Row(
@@ -21,5 +21,6 @@ fun MediaSwitch(selected: MediaType, onSelect: (MediaType) -> Unit, modifier: Mo
     ) {
         GlassPill(stringResource(R.string.media_games), selected = selected == MediaType.GAMES, onClick = { onSelect(MediaType.GAMES) })
         GlassPill(stringResource(R.string.media_movies), selected = selected == MediaType.MOVIES, onClick = { onSelect(MediaType.MOVIES) })
+        GlassPill(stringResource(R.string.media_books), selected = selected == MediaType.BOOKS, onClick = { onSelect(MediaType.BOOKS) })
     }
 }

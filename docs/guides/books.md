@@ -10,6 +10,9 @@
 
 La recherche demande une connexion ; les livres ajoutés restent consultables hors ligne.
 
+## Découvrir
+Onglet **Découvrir** → pastille **Livres** : tendances de la semaine et grands genres (science-fiction, fantasy, policier, romance, classiques). **+** ajoute un livre en « À lire ».
+
 ## Partager
 - Onglet **Livres** → icône partage : *Ma librairie* (jeux, films & séries et livres, un onglet chacun) ou *Uniquement cet onglet* (tes livres, classés par ta note).
 - Fiche d'un livre → icône partage : un lien pour ce livre seul (couverture, statut, étoiles).

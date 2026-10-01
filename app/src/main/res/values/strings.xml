@@ -272,6 +272,14 @@
     <string name="library_error_unknown">Une erreur est survenue. Réessayez.</string>
     <!-- Livres (Open Library, Google Books en secours) -->
     <string name="tab_books">Livres</string>
+    <string name="media_books">Livres</string>
+    <string name="book_chart_trending">Tendances</string>
+    <string name="book_chart_science_fiction">Science-fiction</string>
+    <string name="book_chart_fantasy">Fantasy</string>
+    <string name="book_chart_mystery">Policier</string>
+    <string name="book_chart_romance">Romance</string>
+    <string name="book_chart_classics">Classiques</string>
+    <string name="book_discover_error">Impossible de charger les listes de livres. Vérifie ta connexion et réessaie.</string>
     <string name="books_title">Livres</string>
     <string name="books_search_placeholder">Titre, auteur ou ISBN…</string>
     <string name="books_search_error_network">Impossible de joindre le catalogue de livres. Vérifie ta connexion et réessaie.</string>

@@ -103,4 +103,24 @@ class OpenLibraryServiceTest {
         assertEquals(listOf("OL7353617M", "OL9M"), editions.map { it.editionId })
         assertTrue(http.requests.single().contains("/works/OL893415W/editions.json"))
     }
+
+    @Test
+    fun `a Discover list asks the trending or the subject endpoint with a limit`() = runTest {
+        val http = FakeHttp { """{"works":[{"key":"/works/OL1W","title":"Dune"}]}""" }
+        val svc = service(http)
+        assertEquals(1, svc.chart(com.davidgcd.backlog.model.BookChart.TRENDING).size)
+        svc.chart(com.davidgcd.backlog.model.BookChart.SCIENCE_FICTION)
+        assertTrue(http.requests[0], "/trending/weekly.json" in http.requests[0] && "limit=40" in http.requests[0])
+        assertTrue(http.requests[1], "/subjects/science_fiction.json" in http.requests[1])
+    }
+
+    @Test
+    fun `a Discover list with the catalogue down is an error the screen can word`() = runTest {
+        try {
+            service(FakeHttp { IOException("offline") }).chart(com.davidgcd.backlog.model.BookChart.FANTASY)
+            fail()
+        } catch (e: BookSourceException) {
+            assertTrue(e.isNetwork)
+        }
+    }
 }

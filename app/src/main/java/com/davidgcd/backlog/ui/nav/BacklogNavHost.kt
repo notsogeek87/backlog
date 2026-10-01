@@ -55,6 +55,9 @@ import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.ui.bookdetail.BookDetailScreen
 import com.davidgcd.backlog.ui.bookdetail.BookDetailViewModel
 import com.davidgcd.backlog.ui.bookdetail.BookDetailViewModelFactory
+import com.davidgcd.backlog.ui.books.BookDiscoverScreen
+import com.davidgcd.backlog.ui.books.BookDiscoverViewModel
+import com.davidgcd.backlog.ui.books.BookDiscoverViewModelFactory
 import com.davidgcd.backlog.ui.books.BooksScreen
 import com.davidgcd.backlog.ui.books.BooksViewModel
 import com.davidgcd.backlog.ui.books.BooksViewModelFactory
@@ -268,6 +271,13 @@ fun BacklogNavHost(
                 DiscoverScreen(
                     viewModel = viewModel,
                     onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
+                    mediaSwitch = mediaSwitch,
+                )
+            } else if (discoverMedia == MediaType.BOOKS) {
+                val viewModel: BookDiscoverViewModel = viewModel(factory = BookDiscoverViewModelFactory(bookRepository))
+                BookDiscoverScreen(
+                    viewModel = viewModel,
+                    onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
                     mediaSwitch = mediaSwitch,
                 )
             } else {

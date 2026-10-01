@@ -27,6 +27,10 @@ toucher à `Game`/`GameEntity`.
 - **Description** : si celle d'Open Library n'est pas en français (heuristique `BookText.looksFrench`), le dépôt cherche une description française sur Google Books (`langRestrict=fr`, par ISBN puis titre + auteur). Sans résultat, l'originale est conservée. Un échec réseau n'est pas mémorisé (nouvel essai à la prochaine ouverture).
 - Langue de l'édition : affichée par son nom français (« Anglais », « Français »).
 
+## Découvrir
+
+Le sélecteur de Découvrir a un 3ᵉ choix **Livres** (`MediaType.BOOKS`) : listes Open Library en pastilles (`BookChart`) — Tendances de la semaine (`/trending/weekly.json`), puis Science-fiction, Fantasy, Policier, Romance, Classiques (`/subjects/<slug>.json`). 40 livres par liste, cache mémoire 10 min, mêmes lignes et même bouton d'ajout (✓ si déjà dans la liste) que la recherche. Hors ligne : message + « Réessayer ».
+
 ## Partage
 
 Même mécanisme que jeux et films (serveur `server/`, lien public valable 24 h, pseudo « Le top de … »), deux partages :
@@ -42,4 +46,3 @@ Même mécanisme que jeux et films (serveur `server/`, lien public valable 24 h,
   ensuite (édition de couverture) en tâche de fond après l'ajout. Hors ligne au moment de l'ajout, ils sont complétés à la prochaine ouverture de la fiche.
 - Les descriptions et sujets Open Library sont parfois absents ou en anglais ; les champs vides ne sont pas affichés.
 - Google Books sans clé a un quota anonyme limité.
-- Les livres ne sont pas (encore) dans l'onglet Découvrir.

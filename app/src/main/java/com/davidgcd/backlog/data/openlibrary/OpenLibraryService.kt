@@ -1,6 +1,7 @@
 package com.davidgcd.backlog.data.openlibrary
 
 import com.davidgcd.backlog.model.Book
+import com.davidgcd.backlog.model.BookChart
 import com.davidgcd.backlog.model.BookPage
 import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.Isbn
@@ -40,6 +41,10 @@ class OpenLibraryService(
         )
         return OpenLibraryParsers.parseSearch(body, page, queryIsbn = isbn)
     }
+
+    /** A Discover list: the works trending this week, or the popular ones of a subject (at most [limit]). */
+    suspend fun chart(chart: BookChart, limit: Int = 40): List<Book> =
+        OpenLibraryParsers.parseSearch(get(chart.path, mapOf("limit" to limit.toString()))).books
 
     /**
      * What Open Library knows of one book beyond the search hit: its edition (ISBN, publisher, pages,

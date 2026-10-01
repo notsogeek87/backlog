@@ -12,6 +12,7 @@ import com.davidgcd.backlog.data.openlibrary.BookSourceError
 import com.davidgcd.backlog.data.openlibrary.BookSourceException
 import com.davidgcd.backlog.data.openlibrary.OpenLibraryService
 import com.davidgcd.backlog.model.Book
+import com.davidgcd.backlog.model.BookChart
 import com.davidgcd.backlog.model.BookDuplicates
 import com.davidgcd.backlog.model.BookKey
 import com.davidgcd.backlog.model.BookRanking
@@ -97,6 +98,18 @@ class BookRepository(
         // Nobody had anything: that's "no result" if at least one catalogue answered, an error if none did.
         if (!answered) throw failure ?: BookSourceException(BookSourceError.UNAVAILABLE)
         return BookSearchResult(emptyList(), hasMore = false)
+    }
+
+    /** A Discover list (see [BookChart]), cached like a search so switching tabs doesn't ask again. Throws when Open Library can't be reached. */
+    suspend fun chart(chart: BookChart): List<Book> {
+        val cacheKey = "chart:${chart.name}"
+        synchronized(searchCache) { searchCache[cacheKey] }?.let { (at, result) ->
+            if (now() - at < SEARCH_CACHE_TTL_MS) return result.books
+        }
+        val books = openLibrary.chart(chart)
+        books.forEach { seen[it.key] = it }
+        synchronized(searchCache) { searchCache[cacheKey] = now() to BookSearchResult(books, hasMore = false) }
+        return books
     }
 
     private fun finish(cacheKey: String, query: String, raw: BookSearchResult): BookSearchResult {
