@@ -29,6 +29,6 @@ Utilisés à la place : nombre de jeux actifs/archivés (tuiles), ajouts récent
 - Non compilé localement (pas de SDK Android) : validation par la CI `android-build`.
 
 ## Logo
-Pile de trois cartes portrait (jaquettes de jeux, affiches, couvertures) dont la première est cochée : une file à dépiler, sobre et sans mascotte, sur fond bleu nuit.
+Une étagère avec quatre tranches de livres/boîtiers de hauteurs différentes (dont une penchée), en bleus-gris avec une touche teal, sur fond bleu nuit : la bibliothèque de jeux, films et livres. Sobre, sans mascotte.
 - Sources : `docs/brand/logo.png` (logo complet, 1254×1254), `docs/brand/logo-512.png`, `docs/brand/play-store-icon-512.png` (fiche Play Store, 512×512).
 - Android : icône adaptative (`mipmap-anydpi-v26/ic_launcher*.xml`, avec variante monochrome Android 13+), splash Android 12+ (`values-v31/themes.xml`), marque in-app `drawable-nodpi/ic_logo_mark.png` (en-tête Backlog, état vide).
