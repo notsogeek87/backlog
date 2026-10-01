@@ -148,6 +148,13 @@ watchlist et notes) : voir [ADR](docs/architecture/2026-09-30-films-series-tmdb.
 La **liste de souhaits Steam** se synchronise depuis la même carte (statut « Souhaité », sens unique Steam → app, voir le [guide](docs/guides/steam-import.md)).
 Nécessite `STEAM_API_KEY` dans `Secrets.kt` (voir `Secrets.kt.example`).
 
+## Livres
+
+Onglet **Livres** : recherche par titre, auteur ou ISBN sur Open Library (Google Books en secours, aucune clé
+requise), statuts À lire / En cours / Lu / Abandonné, favoris, éditions multiples, détection de doublons,
+export/import CSV. Voir l'[ADR](docs/architecture/2026-10-01-livres-open-library.md),
+l'[API](docs/api/books.md) et le [guide](docs/guides/books.md).
+
 ## Notes Metacritic : scaffold, pas branché
 
 Metacritic n'a pas d'API officielle gratuite (l'app iOS passe par un proxy

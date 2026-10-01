@@ -2,6 +2,7 @@ package com.davidgcd.backlog
 
 import android.app.Application
 import com.davidgcd.backlog.config.Secrets
+import com.davidgcd.backlog.data.csv.BookCsvService
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.tmdb.TmdbClient
@@ -15,6 +16,8 @@ import com.davidgcd.backlog.data.library.SteamAutoSyncScheduler
 import com.davidgcd.backlog.data.library.WishlistSyncService
 import com.davidgcd.backlog.data.library.android.AndroidLibraryProvider
 import com.davidgcd.backlog.data.library.android.PackageManagerInstalledApps
+import com.davidgcd.backlog.data.googlebooks.GoogleBooksService
+import com.davidgcd.backlog.data.openlibrary.OpenLibraryService
 import com.davidgcd.backlog.data.library.steam.SteamAuthService
 import com.davidgcd.backlog.data.library.steam.SteamLibraryProvider
 import com.davidgcd.backlog.data.local.AppDatabase
@@ -29,6 +32,7 @@ import com.davidgcd.backlog.data.remote.SteamOpenIdApi
 import com.davidgcd.backlog.data.remote.SteamWebApi
 import com.davidgcd.backlog.data.remote.TwitchAuthApi
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.IgdbService
 import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.MovieRepository
@@ -87,6 +91,12 @@ class BacklogApplication : Application() {
         private set
 
     lateinit var tmdbSyncService: TmdbSyncService
+        private set
+
+    lateinit var bookRepository: BookRepository
+        private set
+
+    lateinit var bookCsvService: BookCsvService
         private set
 
     override fun onCreate() {
@@ -200,6 +210,12 @@ class BacklogApplication : Application() {
         )
         movieRepository = MovieRepository(database.movieDao(), tmdbClient)
         tmdbSyncService = TmdbSyncService(tmdbClient, database.movieDao(), libraryAccountStore)
+
+        // Livres: Open Library is the catalogue, Google Books only a fallback; neither needs an API key,
+        // so nothing book-related lives in Secrets.kt. Saved books are read from Room, never from these.
+        val bookHttp = OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build()
+        bookRepository = BookRepository(database.bookDao(), OpenLibraryService(bookHttp), GoogleBooksService(bookHttp))
+        bookCsvService = BookCsvService(this, bookRepository)
 
         ReleaseReminderScheduler.schedule(this)
         SteamAutoSyncScheduler.schedule(this)

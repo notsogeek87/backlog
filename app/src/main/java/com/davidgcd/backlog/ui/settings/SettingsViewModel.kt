@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.csv.AutoExportFolder
+import com.davidgcd.backlog.data.csv.BookCsvService
+import com.davidgcd.backlog.data.csv.BookImportResult
+import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.csv.AutoExportFrequency
 import com.davidgcd.backlog.data.csv.AutoExportPreferences
 import com.davidgcd.backlog.data.csv.AutoExportScheduler
@@ -38,6 +41,8 @@ class SettingsViewModel(
     private val csvImportService: CsvImportService,
     private val autoExportPreferences: AutoExportPreferences,
     private val shareLinkService: ShareLinkService,
+    private val bookCsvService: BookCsvService,
+    private val bookRepository: BookRepository,
 ) : ViewModel() {
     val shareOwnerName: StateFlow<String> = shareLinkService.ownerName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
@@ -114,6 +119,44 @@ class SettingsViewModel(
                 false
             }
         }
+    }
+
+    /** Books CSV (see BookCsv): same one-shot outcome pattern as the games export; the import reports its counts. */
+    fun exportBooksCsv(uri: Uri) {
+        viewModelScope.launch {
+            _exportSucceeded.value = try {
+                bookCsvService.export(uri, bookRepository.allBooks())
+                true
+            } catch (t: kotlinx.coroutines.CancellationException) {
+                throw t
+            } catch (t: Throwable) {
+                false
+            }
+        }
+    }
+
+    /** null = nothing to report; a result with all counts at 0 can also mean an unreadable file (see [bookImportFailed]). */
+    private val _bookImportResult = MutableStateFlow<BookImportResult?>(null)
+    val bookImportResult: StateFlow<BookImportResult?> = _bookImportResult
+
+    private val _bookImportFailed = MutableStateFlow(false)
+    val bookImportFailed: StateFlow<Boolean> = _bookImportFailed
+
+    fun importBooksCsv(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                _bookImportResult.value = bookCsvService.import(uri)
+            } catch (t: kotlinx.coroutines.CancellationException) {
+                throw t
+            } catch (t: Throwable) {
+                _bookImportFailed.value = true
+            }
+        }
+    }
+
+    fun consumeBookImport() {
+        _bookImportResult.value = null
+        _bookImportFailed.value = false
     }
 
     val autoExportEnabled: StateFlow<Boolean> = autoExportPreferences.enabled
@@ -196,10 +239,12 @@ class SettingsViewModelFactory(
     private val csvImportService: CsvImportService,
     private val autoExportPreferences: AutoExportPreferences,
     private val shareLinkService: ShareLinkService,
+    private val bookCsvService: BookCsvService,
+    private val bookRepository: BookRepository,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == SettingsViewModel::class.java)
-        return SettingsViewModel(preferences, appContext, repository, csvExportService, csvImportService, autoExportPreferences, shareLinkService) as T
+        return SettingsViewModel(preferences, appContext, repository, csvExportService, csvImportService, autoExportPreferences, shareLinkService, bookCsvService, bookRepository) as T
     }
 }

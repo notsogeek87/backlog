@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Movie
@@ -49,7 +50,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.tmdb.TmdbSyncService
+import com.davidgcd.backlog.data.csv.BookCsvService
+import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.MovieRepository
+import com.davidgcd.backlog.ui.bookdetail.BookDetailScreen
+import com.davidgcd.backlog.ui.bookdetail.BookDetailViewModel
+import com.davidgcd.backlog.ui.bookdetail.BookDetailViewModelFactory
+import com.davidgcd.backlog.ui.books.BooksScreen
+import com.davidgcd.backlog.ui.books.BooksViewModel
+import com.davidgcd.backlog.ui.books.BooksViewModelFactory
 import com.davidgcd.backlog.ui.components.MediaSwitch
 import com.davidgcd.backlog.ui.components.MediaType
 import com.davidgcd.backlog.ui.moviedetail.MovieDetailScreen
@@ -117,6 +126,9 @@ private object Routes {
     const val MOVIES = "movies"
     const val MOVIE_DETAIL = "movie/{titleKey}"
     fun movieDetail(titleKey: String) = "movie/$titleKey"
+    const val BOOKS = "books"
+    const val BOOK_DETAIL = "book/{bookKey}"
+    fun bookDetail(bookKey: String) = "book/$bookKey"
     const val TMDB_LOGIN = "platforms/tmdb/login"
     const val TMDB_IMPORT = "platforms/tmdb/import"
     const val GAME_DETAIL = "game/{gameId}"
@@ -131,6 +143,7 @@ private data class TopLevelDestination(val route: String, val icon: ImageVector,
 private val topLevelDestinations = listOf(
     TopLevelDestination(Routes.BACKLOG, Icons.Filled.Bookmarks, R.string.tab_games),
     TopLevelDestination(Routes.MOVIES, Icons.Filled.Movie, R.string.tab_movies),
+    TopLevelDestination(Routes.BOOKS, Icons.Filled.Book, R.string.tab_books),
     TopLevelDestination(Routes.DISCOVER, Icons.Filled.Explore, R.string.discover_title),
     TopLevelDestination(Routes.SETTINGS, Icons.Filled.Settings, R.string.settings_title),
 )
@@ -157,6 +170,8 @@ fun BacklogNavHost(
     shareLinkService: ShareLinkService,
     movieRepository: MovieRepository,
     tmdbSyncService: TmdbSyncService,
+    bookRepository: BookRepository,
+    bookCsvService: BookCsvService,
     openGameId: Long? = null,
     onOpenGameHandled: () -> Unit = {},
 ) {
@@ -287,6 +302,33 @@ fun BacklogNavHost(
             )
             MovieDetailScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
+        composable(Routes.BOOKS) {
+            val viewModel: BooksViewModel = viewModel(factory = BooksViewModelFactory(bookRepository))
+            BooksScreen(
+                viewModel = viewModel,
+                onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
+            )
+        }
+        composable(
+            route = Routes.BOOK_DETAIL,
+            arguments = listOf(navArgument("bookKey") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val bookKey = backStackEntry.arguments?.getString("bookKey") ?: return@composable
+            val viewModel: BookDetailViewModel = viewModel(
+                factory = BookDetailViewModelFactory(bookKey, bookRepository),
+                key = "book_detail_$bookKey",
+            )
+            BookDetailScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                // A duplicate points to the saved book: replace this fiche so back returns to the list.
+                onOpenBook = { key ->
+                    navController.navigate(Routes.bookDetail(key)) {
+                        popUpTo(Routes.BOOK_DETAIL) { inclusive = true }
+                    }
+                },
+            )
+        }
         composable(Routes.TMDB_LOGIN) {
             val viewModel: TmdbLoginViewModel = viewModel(factory = TmdbLoginViewModelFactory(tmdbSyncService))
             TmdbLoginScreen(
@@ -334,6 +376,8 @@ fun BacklogNavHost(
                     csvImportService,
                     AutoExportPreferences(appContext),
                     shareLinkService,
+                    bookCsvService,
+                    bookRepository,
                 ),
             )
             val platformsViewModel: PlatformsViewModel = viewModel(

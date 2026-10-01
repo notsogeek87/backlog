@@ -280,6 +280,8 @@ fun GameListItem(
     ratingText: String? = null,
     /** The user's own note, shown as a badge beside the status. */
     userRatingLabel: String? = null,
+    /** Replaces the game cover (books pass their own 2:3 cover with its placeholder); null keeps [GameCover]. */
+    cover: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
     trailing: @Composable () -> Unit = {},
 ) {
@@ -289,7 +291,7 @@ fun GameListItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            GameCover(coverImageId, width = 64.dp, size = IgdbImage.Size.CoverSmall, imageUrl = coverUrl)
+            if (cover != null) cover() else GameCover(coverImageId, width = 64.dp, size = IgdbImage.Size.CoverSmall, imageUrl = coverUrl)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     name,
