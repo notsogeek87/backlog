@@ -27,6 +27,10 @@ toucher à `Game`/`GameEntity`.
 - **Description** : si celle d'Open Library n'est pas en français (heuristique `BookText.looksFrench`), le dépôt cherche une description française sur Google Books (`langRestrict=fr`, par ISBN puis titre + auteur). Sans résultat, l'originale est conservée. Un échec réseau n'est pas mémorisé (nouvel essai à la prochaine ouverture).
 - Langue de l'édition : affichée par son nom français (« Anglais », « Français »).
 
+## Édition française
+
+Un résultat de recherche est une *œuvre* ; l'édition qu'il porte est seulement celle dont Open Library a pris la couverture (parfois espagnole). Pour un résultat sans ISBN, `BookRepository.withFrenchEdition` cherche dans les éditions de l'œuvre (40 max) la première en français avec ISBN et adopte son ISBN, éditeur, pages, langue et couverture. Un livre qui a déjà un ISBN (édition choisie) n'est jamais remplacé. Le lien « Ouvrir / partage » vise la page de l'**édition** (`/isbn/<ISBN-13>`, sinon `/books/<id>`), jamais la page de l'œuvre en premier : celle-ci ouvre l'édition par défaut d'Open Library, souvent étrangère.
+
 ## Découvrir
 
 Le sélecteur de Découvrir a un 3ᵉ choix **Livres** (`MediaType.BOOKS`) : listes Open Library en pastilles (`BookChart`) — Tendances de la semaine (`/trending/weekly.json`), puis Science-fiction, Fantasy, Policier, Romance, Classiques (`/subjects/<slug>.json`). 40 livres par liste, cache mémoire 10 min, mêmes lignes et même bouton d'ajout (✓ si déjà dans la liste) que la recherche. Hors ligne : message + « Réessayer ».

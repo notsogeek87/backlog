@@ -181,3 +181,11 @@ test('CSP lets the book covers load through Open Library\'s redirect to archive.
   }
   assert.ok(CSP.startsWith("default-src 'none'") && !CSP.includes('script-src') && !CSP.includes("'unsafe-eval'"));
 });
+
+test('book pages may link to an Open Library edition by ISBN, but not to anything else', () => {
+  const urlOf = (url) => validatePayload({ kind: 'books', items: [{ name: 'Dune', url }] }).items[0].url;
+  assert.equal(urlOf('https://openlibrary.org/isbn/9782070368228'), 'https://openlibrary.org/isbn/9782070368228');
+  assert.equal(urlOf('https://openlibrary.org/isbn/207036822X'), 'https://openlibrary.org/isbn/207036822X');
+  assert.equal(urlOf('https://openlibrary.org/isbn/978220?x=1'), null);
+  assert.equal(urlOf('https://evil.example/isbn/9782070368228'), null);
+});

@@ -62,8 +62,11 @@ data class Book(
         get() = when {
             source == BookSource.GOOGLE_BOOKS && key.startsWith(BookKey.GOOGLE_PREFIX) ->
                 "https://books.google.com/books?id=${key.removePrefix(BookKey.GOOGLE_PREFIX)}"
-            workId != null -> "https://openlibrary.org/works/$workId"
+            // The page of *this* edition when known: the work's page opens whichever edition Open Library
+            // defaults to — often a foreign one, with a description in another language.
+            canonicalIsbn13 != null -> "https://openlibrary.org/isbn/$canonicalIsbn13"
             editionId != null -> "https://openlibrary.org/books/$editionId"
+            workId != null -> "https://openlibrary.org/works/$workId"
             else -> null
         }
 

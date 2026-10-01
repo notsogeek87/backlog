@@ -67,7 +67,7 @@ class OpenLibraryService(
     }
 
     /** The editions of a work (at most [limit]), the physical books behind one search hit. */
-    suspend fun getEditions(workId: String, limit: Int = 20): List<Book> =
+    suspend fun getEditions(workId: String, limit: Int = 40): List<Book> =
         OpenLibraryParsers.parseEditions(get("/works/$workId/editions.json", mapOf("limit" to limit.toString())))
 
     /** The cover of a book at size `S`, `M` or `L` — see [BookImage]. */

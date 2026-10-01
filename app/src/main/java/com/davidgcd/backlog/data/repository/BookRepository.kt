@@ -19,6 +19,7 @@ import com.davidgcd.backlog.model.BookRanking
 import com.davidgcd.backlog.model.BookSource
 import com.davidgcd.backlog.model.BookText
 import com.davidgcd.backlog.model.ReadStatus
+import com.davidgcd.backlog.util.BookLanguages
 import com.davidgcd.backlog.util.Isbn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -125,7 +126,8 @@ class BookRepository(
      */
     suspend fun fetchRemote(key: String): Book? {
         val known = seen[key] ?: return null
-        val merged = localize(readFresh(known)?.let { known.enrichedWith(it) } ?: known)
+        val base = withFrenchEdition(known)
+        val merged = localize(readFresh(base)?.let { base.enrichedWith(it) } ?: base)
         seen[key] = merged
         return merged
     }
@@ -146,6 +148,27 @@ class BookRepository(
         editionsCache[workId] = result
         result.forEach { seen[it.key] = it }
         return result
+    }
+
+    /**
+     * A search hit stands for a work, and the edition it carries is only the one Open Library took the cover
+     * from — as likely Spanish or Korean as French. For such a hit (no ISBN: nobody chose an edition) the
+     * French edition of the work is preferred, with its ISBN, publisher, pages, language and cover. A book
+     * that already has an ISBN is a chosen edition and is left alone, as is a work with no French edition.
+     */
+    private suspend fun withFrenchEdition(book: Book): Book {
+        if (book.hasIsbn || book.workId == null || book.languages.any(BookLanguages::isFrench)) return book
+        val french = editions(book).firstOrNull { edition -> edition.languages.any(BookLanguages::isFrench) && edition.canonicalIsbn13 != null }
+            ?: return book
+        return book.copy(
+            editionId = french.editionId ?: book.editionId,
+            isbn10 = french.isbn10,
+            isbn13 = french.isbn13,
+            publisher = french.publisher ?: book.publisher,
+            pageCount = french.pageCount ?: book.pageCount,
+            languages = french.languages,
+            coverUrl = french.coverUrl ?: book.coverUrl,
+        )
     }
 
     private suspend fun readFresh(book: Book): Book? {
@@ -200,7 +223,7 @@ class BookRepository(
         val entity = dao.findById(bookKey) ?: return
         val complete = entity.publisher != null && entity.pageCount != null && entity.isbn13 != null && entity.languages != null
         if (complete && entity.description?.let(BookText::looksFrench) == true) return
-        val book = entity.toBook()
+        val book = withFrenchEdition(entity.toBook())
         val enriched = readFresh(book)?.let { book.enrichedWith(it) } ?: book
         val updated = localize(enriched).toEntity(entity.readStatus, entity.addedAt)
             .copy(isFavorite = entity.isFavorite, userRating = entity.userRating, updatedAt = now())
@@ -225,7 +248,7 @@ class BookRepository(
         } catch (t: Throwable) {
             null
         } ?: return entity
-        val merged = localize(book.enrichedWith(hit).let { first -> readFresh(first)?.let(first::enrichedWith) ?: first })
+        val merged = localize(withFrenchEdition(book.enrichedWith(hit)).let { first -> readFresh(first)?.let(first::enrichedWith) ?: first })
         return merged.toEntity(entity.readStatus, entity.addedAt).copy(
             bookKey = entity.bookKey,
             isFavorite = entity.isFavorite,

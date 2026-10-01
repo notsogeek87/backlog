@@ -178,4 +178,13 @@ class BookTest {
         )
         assertEquals(listOf("Science-fiction", "Fantasy", "Arrakis (Imaginary place)", "Déserts"), cleaned)
     }
+
+    @Test
+    fun `the catalogue link is the edition's page when known, the work's page only as a last resort`() {
+        assertEquals("https://openlibrary.org/isbn/9782070368228", book(isbn13 = "9782070368228", editionId = "OL1M", workId = "OL2W").catalogUrl)
+        assertEquals("https://openlibrary.org/isbn/9782070368228", book(isbn10 = "207036822X").catalogUrl)
+        assertEquals("https://openlibrary.org/books/OL1M", book(editionId = "OL1M", workId = "OL2W").catalogUrl)
+        assertEquals("https://openlibrary.org/works/OL2W", book(workId = "OL2W").catalogUrl)
+        assertNull(book().catalogUrl)
+    }
 }

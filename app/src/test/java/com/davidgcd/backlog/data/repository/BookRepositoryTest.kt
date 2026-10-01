@@ -287,7 +287,7 @@ class BookRepositoryTest {
     // --- CSV import completion ---------------------------------------------------------------
 
     private fun csvRow(title: String = "Dune", isbn13: String? = null) =
-        BookEntity(bookKey = "csv-key", title = title, authors = "Frank Herbert", isbn13 = isbn13, status = ReadStatus.READ.name, isFavorite = true, userRating = 5, addedAt = 42L)
+        BookEntity(bookKey = "csv-key", title = title, authors = "Frank Herbert", isbn13 = isbn13, status = ReadStatus.READ.name, isFavorite = true, userRating = 5, addedAt = 42L, updatedAt = 42L)
 
     @Test
     fun `a title-only CSV row gets its cover and facts from the catalogue and keeps what the file said`() = runTest {
@@ -396,5 +396,57 @@ class BookRepositoryTest {
         } catch (e: BookSourceException) {
             assertTrue(e.isNetwork)
         }
+    }
+
+    // --- French edition ------------------------------------------------------------------------
+
+    private val mixedEditions = """{"entries":[
+      {"key":"/books/OL5M","title":"Dune","publishers":["Debolsillo"],"isbn_13":["9788497594257"],"languages":[{"key":"/languages/spa"}],"number_of_pages":688},
+      {"key":"/books/OL6M","title":"Dune","publishers":["Pocket"],"isbn_13":["9782266320481"],"languages":[{"key":"/languages/fre"}],"number_of_pages":736,"covers":[777]},
+      {"key":"/books/OL7M","title":"Dune","publishers":["Ace"],"isbn_13":["9780441172719"],"languages":[{"key":"/languages/eng"}]}]}"""
+
+    private fun mixedRig() = Rig(openLibrary = { url ->
+        when {
+            "search.json" in url -> Fixtures.DUNE_SEARCH.replace("OL7353617M", "OL5M")
+            "editions.json" in url -> mixedEditions
+            "/books/" in url -> Fixtures.DUNE_EDITION.replace("OL7353617M", "OL6M").replace("9782070368228", "9782266320481").replace("Pocket", "Pocket")
+            "/works/" in url -> Fixtures.DUNE_WORK
+            else -> 404
+        }
+    })
+
+    @Test
+    fun `a search hit whose cover edition is Spanish is opened on the French edition of the work`() = runTest {
+        val rig = mixedRig()
+        val hit = rig.repository.search("dune").books.single()
+        assertEquals("OL5M", hit.editionId)
+        val detail = rig.repository.fetchRemote(hit.key)!!
+        assertEquals("OL6M", detail.editionId)
+        assertEquals("9782266320481", detail.isbn13)
+        assertEquals("Pocket", detail.publisher)
+        assertEquals(736, detail.pageCount)
+        assertEquals(listOf("fre"), detail.languages)
+        assertEquals("https://covers.openlibrary.org/b/id/777-M.jpg", detail.coverUrl)
+        assertEquals("https://openlibrary.org/isbn/9782266320481", detail.catalogUrl)
+        // The key named the row before and still does.
+        assertEquals(hit.key, detail.key)
+    }
+
+    @Test
+    fun `a chosen edition (with an ISBN) is never swapped for a French one`() = runTest {
+        val rig = mixedRig()
+        val english = Book(key = "isbn:9780441172719", title = "Dune", authors = listOf("Frank Herbert"), isbn13 = "9780441172719", workId = "OL893415W", editionId = "OL7M", languages = listOf("eng"))
+        rig.repository.add(english)
+        rig.repository.enrich("isbn:9780441172719")
+        val saved = rig.repository.find("isbn:9780441172719")!!
+        assertEquals("9780441172719", saved.isbn13)
+        assertEquals("OL7M", saved.editionId)
+    }
+
+    @Test
+    fun `a work with no French edition keeps what it had`() = runTest {
+        val rig = Rig(openLibrary = { url -> if ("editions.json" in url) """{"entries":[{"key":"/books/OL7M","title":"Dune","isbn_13":["9780441172719"],"languages":[{"key":"/languages/eng"}]}]}""" else if ("search.json" in url) Fixtures.DUNE_SEARCH else 404 })
+        val hit = rig.repository.search("dune").books.single()
+        assertEquals("OL7353617M", rig.repository.fetchRemote(hit.key)!!.editionId)
     }
 }
