@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed icon (Android 13+): single-tint silhouette of the media case (clapper bar, cover, game pad). -->
+<!-- Themed icon (Android 13+): single-tint silhouette of the media case (clapper bars, cover, game pad). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.6"
-        android:pathData="M37.32,39.57h33.35a2.33,2.33 0 0 1 2.33,2.33v33.89a2.33,2.33 0 0 1 -2.33,2.33h-33.35a2.33,2.33 0 0 1 -2.33,-2.33v-33.89a2.33,2.33 0 0 1 2.33,-2.33z" />
+        android:pathData="M37.32,39.57h33.35a2.33,2.33 0 0 1 2.33,2.33v33.89a2.33,2.33 0 0 1 -2.33,2.33h-33.35a2.33,2.33 0 0 1 -2.33,-2.33v-33.89a2.33,2.33 0 0 1 2.33,-2.33zM41.18,42.44L43.69,42.44L45.04,40.1L42.52,40.1zM46.92,42.44L49.43,42.44L50.77,40.1L48.26,40.1zM52.66,42.44L55.17,42.44L56.51,40.1L54.0,40.1zM58.39,42.44L60.9,42.44L62.25,40.1L59.74,40.1zM64.13,42.44L66.64,42.44L67.99,40.1L65.47,40.1z" />
     <group android:rotation="-8" android:pivotX="34.99" android:pivotY="39.21">
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M35.89,35.26h36.21a0.9,0.9 0 0 1 0.9,0.9v2.14a0.9,0.9 0 0 1 -0.9,0.9h-36.21a0.9,0.9 0 0 1 -0.9,-0.9v-2.14a0.9,0.9 0 0 1 0.9,-0.9zM37.68,39.21L40.37,39.21L42.17,35.26L39.48,35.26zM43.24,39.21L45.93,39.21L47.72,35.26L45.04,35.26zM48.8,39.21L51.49,39.21L53.28,35.26L50.59,35.26zM54.36,39.21L57.05,39.21L58.84,35.26L56.15,35.26zM59.92,39.21L62.61,39.21L64.4,35.26L61.71,35.26zM65.47,39.21L68.16,39.21L69.96,35.26L67.27,35.26z" />
+        android:pathData="M35.89,35.26h36.21a0.9,0.9 0 0 1 0.9,0.9v2.14a0.9,0.9 0 0 1 -0.9,0.9h-36.21a0.9,0.9 0 0 1 -0.9,-0.9v-2.14a0.9,0.9 0 0 1 0.9,-0.9zM37.68,38.85L40.19,38.85L41.99,35.62L39.48,35.62zM43.24,38.85L45.75,38.85L47.55,35.62L45.04,35.62zM48.8,38.85L51.31,38.85L53.1,35.62L50.59,35.62zM54.36,38.85L56.87,38.85L58.66,35.62L56.15,35.62zM59.92,38.85L62.43,38.85L64.22,35.62L61.71,35.62zM65.47,38.85L67.99,38.85L69.78,35.62L67.27,35.62z" />
     </group>
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M49.7,51.76h13.71a5.38,5.38 0 0 1 5.38,5.38v0.45a5.38,5.38 0 0 1 -5.38,5.38h-13.71a5.38,5.38 0 0 1 -5.38,-5.38v-0.45a5.38,5.38 0 0 1 5.38,-5.38z" />
+        android:pathData="M49.7,52.39h13.71a5.38,5.38 0 0 1 5.38,5.38v0.45a5.38,5.38 0 0 1 -5.38,5.38h-13.71a5.38,5.38 0 0 1 -5.38,-5.38v-0.45a5.38,5.38 0 0 1 5.38,-5.38z" />
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M43.97,62.25a5.83,5.83 0 1 1 11.65,0a5.83,5.83 0 1 1 -11.65,0z" />
+        android:pathData="M43.97,62.88a5.83,5.83 0 1 1 11.65,0a5.83,5.83 0 1 1 -11.65,0z" />
     <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M57.49,62.25a5.83,5.83 0 1 1 11.65,0a5.83,5.83 0 1 1 -11.65,0z" />
+        android:pathData="M57.49,62.88a5.83,5.83 0 1 1 11.65,0a5.83,5.83 0 1 1 -11.65,0z" />
 </vector>
