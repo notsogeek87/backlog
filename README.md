@@ -152,7 +152,7 @@ Nécessite `STEAM_API_KEY` dans `Secrets.kt` (voir `Secrets.kt.example`).
 
 Onglet **Livres** : recherche par titre, auteur ou ISBN sur Open Library (Google Books en secours, aucune clé
 requise), statuts À lire / En cours / Lu / Abandonné, favoris, éditions multiples, détection de doublons,
-export/import CSV. Voir l'[ADR](docs/architecture/2026-10-01-livres-open-library.md),
+export/import CSV commun avec les jeux (export automatique inclus). Voir l'[ADR](docs/architecture/2026-10-01-livres-open-library.md),
 l'[API](docs/api/books.md) et le [guide](docs/guides/books.md).
 
 ## Notes Metacritic : scaffold, pas branché

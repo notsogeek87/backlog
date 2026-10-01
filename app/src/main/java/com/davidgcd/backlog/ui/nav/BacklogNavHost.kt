@@ -50,7 +50,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.tmdb.TmdbSyncService
-import com.davidgcd.backlog.data.csv.BookCsvService
 import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.ui.bookdetail.BookDetailScreen
@@ -171,7 +170,6 @@ fun BacklogNavHost(
     movieRepository: MovieRepository,
     tmdbSyncService: TmdbSyncService,
     bookRepository: BookRepository,
-    bookCsvService: BookCsvService,
     openGameId: Long? = null,
     onOpenGameHandled: () -> Unit = {},
 ) {
@@ -376,7 +374,6 @@ fun BacklogNavHost(
                     csvImportService,
                     AutoExportPreferences(appContext),
                     shareLinkService,
-                    bookCsvService,
                     bookRepository,
                 ),
             )

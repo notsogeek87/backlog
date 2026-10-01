@@ -84,17 +84,6 @@ fun SettingsScreen(
             viewModel.consumeExportResult()
         }
     }
-    val bookImportResult by viewModel.bookImportResult.collectAsState()
-    val bookImportFailed by viewModel.bookImportFailed.collectAsState()
-    val bookImportDoneMsg = bookImportResult?.let { stringResource(R.string.settings_import_books_done, it.added, it.duplicates, it.skipped) }
-    val bookImportFailedMsg = stringResource(R.string.settings_import_books_failed)
-    LaunchedEffect(bookImportResult, bookImportFailed) {
-        val message = if (bookImportFailed) bookImportFailedMsg else bookImportDoneMsg
-        if (message != null) {
-            snackbarHostState.showSnackbar(message)
-            viewModel.consumeBookImport()
-        }
-    }
     val releaseRemindersEnabled by viewModel.releaseRemindersEnabled.collectAsState()
     val schedule by viewModel.schedule.collectAsState()
     val hour by viewModel.hour.collectAsState()
@@ -125,13 +114,6 @@ fun SettingsScreen(
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri -> uri?.let { viewModel.importCsv(it) } }
-
-    val exportBooksLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("text/csv"),
-    ) { uri -> uri?.let { viewModel.exportBooksCsv(it) } }
-    val importBooksLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let { viewModel.importBooksCsv(it) } }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -215,22 +197,6 @@ fun SettingsScreen(
                     onClick = {
                         if (!isImporting) importLauncher.launch(arrayOf("text/*", "text/comma-separated-values"))
                     },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                GlassButton(
-                    text = stringResource(R.string.settings_export_books_csv),
-                    onClick = { exportBooksLauncher.launch("backlog-livres.csv") },
-                    modifier = Modifier.weight(1f),
-                )
-                GlassButton(
-                    text = stringResource(R.string.settings_import_books_csv),
-                    onClick = { importBooksLauncher.launch(arrayOf("text/*", "text/comma-separated-values")) },
                     modifier = Modifier.weight(1f),
                 )
             }

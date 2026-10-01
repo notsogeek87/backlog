@@ -3,6 +3,8 @@ package com.davidgcd.backlog.data.csv
 import android.content.Context
 import android.net.Uri
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.repository.BookAddResult
+import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.util.AppLogger
 import com.davidgcd.backlog.util.TitleSimilarity
@@ -30,6 +32,8 @@ data class CsvImportProgress(val done: Int, val total: Int)
 class CsvImportService(
     private val context: Context,
     private val repository: BacklogRepository,
+    /** Where `BOOK` rows go; without it (or for a file with none) only games are imported. */
+    private val bookRepository: BookRepository? = null,
 ) {
     suspend fun import(uri: Uri, onProgress: (CsvImportProgress) -> Unit = {}): CsvImportResult {
         val lines = context.contentResolver.openInputStream(uri)?.use { input ->
@@ -44,6 +48,8 @@ class CsvImportService(
         val archivedIndex = header.indexOf(CsvColumn.ARCHIVED.header)
         val statusIndex = header.indexOf(CsvColumn.STATUS.header)
         val rankIndex = header.indexOf(CsvColumn.RANK.header)
+        // Files written before books existed have no type column: every row is a game.
+        val typeIndex = header.indexOf(BookCsv.TYPE_HEADER)
 
         var added = 0
         var skipped = 0
@@ -56,6 +62,16 @@ class CsvImportService(
         try {
             rows.forEachIndexed { index, line ->
                 val fields = CsvFormat.parseRow(line)
+                val type = typeIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }
+                if (BookCsv.isBook(type)) {
+                    // Books are read entirely from the file: no catalogue call, an import works offline.
+                    val book = BookCsv.fromRow { column ->
+                        header.indexOf(column).takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.ifEmpty { null }
+                    }
+                    if (book != null && bookRepository != null && bookRepository.addSaved(book) is BookAddResult.Added) added++ else skipped++
+                    onProgress(CsvImportProgress(done = index + 1, total = rows.size))
+                    return@forEachIndexed
+                }
                 val name = nameIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim().orEmpty()
                 val igdbId = idIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toLongOrNull()
                 val archived = archivedIndex.takeIf { it >= 0 }

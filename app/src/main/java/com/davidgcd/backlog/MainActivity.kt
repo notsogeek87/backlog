@@ -85,7 +85,6 @@ class MainActivity : ComponentActivity() {
                         movieRepository = app.movieRepository,
                         tmdbSyncService = app.tmdbSyncService,
                         bookRepository = app.bookRepository,
-                        bookCsvService = app.bookCsvService,
                         wishlistSyncService = app.wishlistSyncService,
                         openGameId = pendingGameId,
                         onOpenGameHandled = { pendingGameId = null },

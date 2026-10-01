@@ -31,10 +31,11 @@ class BookCsvTest {
         addedAt = 1_700_000_000_000,
     )
 
+    private fun library(vararg rows: BookEntity) = listOf(CsvFormat.writeRow(BookCsv.HEADER)) + rows.map { CsvFormat.writeRow(BookCsv.row(it)) }
+
     @Test
     fun `a book survives an export then an import`() {
-        val lines = BookCsv.write(listOf(dune))
-        val back = BookCsv.parse(lines).single()
+        val back = BookCsv.parse(library(dune)).single()
         assertEquals("isbn:9782070368228", back.bookKey)
         assertEquals("Dune, tome 1", back.title)
         assertEquals("Le « cycle »", back.subtitle)
@@ -55,20 +56,43 @@ class BookCsvTest {
     }
 
     @Test
-    fun `the export is one line per book, with the type and the status as machine values`() {
-        val lines = BookCsv.write(listOf(dune))
-        assertEquals(2, lines.size)
-        assertTrue(lines[0].startsWith("type,title,"))
-        assertTrue(lines[1].startsWith("BOOK,"))
-        assertTrue(lines[1].contains("READING"))
-        // A description with line breaks stays on one line.
-        assertFalse(lines[1].contains('\n'))
+    fun `the library header keeps the games columns, adds type in front and the book columns after`() {
+        val gameHeaders = CsvColumn.EXPORT_ORDER.map { it.header }
+        assertEquals(listOf("type") + gameHeaders + BookCsv.EXTRA_COLUMNS, BookCsv.HEADER)
+        assertEquals(
+            listOf("name", "igdbId", "releaseDate", "genres", "platforms", "archived", "steamAppId", "status", "rank"),
+            gameHeaders,
+        )
     }
 
     @Test
-    fun `a minimal row with just a type and a title is a valid book`() {
-        val rows = BookCsv.parse(listOf("type,title,authors,isbn13,status", "BOOK,Dune,Frank Herbert,9782070368228,TO_READ"))
-        val book = rows.single()
+    fun `a book row has one value per column, is typed BOOK and stays on one line`() {
+        val row = BookCsv.row(dune)
+        assertEquals(BookCsv.HEADER.size, row.size)
+        assertEquals("BOOK", row[0])
+        assertEquals("Dune, tome 1", row[BookCsv.HEADER.indexOf("name")])
+        assertEquals("READING", row[BookCsv.HEADER.indexOf("status")])
+        assertEquals("", row[BookCsv.HEADER.indexOf("igdbId")])
+        assertFalse(CsvFormat.writeRow(row).contains('\n'))
+    }
+
+    @Test
+    fun `a file mixing games and books gives only the books to the book reader`() {
+        val gameLine = CsvFormat.writeRow(listOf("GAME", "Zelda", "1022") + List(BookCsv.HEADER.size - 3) { "" })
+        val rows = BookCsv.parse(library(dune) + gameLine)
+        assertEquals(listOf("Dune, tome 1"), rows.map { it.title })
+    }
+
+    @Test
+    fun `an old games-only file without a type column has no books`() {
+        assertTrue(BookCsv.parse(listOf("name,igdbId,releaseDate", "Zelda,1022,2017-03-03")).isEmpty())
+        assertFalse(BookCsv.isBook(null))
+        assertTrue(BookCsv.parse(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `a hand-written row with just a type and a title is a valid book`() {
+        val book = BookCsv.parse(listOf("type,title,authors,isbn13,status", "BOOK,Dune,Frank Herbert,9782070368228,TO_READ")).single()
         assertEquals("Dune", book.title)
         assertEquals("Frank Herbert", book.authors)
         assertEquals("isbn:9782070368228", book.bookKey)
@@ -79,37 +103,14 @@ class BookCsvTest {
 
     @Test
     fun `an unknown status falls back to to-read and a bad rating is dropped`() {
-        val book = BookCsv.parse(listOf("title,status,rating", "Dune,en cours de route,9")).single()
+        val book = BookCsv.parse(listOf("type,name,status,rating", "BOOK,Dune,en cours de route,9")).single()
         assertEquals(ReadStatus.TO_READ.name, book.status)
         assertNull(book.userRating)
     }
 
     @Test
-    fun `rows of another type, without a title, or blank are skipped`() {
-        val rows = BookCsv.parse(
-            listOf(
-                "type,title",
-                "GAME,Zelda",
-                "BOOK,",
-                "",
-                "BOOK,Fondation",
-            ),
-        )
+    fun `book rows without a title and blank lines are skipped`() {
+        val rows = BookCsv.parse(listOf("type,name", "BOOK,", "", "BOOK,Fondation"))
         assertEquals(listOf("Fondation"), rows.map { it.title })
-    }
-
-    @Test
-    fun `a games export is not read as books and nothing breaks`() {
-        // The existing games CSV (name, igdbId, …) has no title column: the books import ignores it entirely.
-        assertTrue(BookCsv.parse(listOf("name,igdbId,releaseDate", "Zelda,1022,2017-03-03")).isEmpty())
-        assertTrue(BookCsv.parse(emptyList()).isEmpty())
-    }
-
-    @Test
-    fun `the games CSV columns are unchanged`() {
-        assertEquals(
-            listOf("name", "igdbId", "releaseDate", "genres", "platforms", "archived", "steamAppId", "status", "rank"),
-            CsvColumn.EXPORT_ORDER.map { it.header },
-        )
     }
 }

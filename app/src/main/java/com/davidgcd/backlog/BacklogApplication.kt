@@ -2,7 +2,6 @@ package com.davidgcd.backlog
 
 import android.app.Application
 import com.davidgcd.backlog.config.Secrets
-import com.davidgcd.backlog.data.csv.BookCsvService
 import com.davidgcd.backlog.data.csv.CsvExportService
 import com.davidgcd.backlog.data.csv.CsvImportService
 import com.davidgcd.backlog.data.tmdb.TmdbClient
@@ -94,9 +93,6 @@ class BacklogApplication : Application() {
         private set
 
     lateinit var bookRepository: BookRepository
-        private set
-
-    lateinit var bookCsvService: BookCsvService
         private set
 
     override fun onCreate() {
@@ -199,7 +195,6 @@ class BacklogApplication : Application() {
         metacriticService = MetacriticService(metacriticApi)
         shareLinkService = ShareLinkService(this, OkHttpClient.Builder().callTimeout(12, TimeUnit.SECONDS).build())
         csvExportService = CsvExportService(this)
-        csvImportService = CsvImportService(this, repository)
 
         // Films & séries: the official TMDB API. The key ships in the APK like the other keys (Secrets.kt);
         // a user's session (their account access) lives in no-backup storage, never in the key.
@@ -215,7 +210,7 @@ class BacklogApplication : Application() {
         // so nothing book-related lives in Secrets.kt. Saved books are read from Room, never from these.
         val bookHttp = OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build()
         bookRepository = BookRepository(database.bookDao(), OpenLibraryService(bookHttp), GoogleBooksService(bookHttp))
-        bookCsvService = BookCsvService(this, bookRepository)
+        csvImportService = CsvImportService(this, repository, bookRepository)
 
         ReleaseReminderScheduler.schedule(this)
         SteamAutoSyncScheduler.schedule(this)

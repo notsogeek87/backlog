@@ -104,7 +104,7 @@
     <string name="settings_section_data">Données</string>
     <string name="settings_export_csv">Exporter en CSV</string>
     <string name="settings_auto_export_title">Export automatique</string>
-    <string name="settings_auto_export_subtitle">Enregistrer régulièrement backlog.csv dans un dossier de l\'appareil</string>
+    <string name="settings_auto_export_subtitle">Enregistrer régulièrement backlog.csv (jeux et livres) dans un dossier de l\'appareil</string>
     <string name="settings_auto_export_folder">Dossier</string>
     <string name="settings_auto_export_folder_unavailable">Dossier inaccessible — choisis-en un autre</string>
     <string name="settings_auto_export_frequency">Fréquence</string>
@@ -327,10 +327,6 @@
     <string name="sort_title">Titre (A-Z)</string>
     <string name="sort_author">Auteur</string>
     <string name="sort_published_year">Année de publication</string>
-    <string name="settings_export_books_csv">Exporter mes livres</string>
-    <string name="settings_import_books_csv">Importer mes livres</string>
-    <string name="settings_import_books_done">%1$d livres ajoutés, %2$d déjà présents, %3$d ignorés.</string>
-    <string name="settings_import_books_failed">Impossible de lire ce fichier.</string>
     <!-- Films & séries (TMDB) -->
     <string name="tab_games">Jeux</string>
     <string name="tab_movies">Films/séries</string>

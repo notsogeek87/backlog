@@ -13,15 +13,20 @@
 
 Modèles : `Book` (transitoire), `BookEntity` (table `books`), `ReadStatus`, `BookKey`, `BookDuplicates`, `BookRanking`, `Isbn`.
 
-## CSV des livres (Réglages → Données)
+## CSV de la bibliothèque (jeux + livres)
 
-En-têtes machine, listes séparées par `;`, une ligne par livre. Le CSV des jeux est inchangé.
+Un seul fichier pour tout : export manuel, import et export automatique (Réglages → Données).
+Une colonne `type` (`GAME` / `BOOK`) distingue les lignes ; **sans colonne `type` (anciens exports de jeux) toutes les lignes sont des jeux**.
+En-tête : `type`, puis les colonnes jeux **inchangées** (`name,igdbId,releaseDate,genres,platforms,archived,steamAppId,status,rank`),
+puis les colonnes livres :
+`subtitle,authors,isbn13,isbn10,publisher,publishedYear,pageCount,languages,description,coverUrl,workId,editionId,source,favorite,rating,addedAt`.
+
+Un livre réutilise `name` (titre), `genres` (sujets) et `status` (`TO_READ`, `READING`, `READ`, `ABANDONED`) ; listes séparées par `;`.
 
 ```csv
-type,title,authors,isbn13,status,favorite
-BOOK,Dune,Frank Herbert,9782070368228,TO_READ,false
+type,name,igdbId,...,status,...,authors,isbn13,...,favorite
+GAME,Hades,113112,...,PLAYED,...,,,...,
+BOOK,Dune,,...,TO_READ,...,Frank Herbert,9782070368228,...,true
 ```
 
-Colonnes : `type,title,subtitle,authors,isbn13,isbn10,publisher,publishedYear,pageCount,languages,subjects,description,coverUrl,workId,editionId,source,status,favorite,rating,addedAt`.
-Statuts : `TO_READ`, `READING`, `READ`, `ABANDONED`. Seul `title` est obligatoire ; une ligne d'un autre `type` est ignorée.
-L'import ne contacte aucun catalogue et saute les doublons.
+L'import des livres ne contacte aucun catalogue (hors ligne possible) et ignore les doublons (comptés dans « ignorés »).

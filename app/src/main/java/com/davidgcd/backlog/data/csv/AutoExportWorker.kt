@@ -33,7 +33,7 @@ class AutoExportWorker(
             } else {
                 withContext(Dispatchers.IO) {
                     val target = AutoExportFolder.exportFileUri(applicationContext, folder)
-                    app.csvExportService.export(target, app.repository.allGames())
+                    app.csvExportService.export(target, app.repository.allGames(), app.bookRepository.allBooks())
                 }
                 true
             }
