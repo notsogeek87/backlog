@@ -3,6 +3,23 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 export const STATUSES = ['BACKLOG', 'PLAYED', 'COMPLETED'];
 export const STATUS_LABELS = { BACKLOG: 'Backlog', PLAYED: 'Joué', COMPLETED: 'Terminé' };
 export const MAX_ITEMS = 2000;
+
+/**
+ * The share page's Content-Security-Policy: no script, and images only from the catalogues' hosts.
+ * Open Library answers a cover with a redirect to archive.org and then to one of its `iaNNN.us.archive.org`
+ * servers, and a CSP also applies to every redirect hop — so the bare `archive.org` (which `*.archive.org`
+ * does NOT match) and its subdomains are both needed. Google Books thumbnails may redirect to googleusercontent.
+ */
+export const IMAGE_HOSTS = [
+  'https://images.igdb.com',
+  'https://image.tmdb.org',
+  'https://covers.openlibrary.org',
+  'https://archive.org',
+  'https://*.archive.org',
+  'https://books.google.com',
+  'https://books.googleusercontent.com',
+];
+export const CSP = `default-src 'none'; img-src ${IMAGE_HOSTS.join(' ')}; style-src 'unsafe-inline'`;
 /** A link lives this long after its creation, then it is deleted. Republishing does not extend it. */
 export const SHARE_TTL_HOURS = 24;
 

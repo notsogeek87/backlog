@@ -1,5 +1,5 @@
 import { sql } from '../lib/db.js';
-import { SHARE_TTL_HOURS, renderPage } from '../lib/shareCore.js';
+import { CSP, SHARE_TTL_HOURS, renderPage } from '../lib/shareCore.js';
 
 export default async function handler(req, res) {
   const id = String(req.query.id ?? '');
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60');
-  res.setHeader('Content-Security-Policy', "default-src 'none'; img-src https://images.igdb.com https://image.tmdb.org https://covers.openlibrary.org https://*.archive.org https://books.google.com; style-src 'unsafe-inline'");
+  res.setHeader('Content-Security-Policy', CSP);
   res.setHeader('Referrer-Policy', 'no-referrer');
   return res.status(200).send(renderPage(rows[0].payload));
 }

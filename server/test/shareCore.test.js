@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, hashToken, newToken, renderPage, tokenMatches, validatePayload } from '../lib/shareCore.js';
+import { CSP, escapeHtml, hashToken, newToken, renderPage, tokenMatches, validatePayload } from '../lib/shareCore.js';
 
 test('validatePayload drops unsafe urls, bad image ids and unknown statuses', () => {
   const { items } = validatePayload({
@@ -172,4 +172,12 @@ test('library payload and page include a Livres tab, and still accept clients th
   assert.ok(html.includes('id="tab-books"') && html.includes('Livres'));
   const noBooks = renderPage({ kind: 'library', title: 'L', games: p.games, movies: [] });
   assert.ok(!noBooks.includes('id="tab-books"'));
+});
+
+test('CSP lets the book covers load through Open Library\'s redirect to archive.org, and still forbids scripts', () => {
+  const imgSrc = CSP.match(/img-src ([^;]+)/)[1].split(' ');
+  for (const host of ['https://covers.openlibrary.org', 'https://archive.org', 'https://*.archive.org', 'https://books.google.com', 'https://images.igdb.com', 'https://image.tmdb.org']) {
+    assert.ok(imgSrc.includes(host), host);
+  }
+  assert.ok(CSP.startsWith("default-src 'none'") && !CSP.includes('script-src') && !CSP.includes("'unsafe-eval'"));
 });
