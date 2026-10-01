@@ -27,10 +27,19 @@ toucher à `Game`/`GameEntity`.
 - **Description** : si celle d'Open Library n'est pas en français (heuristique `BookText.looksFrench`), le dépôt cherche une description française sur Google Books (`langRestrict=fr`, par ISBN puis titre + auteur). Sans résultat, l'originale est conservée. Un échec réseau n'est pas mémorisé (nouvel essai à la prochaine ouverture).
 - Langue de l'édition : affichée par son nom français (« Anglais », « Français »).
 
+## Partage
+
+Même mécanisme que jeux et films (serveur `server/`, lien public valable 24 h, pseudo « Le top de … »), deux partages :
+
+- **Liste complète** (bouton partage de l'onglet Livres) : choix « Ma librairie » (une page avec un onglet par typologie, dont **Livres**) ou « Uniquement cet onglet » (page `kind: "books"`). Les livres sont **classés par note** (★ sur 5, meilleure d'abord) puis regroupés par statut, comme les films.
+- **Un seul livre** (bouton partage de la fiche) : page `kind: "book"` avec exactement un livre (couverture, auteur, statut, étoiles). Chaque partage crée un **nouveau lien**, pour ne pas réécrire ce qui a déjà été envoyé à quelqu'un.
+- Sans serveur joignable : repli en texte (`BookShareText`). Le serveur n'accepte que les couvertures/pages Open Library et Google Books (`BOOK_COVER`, `BOOK_URL`), et sa CSP autorise leurs images.
+- **À déployer** : le serveur (`server/`, Vercel) doit être redéployé pour que les pages livres s'affichent ; un ancien serveur ne connaît pas `kind: "books"`.
+
 ## Limites connues
 
 - Open Library : un résultat de recherche ne dit pas quel ISBN/langue correspond à *quelle* édition ; ils sont lus
   ensuite (édition de couverture) en tâche de fond après l'ajout. Hors ligne au moment de l'ajout, ils sont complétés à la prochaine ouverture de la fiche.
 - Les descriptions et sujets Open Library sont parfois absents ou en anglais ; les champs vides ne sont pas affichés.
 - Google Books sans clé a un quota anonyme limité.
-- Les livres ne sont pas (encore) dans le partage public (`server/`) ni dans l'onglet Découvrir.
+- Les livres ne sont pas (encore) dans l'onglet Découvrir.

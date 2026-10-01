@@ -42,6 +42,19 @@ data class ShareMovieItem(
     val rating: Int?,
 )
 
+/** One book as the share page needs it — the same fields the server validates. */
+data class ShareBookItem(
+    val name: String,
+    val authors: String,
+    val status: String,
+    val year: Int?,
+    val coverUrl: String?,
+    val url: String?,
+    /** The reader's own note, 1–5 stars. */
+    val rating: Int?,
+    val favorite: Boolean,
+)
+
 /**
  * Publishes a snapshot of the backlog to the share server and returns the public link.
  * The first publish creates the link and keeps its secret token on the device; later ones update
@@ -58,7 +71,10 @@ class ShareLinkService(
     // Films & séries get their own link, so sharing one list never overwrites the other's page.
     private val moviesIdKey = stringPreferencesKey("movies_share_id")
     private val moviesTokenKey = stringPreferencesKey("movies_share_token")
-    // The whole library (games + films & séries as tabs) is a third page with its own link.
+    // Books get their own link too (the list); a single book is always a fresh link, see publishBook.
+    private val booksIdKey = stringPreferencesKey("books_share_id")
+    private val booksTokenKey = stringPreferencesKey("books_share_token")
+    // The whole library (games + films & séries + books as tabs) is a third page with its own link.
     private val libraryIdKey = stringPreferencesKey("library_share_id")
     private val libraryTokenKey = stringPreferencesKey("library_share_token")
     private val urlsKey = stringPreferencesKey("igdb_urls")
@@ -97,9 +113,29 @@ class ShareLinkService(
     suspend fun publishMovies(title: String, items: List<ShareMovieItem>): String =
         send(moviesPayload(title, items, owner()), moviesIdKey, moviesTokenKey)
 
+    /** Same, for the books page (its own link): covers rated by the owner first, best note first. */
+    suspend fun publishBooks(title: String, items: List<ShareBookItem>): String =
+        send(booksPayload(title, items, owner()), booksIdKey, booksTokenKey)
+
+    /**
+     * One book on a page of its own. Always a *new* link: reusing one would rewrite what was already sent
+     * to a friend the next time another book is shared.
+     */
+    suspend fun publishBook(item: ShareBookItem): String = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url("$baseUrl/api/share").post(singleBookPayload(item, owner()).toRequestBody(JSON)).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+            JSONObject(response.body!!.string()).getString("url")
+        }
+    }
+
     /** Same, for the whole library: one page with a tab per typology (its own link). */
-    suspend fun publishLibrary(title: String, games: List<ShareItem>, movies: List<ShareMovieItem>): String =
-        send(libraryPayload(title, games, movies, owner()), libraryIdKey, libraryTokenKey)
+    suspend fun publishLibrary(
+        title: String,
+        games: List<ShareItem>,
+        movies: List<ShareMovieItem>,
+        books: List<ShareBookItem> = emptyList(),
+    ): String = send(libraryPayload(title, games, movies, owner(), books), libraryIdKey, libraryTokenKey)
 
     private suspend fun owner(): String = context.shareLinkDataStore.data.first()[ownerKey].orEmpty().trim()
 
@@ -149,6 +185,20 @@ class ShareLinkService(
             },
         )
 
+        private fun bookItems(items: List<ShareBookItem>) = JSONArray(
+            items.map {
+                JSONObject()
+                    .put("name", it.name)
+                    .put("authors", it.authors)
+                    .put("status", it.status)
+                    .put("year", it.year ?: JSONObject.NULL)
+                    .put("coverUrl", it.coverUrl ?: JSONObject.NULL)
+                    .put("url", it.url ?: JSONObject.NULL)
+                    .put("rating", it.rating ?: JSONObject.NULL)
+                    .put("favorite", it.favorite)
+            },
+        )
+
         private fun gameItems(items: List<ShareItem>) = JSONArray(
             items.map {
                 JSONObject()
@@ -173,12 +223,33 @@ class ShareLinkService(
             .put("items", gameItems(items))
             .toString()
 
-        fun libraryPayload(title: String, games: List<ShareItem>, movies: List<ShareMovieItem>, owner: String = ""): String = JSONObject()
+        fun booksPayload(title: String, items: List<ShareBookItem>, owner: String = ""): String = JSONObject()
+            .put("kind", "books")
+            .put("title", title)
+            .put("owner", owner)
+            .put("items", bookItems(items))
+            .toString()
+
+        fun singleBookPayload(item: ShareBookItem, owner: String = ""): String = JSONObject()
+            .put("kind", "book")
+            .put("title", item.name)
+            .put("owner", owner)
+            .put("items", bookItems(listOf(item)))
+            .toString()
+
+        fun libraryPayload(
+            title: String,
+            games: List<ShareItem>,
+            movies: List<ShareMovieItem>,
+            owner: String = "",
+            books: List<ShareBookItem> = emptyList(),
+        ): String = JSONObject()
             .put("kind", "library")
             .put("title", title)
             .put("owner", owner)
             .put("games", JSONObject().put("items", gameItems(games)))
             .put("movies", JSONObject().put("items", movieItems(movies)))
+            .put("books", JSONObject().put("items", bookItems(books)))
             .toString()
     }
 }

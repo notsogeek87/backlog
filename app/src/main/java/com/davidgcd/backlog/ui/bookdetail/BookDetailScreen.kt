@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
@@ -83,6 +84,7 @@ import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.BookLanguages
+import com.davidgcd.backlog.util.BookShareText
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,6 +132,34 @@ fun BookDetailScreen(
         }
     }
 
+    var sharing by remember { mutableStateOf(false) }
+    /** One book, one link: a public page of its own (status, favorite and note included when saved), else plain text. */
+    val shareBook: () -> Unit = share@{
+        val (book, saved) = when (val s = state) {
+            is BookDetailState.Saved -> s.book.toBook() to s.book
+            is BookDetailState.Remote -> s.book to null
+            else -> return@share
+        }
+        scope.launch {
+            sharing = true
+            try {
+                val link = viewModel.publishBookLink(book, saved)
+                val text = when {
+                    link != null -> "${book.title}\n$link"
+                    saved != null -> BookShareText.line(saved)
+                    else -> listOfNotNull(book.title, book.authorLine.ifEmpty { null }, book.catalogUrl).joinToString(" — ")
+                }
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_book_chooser)))
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // The cover tints the screen: blurred, dimmed, faded into the night canvas (blur needs API 31+).
         if (cover != null) {
@@ -162,6 +192,15 @@ fun BookDetailScreen(
                         }
                     },
                     actions = {
+                        if (state is BookDetailState.Saved || state is BookDetailState.Remote) {
+                            IconButton(onClick = shareBook, enabled = !sharing) {
+                                if (sharing) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                                } else {
+                                    Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_book))
+                                }
+                            }
+                        }
                         (state as? BookDetailState.Saved)?.book?.let { saved ->
                             IconButton(onClick = { viewModel.setFavorite(saved, !saved.isFavorite) }) {
                                 Icon(

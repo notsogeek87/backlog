@@ -11,6 +11,10 @@ import com.davidgcd.backlog.data.openlibrary.BookSourceException
 import com.davidgcd.backlog.data.repository.BookAddResult
 import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.toBook
+import com.davidgcd.backlog.data.share.LibrarySharer
+import com.davidgcd.backlog.data.share.ShareLinkService
+import com.davidgcd.backlog.data.share.toShareItem
+import com.davidgcd.backlog.util.AppLogger
 import com.davidgcd.backlog.model.Book
 import com.davidgcd.backlog.model.BookDuplicates
 import com.davidgcd.backlog.model.ReadStatus
@@ -47,7 +51,11 @@ data class BookFilter(
 data class BookHit(val book: Book, val savedKey: String?)
 
 /** State of the Livres tab: the saved list (sorted / filtered) and the catalogue search. */
-class BooksViewModel(private val repository: BookRepository) : ViewModel() {
+class BooksViewModel(
+    private val repository: BookRepository,
+    private val shareLinkService: ShareLinkService? = null,
+    private val librarySharer: LibrarySharer? = null,
+) : ViewModel() {
 
     private val books: StateFlow<List<BookEntity>> = repository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -95,6 +103,27 @@ class BooksViewModel(private val repository: BookRepository) : ViewModel() {
     fun setStatus(book: BookEntity, status: ReadStatus) {
         viewModelScope.launch { repository.setStatus(book, status) }
     }
+
+    // --- sharing -----------------------------------------------------------------------------
+
+    /** What a share lists: every saved book (never narrowed by the filter); the page ranks them by the reader's note. */
+    suspend fun booksToShare(): List<BookEntity> = repository.allBooks()
+
+    /** Publishes the books list as a public page and returns its link, or null when the server can't be reached (the caller then shares text). */
+    suspend fun publishShareLink(title: String, books: List<BookEntity>): String? {
+        val service = shareLinkService ?: return null
+        return try {
+            service.publishBooks(title, books.map { it.toShareItem() })
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            AppLogger.network.error("Share link: publishing the books page failed, sharing plain text instead", t)
+            null
+        }
+    }
+
+    /** Link to the whole-library page (games, films & séries and books tabs), or null when unavailable. */
+    suspend fun publishLibraryLink(title: String): String? = librarySharer?.publish(title)
 
     // --- search ------------------------------------------------------------------------------
 
@@ -237,10 +266,14 @@ private fun BookSort.comparator(): Comparator<BookEntity> = when (this) {
     }
 }
 
-class BooksViewModelFactory(private val repository: BookRepository) : ViewModelProvider.Factory {
+class BooksViewModelFactory(
+    private val repository: BookRepository,
+    private val shareLinkService: ShareLinkService? = null,
+    private val librarySharer: LibrarySharer? = null,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == BooksViewModel::class.java)
-        return BooksViewModel(repository) as T
+        return BooksViewModel(repository, shareLinkService, librarySharer) as T
     }
 }

@@ -7,6 +7,9 @@ import com.davidgcd.backlog.data.local.BookEntity
 import com.davidgcd.backlog.data.repository.BookAddResult
 import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.toBook
+import com.davidgcd.backlog.data.share.ShareLinkService
+import com.davidgcd.backlog.data.share.toShareItem
+import com.davidgcd.backlog.util.AppLogger
 import com.davidgcd.backlog.model.Book
 import com.davidgcd.backlog.model.ReadStatus
 import kotlinx.coroutines.CancellationException
@@ -31,6 +34,7 @@ sealed interface BookDetailState {
 class BookDetailViewModel(
     private val bookKey: String,
     private val repository: BookRepository,
+    private val shareLinkService: ShareLinkService? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<BookDetailState>(BookDetailState.Loading)
@@ -117,6 +121,22 @@ class BookDetailViewModel(
         }
     }
 
+    /**
+     * This one book on a public page of its own (a fresh link each time), or null when the server can't be
+     * reached — the caller then shares plain text. A saved book carries the reader's status, favorite and note.
+     */
+    suspend fun publishBookLink(book: Book, saved: BookEntity?): String? {
+        val service = shareLinkService ?: return null
+        return try {
+            service.publishBook(book.toShareItem(saved))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            AppLogger.network.error("Share link: publishing the book page failed, sharing plain text instead", t)
+            null
+        }
+    }
+
     fun setStatus(book: BookEntity, status: ReadStatus) {
         viewModelScope.launch { repository.setStatus(book, status) }
     }
@@ -142,10 +162,11 @@ class BookDetailViewModel(
 class BookDetailViewModelFactory(
     private val bookKey: String,
     private val repository: BookRepository,
+    private val shareLinkService: ShareLinkService? = null,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == BookDetailViewModel::class.java)
-        return BookDetailViewModel(bookKey, repository) as T
+        return BookDetailViewModel(bookKey, repository, shareLinkService) as T
     }
 }

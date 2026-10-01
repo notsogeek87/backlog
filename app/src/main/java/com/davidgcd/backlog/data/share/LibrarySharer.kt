@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.share
 
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.repository.BacklogRepository
+import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.model.Ranking
 import com.davidgcd.backlog.model.TitleKey
@@ -12,12 +13,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Publishes the whole library — games and films & séries — as one public page with a tab per typology.
+ * Publishes the whole library — games, films & séries and books — as one public page with a tab per typology.
  * Shared by the games and the films screens, so both offer the same "my library" choice.
  */
 class LibrarySharer(
     private val games: BacklogRepository,
     private val movies: MovieRepository,
+    private val books: BookRepository,
     private val shareLinkService: ShareLinkService,
 ) {
     /** The link to the library page, or null when the server can't be reached (the caller then shares text). */
@@ -37,7 +39,8 @@ class LibrarySharer(
                 rating = it.userRating,
             )
         }
-        shareLinkService.publishLibrary(title, gameItems, movieItems)
+        val bookItems = books.allBooks().map { it.toShareItem() }
+        shareLinkService.publishLibrary(title, gameItems, movieItems, bookItems)
     } catch (t: CancellationException) {
         throw t
     } catch (t: Throwable) {

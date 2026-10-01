@@ -16,10 +16,11 @@
     </plurals>
     <string name="share_scope_title">Que veux-tu partager ?</string>
     <string name="share_scope_library">Ma librairie</string>
-    <string name="share_scope_library_hint">Un seul lien, avec un onglet par typologie : jeux, films &amp; séries</string>
+    <string name="share_scope_library_hint">Un seul lien, avec un onglet par typologie : jeux, films &amp; séries, livres</string>
     <string name="share_scope_tab">Uniquement cet onglet</string>
     <string name="share_scope_tab_games_hint">Seulement ma liste de jeux</string>
     <string name="share_scope_tab_movies_hint">Seulement ma liste de films &amp; séries</string>
+    <string name="share_scope_tab_books_hint">Seulement ma liste de livres</string>
     <string name="share_scope_cancel">Annuler</string>
     <string name="share_library_header">Ma librairie</string>
     <string name="share_library_chooser">Partager ma librairie avec…</string>
@@ -323,6 +324,15 @@
     <string name="book_editions_title">Autres éditions</string>
     <string name="book_editions_hint">Chaque édition s\'ajoute séparément à ta liste.</string>
     <string name="book_edition_pages">%1$d p.</string>
+    <string name="action_share_books">Partager mes livres</string>
+    <string name="action_share_book">Partager ce livre</string>
+    <string name="share_books_chooser">Partager mes livres avec…</string>
+    <string name="share_book_chooser">Partager ce livre avec…</string>
+    <string name="share_books_ratings">Mes notes</string>
+    <plurals name="share_books_header">
+        <item quantity="one">Ma liste de livres (%1$d livre)</item>
+        <item quantity="other">Ma liste de livres (%1$d livres)</item>
+    </plurals>
     <string name="filter_favorites">Favoris</string>
     <string name="sort_title">Titre (A-Z)</string>
     <string name="sort_author">Auteur</string>

@@ -181,8 +181,8 @@ fun BacklogNavHost(
             onOpenGameHandled()
         }
     }
-    val librarySharer = remember(repository, movieRepository, shareLinkService) {
-        LibrarySharer(repository, movieRepository, shareLinkService)
+    val librarySharer = remember(repository, movieRepository, bookRepository, shareLinkService) {
+        LibrarySharer(repository, movieRepository, bookRepository, shareLinkService)
     }
     // Discover serves both worlds; which one is showing survives rotation and tab switches.
     var discoverMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
@@ -301,7 +301,7 @@ fun BacklogNavHost(
             MovieDetailScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
         composable(Routes.BOOKS) {
-            val viewModel: BooksViewModel = viewModel(factory = BooksViewModelFactory(bookRepository))
+            val viewModel: BooksViewModel = viewModel(factory = BooksViewModelFactory(bookRepository, shareLinkService, librarySharer))
             BooksScreen(
                 viewModel = viewModel,
                 onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
@@ -313,7 +313,7 @@ fun BacklogNavHost(
         ) { backStackEntry ->
             val bookKey = backStackEntry.arguments?.getString("bookKey") ?: return@composable
             val viewModel: BookDetailViewModel = viewModel(
-                factory = BookDetailViewModelFactory(bookKey, bookRepository),
+                factory = BookDetailViewModelFactory(bookKey, bookRepository, shareLinkService),
                 key = "book_detail_$bookKey",
             )
             BookDetailScreen(

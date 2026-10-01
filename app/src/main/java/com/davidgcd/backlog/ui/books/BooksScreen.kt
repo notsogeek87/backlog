@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.ui.books
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.CircularProgressIndicator
@@ -91,6 +93,8 @@ import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassPill
 import com.davidgcd.backlog.ui.components.GradientButton
+import com.davidgcd.backlog.ui.components.ShareScopeDialog
+import com.davidgcd.backlog.ui.components.labelRes
 import com.davidgcd.backlog.ui.components.StatCard
 import com.davidgcd.backlog.ui.components.countLabelRes
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
@@ -98,6 +102,7 @@ import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
+import com.davidgcd.backlog.util.BookShareText
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,6 +142,71 @@ fun BooksScreen(
     BackHandler(enabled = showSearch) { closeSearch() }
     LaunchedEffect(showSearch) { if (showSearch) searchFocus.requestFocus() }
 
+    var sharing by remember { mutableStateOf(false) }
+    var showScopeDialog by remember { mutableStateOf(false) }
+
+    val shareList: () -> Unit = {
+        scope.launch {
+            sharing = true
+            try {
+                val books = viewModel.booksToShare()
+                val header = context.resources.getQuantityString(R.plurals.share_books_header, books.size, books.size)
+                // A public page (covers, best note first) when the server answers; otherwise the plain-text list.
+                val publicLink = viewModel.publishShareLink(header, books)
+                val text = if (publicLink != null) {
+                    "$header\n$publicLink"
+                } else {
+                    BookShareText.build(
+                        books,
+                        BookShareText.Labels(
+                            header = { header },
+                            status = { status -> context.getString(status.labelRes()) },
+                            ratings = context.getString(R.string.share_books_ratings),
+                        ),
+                    )
+                }
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_books_chooser)))
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
+    val shareLibrary: () -> Unit = {
+        scope.launch {
+            sharing = true
+            try {
+                val header = context.getString(R.string.share_library_header)
+                // No server reachable: fall back to this tab's plain text rather than sharing nothing.
+                val publicLink = viewModel.publishLibraryLink(header)
+                if (publicLink == null) {
+                    shareList()
+                } else {
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "$header\n$publicLink")
+                    }
+                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_library_chooser)))
+                }
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
+    if (showScopeDialog) {
+        ShareScopeDialog(
+            tabHintRes = R.string.share_scope_tab_books_hint,
+            onLibrary = { showScopeDialog = false; shareLibrary() },
+            onTab = { showScopeDialog = false; shareList() },
+            onDismiss = { showScopeDialog = false },
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         contentColor = Glass.Text,
@@ -156,6 +226,13 @@ fun BooksScreen(
                 },
                 actions = {
                     if (!showSearch) {
+                        IconButton(onClick = { showScopeDialog = true }, enabled = !sharing) {
+                            if (sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_books))
+                            }
+                        }
                         SortMenuButton(current = sort, onSelect = viewModel::setSort)
                         FilterMenuButton(current = filter, availableSubjects = subjects, onChange = viewModel::setFilter)
                     }

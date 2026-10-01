@@ -120,3 +120,56 @@ test('renderPage of a library has a tab per non-empty typology', () => {
   const gamesOnly = renderPage({ kind: 'library', title: 't', games: [{ name: 'Hades', status: 'PLAYED', coverImageId: null, url: null, rank: null }], movies: [] });
   assert.ok(!gamesOnly.includes('id="tab-movies"'));
 });
+
+test('books payload: only sane cover / url / note / status survive', () => {
+  const p = validatePayload({
+    kind: 'books',
+    items: [
+      { name: 'Dune', authors: 'Frank Herbert', status: 'READ', year: 1965, coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg', url: 'https://openlibrary.org/works/OL893415W', rating: 5, favorite: true },
+      { name: 'X', status: 'NOPE', coverUrl: 'https://evil.example/a.jpg', url: 'javascript:alert(1)', rating: 6, year: 'y', favorite: 'yes' },
+      { name: 'Y', coverUrl: 'https://books.google.com/books/content?id=abc&zoom=1&source=gbs_api', url: 'https://books.google.com/books?id=abc' },
+    ],
+  });
+  assert.equal(p.kind, 'books');
+  assert.deepEqual(p.items[0], { name: 'Dune', authors: 'Frank Herbert', status: 'READ', year: 1965, coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg', url: 'https://openlibrary.org/works/OL893415W', rating: 5, favorite: true });
+  assert.deepEqual(p.items[1], { name: 'X', authors: '', status: 'TO_READ', year: null, coverUrl: null, url: null, rating: null, favorite: false });
+  assert.ok(p.items[2].coverUrl && p.items[2].url);
+  assert.throws(() => validatePayload({ kind: 'books', items: [{ name: '' }] }));
+});
+
+test('books page: rated covers best note first, unrated grouped by status, all escaped', () => {
+  const html = renderPage({
+    kind: 'books', title: 'Mes livres', owner: 'David',
+    items: [
+      { name: 'Bof', authors: 'A', status: 'READ', year: 2001, coverUrl: null, url: null, rating: 2, favorite: false },
+      { name: 'Top', authors: 'B', status: 'READ', year: null, coverUrl: 'https://covers.openlibrary.org/b/id/1-M.jpg', url: null, rating: 5, favorite: true },
+      { name: '<i>Plus tard</i>', authors: '', status: 'TO_READ', year: null, coverUrl: null, url: null, rating: null, favorite: false },
+    ],
+  });
+  assert.ok(html.includes('Les notes de David'));
+  assert.ok(html.indexOf('Top') < html.indexOf('Bof'));
+  assert.ok(html.includes('★ 5') && html.includes('♥ Top'));
+  assert.ok(html.indexOf('Bof') < html.indexOf('À lire <small>'));
+  assert.ok(!html.includes('<i>Plus tard'));
+});
+
+test('single book: exactly one book, shown on its own page', () => {
+  const book = { name: 'Dune', authors: 'Frank Herbert', status: 'READING', year: 1965, coverUrl: null, url: 'https://openlibrary.org/works/OL1W', rating: 4, favorite: false };
+  const p = validatePayload({ kind: 'book', title: 'Dune', items: [book] });
+  assert.equal(p.kind, 'book');
+  assert.throws(() => validatePayload({ kind: 'book', items: [book, book] }));
+  assert.throws(() => validatePayload({ kind: 'book', items: [] }));
+  const html = renderPage(p);
+  assert.ok(html.includes('class="single"') && html.includes('★★★★☆') && html.includes('En cours'));
+  assert.ok(html.includes('Frank Herbert') && html.includes('Voir la fiche'));
+});
+
+test('library payload and page include a Livres tab, and still accept clients that send no books', () => {
+  const p = validatePayload({ kind: 'library', games: { items: [{ name: 'Hades' }] }, books: { items: [{ name: 'Dune', status: 'READ', rating: 5 }] } });
+  assert.equal(p.books[0].rating, 5);
+  assert.deepEqual(validatePayload({ kind: 'library', games: { items: [{ name: 'Hades' }] } }).books, []);
+  const html = renderPage({ kind: 'library', title: 'L', games: p.games, movies: [], books: p.books });
+  assert.ok(html.includes('id="tab-books"') && html.includes('Livres'));
+  const noBooks = renderPage({ kind: 'library', title: 'L', games: p.games, movies: [] });
+  assert.ok(!noBooks.includes('id="tab-books"'));
+});

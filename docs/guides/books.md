@@ -9,3 +9,7 @@
 5. Réglages → Données : **Exporter / Importer en CSV** et **Export automatique** couvrent jeux et livres dans un même fichier (voir [API](../api/books.md)).
 
 La recherche demande une connexion ; les livres ajoutés restent consultables hors ligne.
+
+## Partager
+- Onglet **Livres** → icône partage : *Ma librairie* (jeux, films & séries et livres, un onglet chacun) ou *Uniquement cet onglet* (tes livres, classés par ta note).
+- Fiche d'un livre → icône partage : un lien pour ce livre seul (couverture, statut, étoiles).
