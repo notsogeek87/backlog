@@ -757,7 +757,11 @@ private fun SearchResultsList(
     onClick: (Game) -> Unit,
     extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
 ) {
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // New hits can land above the row the list is anchored to (the other categories often answer first): go back to the top.
+    androidx.compose.runtime.LaunchedEffect(results.firstOrNull()?.id) { listState.scrollToItem(0) }
     androidx.compose.foundation.lazy.LazyColumn(
+        state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
