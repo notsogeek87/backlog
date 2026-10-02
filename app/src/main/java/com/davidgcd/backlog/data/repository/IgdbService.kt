@@ -118,7 +118,7 @@ class IgdbService(private val api: IgdbApi) : GameCatalog {
         // websites.category/url is only requested here, never in searchGames — the iOS app's rule of
         // keeping fields used by a single screen out of the shared sync/search query.
         val apicalypse = """
-            fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating,websites.url,websites.category;
+            fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,total_rating,websites.url,websites.category,url;
             where id = $id;
         """.trimIndent()
         return api.games(apicalypse.toRequestBody()).firstOrNull()

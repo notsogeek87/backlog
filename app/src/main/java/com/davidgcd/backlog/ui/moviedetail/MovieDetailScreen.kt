@@ -31,6 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,6 +67,7 @@ import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.watchStatus
 import com.davidgcd.backlog.data.repository.toMediaTitle
 import com.davidgcd.backlog.model.MediaTitle
+import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.WatchStatus
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
@@ -88,6 +90,21 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val state by viewModel.state.collectAsState()
     val providers by viewModel.providers.collectAsState()
     val credits by viewModel.credits.collectAsState()
+
+    val context = LocalContext.current
+    /** Shares the title's themoviedb.org page. */
+    val shareTitle: () -> Unit = share@{
+        val (name, link) = when (val s = state) {
+            is MovieDetailState.Saved -> s.movie.title to TitleKey.url(s.movie.titleKey)
+            is MovieDetailState.Remote -> s.title.title to s.title.tmdbUrl
+            else -> return@share
+        }
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "$name\n$link")
+        }
+        context.startActivity(Intent.createChooser(send, context.getString(R.string.share_movie_chooser)))
+    }
 
     val backdrop = when (val s = state) {
         is MovieDetailState.Saved -> s.movie.posterUrl
@@ -123,6 +140,13 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                        }
+                    },
+                    actions = {
+                        if (state is MovieDetailState.Saved || state is MovieDetailState.Remote) {
+                            IconButton(onClick = shareTitle) {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_movie))
+                            }
                         }
                     },
                 )

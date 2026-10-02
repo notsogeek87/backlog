@@ -76,6 +76,19 @@ class GameDetailViewModel(
             .launchIn(viewModelScope)
     }
 
+    /** igdb.com page of this game, to share; null when IGDB can't be reached or doesn't know it. */
+    suspend fun gameLink(): String? {
+        (state.value as? GameDetailState.Remote)?.game?.url?.let { return it }
+        return try {
+            repository.gameUrls(listOf(gameId))[gameId]
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            DebugLog.log("GameDetailViewModel: gameLink($gameId) failed: ${t::class.simpleName}: ${t.message}")
+            null
+        }
+    }
+
     private var remoteLoadStarted = false
 
     private fun loadRemoteIfNeeded() {

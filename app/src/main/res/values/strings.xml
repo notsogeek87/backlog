@@ -7,6 +7,10 @@
     <string name="action_search">Rechercher</string>
     <string name="action_discover">Découvrir</string>
     <string name="action_settings">Réglages</string>
+    <string name="action_share_game">Partager ce jeu</string>
+    <string name="share_game_chooser">Partager ce jeu avec…</string>
+    <string name="action_share_movie">Partager ce titre</string>
+    <string name="share_movie_chooser">Partager ce titre avec…</string>
     <string name="action_share_backlog">Partager mon backlog</string>
     <string name="share_backlog_ranking">Mon classement</string>
     <string name="share_backlog_chooser">Partager mon backlog avec…</string>

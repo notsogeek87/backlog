@@ -18,6 +18,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.layout.size
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -79,6 +85,31 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val ratings by viewModel.ratings.collectAsState()
     val frenchSummary by viewModel.frenchSummary.collectAsState()
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var sharing by remember { mutableStateOf(false) }
+    /** Shares the game's igdb.com page; falls back to its name when IGDB has no page to give. */
+    val shareGame: () -> Unit = share@{
+        val name = when (val s = state) {
+            is GameDetailState.InBacklog -> s.entity.name
+            is GameDetailState.Remote -> s.game.name
+            else -> return@share
+        }
+        scope.launch {
+            sharing = true
+            try {
+                val link = viewModel.gameLink()
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, if (link != null) "$name\n$link" else name)
+                }
+                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_game_chooser)))
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
     val backdropId = when (val s = state) {
         is GameDetailState.InBacklog -> s.entity.coverImageId
         is GameDetailState.Remote -> s.game.cover?.imageId
@@ -114,6 +145,17 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                        }
+                    },
+                    actions = {
+                        if (state is GameDetailState.InBacklog || state is GameDetailState.Remote) {
+                            IconButton(onClick = shareGame, enabled = !sharing) {
+                                if (sharing) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                                } else {
+                                    Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_game))
+                                }
+                            }
                         }
                     },
                 )
