@@ -98,6 +98,9 @@ import com.davidgcd.backlog.ui.backlog.BacklogScreen
 import com.davidgcd.backlog.ui.backlog.BacklogViewModel
 import com.davidgcd.backlog.ui.backlog.BacklogViewModelFactory
 import com.davidgcd.backlog.ui.discover.DiscoverScreen
+import com.davidgcd.backlog.ui.search.CrossSearch
+import com.davidgcd.backlog.ui.search.CrossSearchViewModel
+import com.davidgcd.backlog.ui.search.CrossSearchViewModelFactory
 import com.davidgcd.backlog.ui.discover.DiscoverViewModel
 import com.davidgcd.backlog.ui.discover.DiscoverViewModelFactory
 import com.davidgcd.backlog.ui.gamedetail.GameDetailScreen
@@ -194,6 +197,14 @@ fun BacklogNavHost(
     }
     // Discover serves both worlds; which one is showing survives rotation and tab switches.
     var discoverMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
+    // One shared search for the other categories: typing on any tab also finds games, films & séries and books.
+    val crossSearchViewModel: CrossSearchViewModel = viewModel(factory = CrossSearchViewModelFactory(repository, movieRepository, bookRepository))
+    val crossSearch = CrossSearch(
+        viewModel = crossSearchViewModel,
+        onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
+        onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
+        onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
+    )
     val tmdbAccount by libraryAccountStore.observe(LibraryProviders.TMDB).collectAsState(initial = null)
     val navEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
@@ -259,6 +270,7 @@ fun BacklogNavHost(
                 viewModel = viewModel,
                 onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
                 onOpenRanking = { navController.navigate(Routes.RANKING) },
+                crossSearch = crossSearch,
             )
         }
         composable(Routes.RANKING) {
@@ -302,6 +314,7 @@ fun BacklogNavHost(
                 onOpenTmdbImport = {
                     navController.navigate(if (tmdbAccount != null) Routes.TMDB_IMPORT else Routes.TMDB_LOGIN)
                 },
+                crossSearch = crossSearch,
             )
         }
         composable(
@@ -343,6 +356,7 @@ fun BacklogNavHost(
             BooksScreen(
                 viewModel = viewModel,
                 onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
+                crossSearch = crossSearch,
             )
         }
         composable(

@@ -92,6 +92,11 @@ import com.davidgcd.backlog.util.BacklogShareText
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.util.FrenchLabels
+import com.davidgcd.backlog.ui.components.MediaType
+import com.davidgcd.backlog.ui.search.CrossSearch
+import com.davidgcd.backlog.ui.search.CrossSearchState
+import com.davidgcd.backlog.ui.search.crossSearchItems
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GameListItem
@@ -109,6 +114,7 @@ fun BacklogScreen(
     viewModel: BacklogViewModel,
     onGameClick: (Long) -> Unit,
     onOpenRanking: () -> Unit,
+    crossSearch: CrossSearch? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -234,10 +240,22 @@ fun BacklogScreen(
     val isSearching by viewModel.isSearching.collectAsState()
     val searchError by viewModel.searchError.collectAsState()
 
+    val crossState by (crossSearch?.viewModel?.state ?: remember { MutableStateFlow(CrossSearchState()) }).collectAsState()
+    fun runSearch(text: String) {
+        viewModel.search(text)
+        crossSearch?.viewModel?.search(text, MediaType.GAMES)
+    }
+    val onCrossAdded: (String) -> Unit = { name ->
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, name), duration = SnackbarDuration.Short)
+        }
+    }
+
     fun closeSearch() {
         showSearch = false
         query = ""
-        viewModel.search("")
+        runSearch("")
     }
 
     // System back leaves search mode first instead of exiting the app.
@@ -311,7 +329,7 @@ fun BacklogScreen(
                     value = query,
                     onValueChange = {
                         query = it
-                        viewModel.search(it)
+                        runSearch(it)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -327,12 +345,12 @@ fun BacklogScreen(
                         cursorColor = Glass.Cyan,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { viewModel.search(query) }),
+                    keyboardActions = KeyboardActions(onSearch = { runSearch(query) }),
                     placeholder = { Text(stringResource(R.string.search_placeholder)) },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = ""; viewModel.search("") }) {
+                            IconButton(onClick = { query = ""; runSearch("") }) {
                                 Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_clear))
                             }
                         }
@@ -361,7 +379,7 @@ fun BacklogScreen(
                         modifier = Modifier.padding(16.dp),
                     )
                 }
-                if (!isSearching && searchError == null && query.isNotBlank() && searchResults.isEmpty()) {
+                if (!isSearching && searchError == null && query.isNotBlank() && crossState.isEmpty && searchResults.isEmpty()) {
                     Text(
                         text = stringResource(R.string.search_no_results),
                         style = MaterialTheme.typography.bodyLarge,
@@ -384,6 +402,7 @@ fun BacklogScreen(
                         }
                     },
                     onClick = { onGameClick(it.id) },
+                    extra = { if (crossSearch != null) crossSearchItems(crossState, MediaType.GAMES, crossSearch, onCrossAdded) },
                 )
             } else if (isBacklogEmpty) {
                 EmptyState(
@@ -736,6 +755,7 @@ private fun SearchResultsList(
     backlogIds: Set<Long>,
     onAdd: (Game) -> Unit,
     onClick: (Game) -> Unit,
+    extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
 ) {
     androidx.compose.foundation.lazy.LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
@@ -768,5 +788,6 @@ private fun SearchResultsList(
                 },
             )
         }
+        extra()
     }
 }

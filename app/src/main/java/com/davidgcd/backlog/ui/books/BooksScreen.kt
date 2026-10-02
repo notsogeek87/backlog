@@ -102,6 +102,11 @@ import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
+import com.davidgcd.backlog.ui.components.MediaType
+import com.davidgcd.backlog.ui.search.CrossSearch
+import com.davidgcd.backlog.ui.search.CrossSearchState
+import com.davidgcd.backlog.ui.search.crossSearchItems
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.davidgcd.backlog.util.BookShareText
 import kotlinx.coroutines.launch
 
@@ -110,6 +115,7 @@ import kotlinx.coroutines.launch
 fun BooksScreen(
     viewModel: BooksViewModel,
     onBookClick: (String) -> Unit,
+    crossSearch: CrossSearch? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -133,10 +139,22 @@ fun BooksScreen(
     val fromFallback by viewModel.fromFallback.collectAsState()
     val searchError by viewModel.searchError.collectAsState()
 
+    val crossState by (crossSearch?.viewModel?.state ?: remember { MutableStateFlow(CrossSearchState()) }).collectAsState()
+    fun runSearch(text: String) {
+        viewModel.search(text)
+        crossSearch?.viewModel?.search(text, MediaType.BOOKS)
+    }
+    val onCrossAdded: (String) -> Unit = { name ->
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, name), duration = SnackbarDuration.Short)
+        }
+    }
+
     fun closeSearch() {
         showSearch = false
         query = ""
-        viewModel.search("")
+        runSearch("")
     }
 
     BackHandler(enabled = showSearch) { closeSearch() }
@@ -253,7 +271,7 @@ fun BooksScreen(
                     value = query,
                     onValueChange = {
                         query = it
-                        viewModel.search(it)
+                        runSearch(it)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -269,12 +287,12 @@ fun BooksScreen(
                         cursorColor = Glass.Cyan,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { viewModel.search(query) }),
+                    keyboardActions = KeyboardActions(onSearch = { runSearch(query) }),
                     placeholder = { Text(stringResource(R.string.books_search_placeholder)) },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = ""; viewModel.search("") }) {
+                            IconButton(onClick = { query = ""; runSearch("") }) {
                                 Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_clear))
                             }
                         }
@@ -299,7 +317,7 @@ fun BooksScreen(
                         modifier = Modifier.padding(16.dp),
                     )
                 }
-                if (!isSearching && searchError == null && query.isNotBlank() && results.isEmpty()) {
+                if (!isSearching && searchError == null && query.isNotBlank() && crossState.isEmpty && results.isEmpty()) {
                     NoResults()
                 }
                 SearchResults(
@@ -330,6 +348,7 @@ fun BooksScreen(
                         }
                     },
                     onClick = { hit -> onBookClick(hit.savedKey ?: hit.book.key) },
+                    extra = { if (crossSearch != null) crossSearchItems(crossState, MediaType.BOOKS, crossSearch, onCrossAdded) },
                 )
             } else if (isEmpty) {
                 EmptyState(
@@ -496,6 +515,7 @@ private fun SearchResults(
     onLoadMore: () -> Unit,
     onAdd: (BookHit) -> Unit,
     onClick: (BookHit) -> Unit,
+    extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
 ) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
@@ -521,6 +541,7 @@ private fun SearchResults(
                 }
             }
         }
+        extra()
     }
 }
 

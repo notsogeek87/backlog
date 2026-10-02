@@ -95,6 +95,11 @@ import com.davidgcd.backlog.ui.components.labelRes
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.TmdbImage
+import com.davidgcd.backlog.ui.components.MediaType
+import com.davidgcd.backlog.ui.search.CrossSearch
+import com.davidgcd.backlog.ui.search.CrossSearchState
+import com.davidgcd.backlog.ui.search.crossSearchItems
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.davidgcd.backlog.ui.components.ShareScopeDialog
 import com.davidgcd.backlog.util.MovieShareText
 import com.davidgcd.backlog.util.ReleaseDateFormatting
@@ -106,6 +111,7 @@ fun MoviesScreen(
     viewModel: MoviesViewModel,
     onMovieClick: (String) -> Unit,
     onOpenTmdbImport: () -> Unit,
+    crossSearch: CrossSearch? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -129,10 +135,22 @@ fun MoviesScreen(
     val isSearching by viewModel.isSearching.collectAsState()
     val searchError by viewModel.searchError.collectAsState()
 
+    val crossState by (crossSearch?.viewModel?.state ?: remember { MutableStateFlow(CrossSearchState()) }).collectAsState()
+    fun runSearch(text: String) {
+        viewModel.search(text)
+        crossSearch?.viewModel?.search(text, MediaType.MOVIES)
+    }
+    val onCrossAdded: (String) -> Unit = { name ->
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, name), duration = SnackbarDuration.Short)
+        }
+    }
+
     fun closeSearch() {
         showSearch = false
         query = ""
-        viewModel.search("")
+        runSearch("")
     }
 
     BackHandler(enabled = showSearch) { closeSearch() }
@@ -249,7 +267,7 @@ fun MoviesScreen(
                     value = query,
                     onValueChange = {
                         query = it
-                        viewModel.search(it)
+                        runSearch(it)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -265,12 +283,12 @@ fun MoviesScreen(
                         cursorColor = Glass.Cyan,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { viewModel.search(query) }),
+                    keyboardActions = KeyboardActions(onSearch = { runSearch(query) }),
                     placeholder = { Text(stringResource(R.string.movies_search_placeholder)) },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = ""; viewModel.search("") }) {
+                            IconButton(onClick = { query = ""; runSearch("") }) {
                                 Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_clear))
                             }
                         }
@@ -294,7 +312,7 @@ fun MoviesScreen(
                         modifier = Modifier.padding(16.dp),
                     )
                 }
-                if (!isSearching && searchError == null && query.isNotBlank() && searchResults.isEmpty()) {
+                if (!isSearching && searchError == null && query.isNotBlank() && crossState.isEmpty && searchResults.isEmpty()) {
                     Text(
                         text = stringResource(R.string.search_no_results),
                         style = MaterialTheme.typography.bodyLarge,
@@ -317,6 +335,7 @@ fun MoviesScreen(
                         }
                     },
                     onClick = { onMovieClick(it.id) },
+                    extra = { if (crossSearch != null) crossSearchItems(crossState, MediaType.MOVIES, crossSearch, onCrossAdded) },
                 )
             } else if (isEmpty) {
                 EmptyState(
@@ -640,6 +659,7 @@ private fun SearchResults(
     savedIds: Set<String>,
     onAdd: (MediaTitle) -> Unit,
     onClick: (MediaTitle) -> Unit,
+    extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
 ) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
@@ -648,6 +668,7 @@ private fun SearchResults(
         items(results, key = { it.id }) { title ->
             MediaTitleListItem(title = title, saved = title.id in savedIds, onAdd = { onAdd(title) }, onClick = { onClick(title) })
         }
+        extra()
     }
 }
 
