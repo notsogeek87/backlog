@@ -348,7 +348,7 @@ fun BooksScreen(
                         }
                     },
                     onClick = { hit -> onBookClick(hit.savedKey ?: hit.book.key) },
-                    extra = { if (crossSearch != null) crossSearchItems(crossState, MediaType.BOOKS, crossSearch, onCrossAdded) },
+                    extra = { if (crossSearch != null && !isSearching) crossSearchItems(crossState, MediaType.BOOKS, crossSearch, onCrossAdded) },
                 )
             } else if (isEmpty) {
                 EmptyState(
@@ -517,9 +517,8 @@ private fun SearchResults(
     onClick: (BookHit) -> Unit,
     extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
 ) {
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    // New hits can land above the row the list is anchored to (the other categories often answer first): go back to the top.
-    androidx.compose.runtime.LaunchedEffect(results.firstOrNull()?.book?.key) { listState.scrollToItem(0) }
+    // A fresh list state per first hit: new rows can never leave the list anchored below the tab's own results.
+    val listState = androidx.compose.runtime.remember(results.firstOrNull()?.book?.key) { androidx.compose.foundation.lazy.LazyListState() }
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),

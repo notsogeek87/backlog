@@ -335,7 +335,7 @@ fun MoviesScreen(
                         }
                     },
                     onClick = { onMovieClick(it.id) },
-                    extra = { if (crossSearch != null) crossSearchItems(crossState, MediaType.MOVIES, crossSearch, onCrossAdded) },
+                    extra = { if (crossSearch != null && !isSearching) crossSearchItems(crossState, MediaType.MOVIES, crossSearch, onCrossAdded) },
                 )
             } else if (isEmpty) {
                 EmptyState(
@@ -661,9 +661,8 @@ private fun SearchResults(
     onClick: (MediaTitle) -> Unit,
     extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
 ) {
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    // New hits can land above the row the list is anchored to (the other categories often answer first): go back to the top.
-    androidx.compose.runtime.LaunchedEffect(results.firstOrNull()?.id) { listState.scrollToItem(0) }
+    // A fresh list state per first hit: new rows can never leave the list anchored below the tab's own results.
+    val listState = androidx.compose.runtime.remember(results.firstOrNull()?.id) { androidx.compose.foundation.lazy.LazyListState() }
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
