@@ -8,7 +8,7 @@
 |---------|---------|
 | `architecture/` | ADR datés (`AAAA-MM-JJ-sujet.md`), architecture de l'app, design system, audits |
 | `api/` | Fournisseurs de données et API (IGDB, Steam, TMDB, livres, Metacritic) et serveur de partage |
-| `guides/` | Procédures : imports, sauvegarde, localisation, tests |
+| `guides/` | Procédures : imports, sauvegarde, localisation, tests, nouveautés |
 | `legacy/` | Documentation obsolète conservée (vide pour l'instant) |
 | `brand/` | Logos et visuels (pas de texte) |
 
@@ -31,6 +31,7 @@
 - [Sauvegarde et restauration](guides/backup-restore.md)
 - [Localisation](guides/localisation.md)
 - [Tests](guides/testing.md)
+- [Fenêtre « Nouveautés »](guides/whats-new.md)
 
 ## Écrire de la doc
 Chaque page commence par un titre et une ligne **Pour qui / pourquoi**, avec des exemples de code quand c'est utile. Un choix structurant donne un ADR dans `architecture/`, une route ou fonction une page dans `api/`, une procédure une page dans `guides/`. Toute nouvelle page est ajoutée au sommaire ci-dessus.

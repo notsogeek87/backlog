@@ -26,6 +26,8 @@ import com.davidgcd.backlog.ui.theme.BacklogTheme
 import com.davidgcd.backlog.ui.update.AppUpdateViewModel
 import com.davidgcd.backlog.ui.update.AppUpdateViewModelFactory
 import com.davidgcd.backlog.ui.update.UpdatePrompt
+import com.davidgcd.backlog.ui.whatsnew.WhatsNewPrompt
+import com.davidgcd.backlog.ui.whatsnew.WhatsNewStore
 import com.davidgcd.backlog.util.DetailLink
 import java.util.Locale
 
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
         val app = application as BacklogApplication
         val repository = app.repository
         val notificationPreferences = NotificationPreferences(applicationContext)
+        val whatsNewStore = WhatsNewStore(applicationContext)
 
         setContent {
             val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -87,6 +90,7 @@ class MainActivity : ComponentActivity() {
             BacklogTheme {
                 // Vérifie à chaque ouverture (ON_START) et propose la mise à jour avec les étapes expliquées.
                 if (updateViewModel.updatesEnabled) UpdatePrompt(updateViewModel)
+                WhatsNewPrompt(whatsNewStore)
                 AppBackground {
                     BacklogNavHost(
                         repository = repository,

@@ -441,6 +441,8 @@
     </plurals>
     <string name="tmdb_import_rated">Notes lues : %1$d</string>
     <string name="tmdb_import_watchlist">Watchlist lue : %1$d</string>
+    <string name="whats_new_title">Nouveautés</string>
+    <string name="whats_new_close">Compris</string>
     <string name="trailer_title">Bande-annonce</string>
     <string name="trailer_watch_fr">Regarder la bande-annonce (VF)</string>
     <string name="trailer_watch_vo">Regarder la bande-annonce (VO)</string>
