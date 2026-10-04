@@ -21,6 +21,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # versionCode de app/build.gradle.kts (strictement croissant à chaque build).
+      BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,21 +69,20 @@ jobs:
       - name: Run unit tests
         run: gradle testDebugUnitTest --no-daemon
 
-      # versionCode/versionName ne sont plus figés dans app/build.gradle.kts :
-      # ce run de CI leur donne une valeur unique et strictement croissante
-      # (run_number), nécessaire pour que les vraies releases (voir plus bas)
-      # portent chacune une version distincte au lieu de rester bloquées en "0.1.0".
+      # versionCode = run_number ; versionName = <appVersionBase>.<run_number> (appVersionBase dans
+      # gradle.properties) ; tag de release v<versionName>. Chaque build a donc une version unique et
+      # strictement croissante, ce que les mises à jour automatiques (lielugit-updater) exigent : le tag doit
+      # être lu comme une version SUPÉRIEURE à la versionName installée.
       - name: Déterminer la version
         id: version
         run: |
+          BASE=$(grep '^appVersionBase=' gradle.properties | cut -d= -f2)
           echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
-          echo "name=0.1.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "name=$BASE.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Assemble debug APK
         run: |
-          gradle assembleDebug --no-daemon \
-            -PbacklogVersionCode=${{ steps.version.outputs.code }} \
-            -PbacklogVersionName=${{ steps.version.outputs.name }}
+          gradle assembleDebug --no-daemon
 
       # Gradle nomme toujours sa sortie "app-debug.apk" (nom fixe lié au
       # buildType), quelle que soit la version : on la renomme pour que le
@@ -115,10 +117,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ steps.version.outputs.name }}"
+          cat > release-notes.md <<'EOF'
+          ## Installer Backlog
+
+          **Déjà installé ?** Ouvre l'app : elle vérifie à chaque ouverture si une version plus récente existe et te propose de la mettre à jour (Installer → autoriser l'installation d'apps inconnues si Android le demande → confirmer « Mettre à jour »). Tu peux aussi toucher « Rechercher une mise à jour » dans les Réglages. Tes données sont conservées.
+
+          **Première installation (manuelle) :**
+          1. Télécharge l'APK `${{ steps.apk.outputs.name }}` ci-dessous (section « Assets »).
+          2. Ouvre-le. Si Android bloque l'installation, autorise la source (navigateur ou gestionnaire de fichiers) à installer des applications inconnues, puis reviens en arrière.
+          3. Touche « Installer ». Les mises à jour suivantes seront ensuite proposées dans l'app.
+
+          Même clé de signature et même identifiant d'application pour tous les APK : la mise à jour se fait par-dessus l'ancienne version. Si Android refuse (« app non installée »), désinstalle l'ancienne version une fois, puis réinstalle.
+
+          ---
+          Run #${{ github.run_number }} (${{ github.sha }}). Signé avec la clé debug committée (pas de clé de production configurée).
+          EOF
           gh release create "$TAG" \
             "${{ steps.apk.outputs.path }}" \
             --title "Backlog $TAG" \
-            --notes "Run #${{ github.run_number }} (${{ github.sha }}). Signé avec la clé debug (pas de clé de production configurée)." \
+            --notes-file release-notes.md \
             --target "${{ github.sha }}"
 
       # Les artifacts d'Actions sont hébergés sur Azure Blob Storage, souvent
@@ -146,6 +163,6 @@ jobs:
           gh release create "$TAG" \
             "${{ steps.apk.outputs.path }}" \
             --title "Backlog — APK debug (${{ steps.reltag.outputs.branch }})" \
-            --notes "Build automatique non signé, run #${{ github.run_number }} (${{ github.sha }})." \
+            --notes "Build de test de la branche, jamais proposé par les mises à jour automatiques (pré-release). Run #${{ github.run_number }} (${{ github.sha }})." \
             --prerelease \
             --target "${{ github.sha }}"

@@ -5,6 +5,11 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// versionCode = numéro de build CI (strictement croissant), versionName = <appVersionBase>.<numéro> :
+// le tag de release v<versionName> est ainsi toujours supérieur à la version installée (mises à jour via lielugit-updater).
+val buildNumber = (System.getenv("BUILD_NUMBER") ?: providers.gradleProperty("buildNumber").orNull)?.toIntOrNull() ?: 1
+val appVersionBase = providers.gradleProperty("appVersionBase").get()
+
 // Clé d'upload Play Store fournie par la CI depuis les secrets du dépôt.
 // Absente en local : Gradle retombe sur la signature debug (même logique que
 // trusti/swipernews, voir play-store-bundle.yml).
@@ -19,19 +24,10 @@ android {
         applicationId = "com.davidgcd.backlog"
         minSdk = 26
         targetSdk = 35
-        // Surchargeable en CI via -PbacklogVersionCode=N -PbacklogVersionName=X.Y.N
-        // (android.yml) pour que chaque release GitHub porte une version unique et
-        // croissante, ou -PversionCode/-PversionName (play-store-bundle.yml).
-        versionCode = when {
-            project.hasProperty("versionCode") -> (project.property("versionCode") as String).toInt()
-            project.hasProperty("backlogVersionCode") -> (project.property("backlogVersionCode") as String).toInt()
-            else -> 1
-        }
-        versionName = when {
-            project.hasProperty("versionName") -> project.property("versionName") as String
-            project.hasProperty("backlogVersionName") -> project.property("backlogVersionName") as String
-            else -> "0.1.0"
-        }
+        // CI (android-build.yml) : BUILD_NUMBER = github.run_number. play-store-bundle.yml impose sa propre
+        // version (-PversionCode/-PversionName, versionCode décalé de 1000 : canal Play distinct).
+        versionCode = (project.findProperty("versionCode") as String?)?.toInt() ?: buildNumber
+        versionName = (project.findProperty("versionName") as String?) ?: "$appVersionBase.$buildNumber"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -64,8 +60,13 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            // APK distribué par GitHub Releases : mises à jour automatiques actives.
+            buildConfigField("boolean", "SELF_UPDATE", "true")
         }
         release {
+            // Build Play Store : Google Play gère les mises à jour (et REQUEST_INSTALL_PACKAGES y est retiré,
+            // voir src/release/AndroidManifest.xml).
+            buildConfigField("boolean", "SELF_UPDATE", "false")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasReleaseKeystore) {
@@ -134,6 +135,10 @@ dependencies {
 
     // DataStore (small local prefs, equivalent to UserDefaults)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Mises à jour automatiques depuis les GitHub Releases (dépôt Maven vendoré : libs/lielugit-maven)
+    implementation("com.lielu:lielugit-updater:1.0.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 
     // Background release-day check (equivalent to the iOS nightly BGTask)
     implementation("androidx.work:work-runtime-ktx:2.9.1")

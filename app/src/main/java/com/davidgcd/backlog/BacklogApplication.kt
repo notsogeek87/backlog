@@ -38,6 +38,8 @@ import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.notifications.ReleaseReminderScheduler
+import com.lielu.githubupdater.UpdateConfig
+import com.lielu.githubupdater.UpdateManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
@@ -94,6 +96,18 @@ class BacklogApplication : Application() {
 
     lateinit var bookRepository: BookRepository
         private set
+
+    /** Mises à jour via les GitHub Releases de CE dépôt ; partagé entre la fenêtre de lancement et les Réglages. */
+    val updateManager: UpdateManager by lazy {
+        UpdateManager(this, UpdateConfig(githubOwner = "notsogeek87", githubRepository = "backlog"))
+    }
+
+    /**
+     * Désactivé sur le build Play Store (BuildConfig.SELF_UPDATE) et sur tout applicationId à suffixe
+     * (ex. `.staging`) : un APK d'un autre applicationId ne peut pas mettre à jour la release de production.
+     */
+    val updatesEnabled: Boolean
+        get() = BuildConfig.SELF_UPDATE && packageName == "com.davidgcd.backlog"
 
     override fun onCreate() {
         super.onCreate()

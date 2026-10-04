@@ -72,6 +72,8 @@ fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     /** "My platforms" block, supplied by the nav host so Settings doesn't know about providers. */
     platformsContent: @Composable () -> Unit = {},
+    /** "Mises à jour" block (empty when self-update is disabled), supplied by the nav host. */
+    updatesContent: @Composable () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val shareOwnerName by viewModel.shareOwnerName.collectAsState()
@@ -252,6 +254,8 @@ fun SettingsScreen(
                     TextButton(onClick = viewModel::cancelImport) { Text(stringResource(R.string.action_cancel)) }
                 }
             }
+
+            updatesContent()
 
             SectionTitle(stringResource(R.string.settings_section_debug), topPadding = 8.dp)
             GlassButton(

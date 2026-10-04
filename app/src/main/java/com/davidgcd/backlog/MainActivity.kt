@@ -17,11 +17,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.davidgcd.backlog.notifications.NotificationIds
 import com.davidgcd.backlog.notifications.NotificationPreferences
 import com.davidgcd.backlog.ui.components.AppBackground
 import com.davidgcd.backlog.ui.nav.BacklogNavHost
 import com.davidgcd.backlog.ui.theme.BacklogTheme
+import com.davidgcd.backlog.ui.update.AppUpdateViewModel
+import com.davidgcd.backlog.ui.update.AppUpdateViewModelFactory
+import com.davidgcd.backlog.ui.update.UpdatePrompt
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -68,7 +72,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val updateViewModel: AppUpdateViewModel = viewModel(
+                factory = AppUpdateViewModelFactory(app.updateManager, app.updatesEnabled),
+            )
+
             BacklogTheme {
+                // Vérifie à chaque ouverture (ON_START) et propose la mise à jour avec les étapes expliquées.
+                if (updateViewModel.updatesEnabled) UpdatePrompt(updateViewModel)
                 AppBackground {
                     BacklogNavHost(
                         repository = repository,
@@ -86,6 +96,7 @@ class MainActivity : ComponentActivity() {
                         tmdbSyncService = app.tmdbSyncService,
                         bookRepository = app.bookRepository,
                         wishlistSyncService = app.wishlistSyncService,
+                        updateViewModel = updateViewModel,
                         openGameId = pendingGameId,
                         onOpenGameHandled = { pendingGameId = null },
                     )

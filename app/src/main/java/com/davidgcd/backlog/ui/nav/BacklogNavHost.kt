@@ -117,6 +117,8 @@ import com.davidgcd.backlog.ui.platforms.SteamLoginViewModel
 import com.davidgcd.backlog.ui.platforms.SteamLoginViewModelFactory
 import com.davidgcd.backlog.data.csv.AutoExportPreferences
 import com.davidgcd.backlog.ui.settings.SettingsScreen
+import com.davidgcd.backlog.ui.update.AppUpdateViewModel
+import com.davidgcd.backlog.ui.update.UpdateSettingsSection
 import com.davidgcd.backlog.ui.settings.SettingsViewModel
 import com.davidgcd.backlog.ui.ranking.RankingScreen
 import com.davidgcd.backlog.ui.ranking.RankingViewModel
@@ -181,6 +183,7 @@ fun BacklogNavHost(
     movieRepository: MovieRepository,
     tmdbSyncService: TmdbSyncService,
     bookRepository: BookRepository,
+    updateViewModel: AppUpdateViewModel,
     openGameId: Long? = null,
     onOpenGameHandled: () -> Unit = {},
 ) {
@@ -434,6 +437,7 @@ fun BacklogNavHost(
             )
             SettingsScreen(
                 viewModel = viewModel,
+                updatesContent = { UpdateSettingsSection(updateViewModel) },
                 platformsContent = {
                     PlatformsSection(
                         viewModel = platformsViewModel,

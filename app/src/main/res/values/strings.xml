@@ -445,4 +445,34 @@
     <string name="where_to_watch_none">Aucune offre trouvée en France pour le moment.</string>
     <string name="where_to_watch_all_offers">Voir toutes les offres</string>
     <string name="where_to_watch_credit">Disponibilités en France, données JustWatch via TMDB.</string>
+
+    <!-- Mises à jour automatiques (lielugit-updater) -->
+    <string name="update_available_title">Mise à jour disponible</string>
+    <string name="update_available_intro">La version %1$s de Backlog est prête.</string>
+    <string name="update_step_install">Touche « Installer » : la mise à jour se télécharge.</string>
+    <string name="update_step_allow">Si Android demande d\'autoriser Backlog à installer des applications, active l\'option, puis reviens en arrière.</string>
+    <string name="update_step_confirm">Confirme avec « Mettre à jour » quand Android le propose.</string>
+    <string name="update_install">Installer</string>
+    <string name="update_later">Plus tard</string>
+    <string name="update_downloading_title">Téléchargement…</string>
+    <string name="update_downloaded_title">Mise à jour téléchargée</string>
+    <string name="update_downloaded_ready_intro">Il ne reste qu\'à l\'installer.</string>
+    <string name="update_downloaded_ready_step">Touche « Installer », puis confirmez avec « Mettre à jour ».</string>
+    <string name="update_downloaded_permission_intro">Android doit d\'abord autoriser Backlog à installer des applications.</string>
+    <string name="update_downloaded_permission_step1">Touche « Installer » : les réglages Android s\'ouvrent.</string>
+    <string name="update_downloaded_permission_step2">Active « Autoriser depuis cette source », puis reviens en arrière.</string>
+    <string name="update_downloaded_permission_step3">Touche de nouveau « Installer » et confirmez.</string>
+    <string name="update_data_kept">Tes données sont conservées.</string>
+    <string name="update_error_title">Mise à jour impossible</string>
+    <string name="update_error_network">Réseau indisponible. Réessaie plus tard.</string>
+    <string name="update_error_rate_limit">Trop de requêtes vers GitHub. Réessaie plus tard.</string>
+    <string name="update_error_no_release">Aucune version publiée trouvée.</string>
+    <string name="update_error_no_apk">Aucun APK compatible dans la dernière version.</string>
+    <string name="update_error_not_allowed">Autorise l\'installation d\'applications inconnues pour Backlog.</string>
+    <string name="update_error_generic">La mise à jour a échoué : %1$s</string>
+    <string name="settings_section_updates">Mises à jour</string>
+    <string name="settings_check_update">Rechercher une mise à jour</string>
+    <string name="settings_update_version">Version installée : %1$s</string>
+    <string name="settings_update_checking">Recherche en cours…</string>
+    <string name="settings_update_up_to_date">Backlog est à jour (version %1$s).</string>
 </resources>

@@ -11,6 +11,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // lielugit-updater : dépôt Maven vendoré (issu du zip de la release), versionné dans git — aucun jeton requis.
+        maven {
+            url = uri("$rootDir/libs/lielugit-maven")
+            content { includeGroup("com.lielu") }
+        }
     }
 }
 
