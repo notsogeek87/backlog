@@ -145,11 +145,12 @@ fun BookDetailScreen(
             sharing = true
             try {
                 val link = viewModel.publishBookLink(book, saved)
+                val appLink = context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Book(saved?.bookKey ?: book.key))
                 val text = when {
-                    link != null -> "${book.title}\n$link"
-                    saved != null -> BookShareText.line(saved)
-                    else -> listOfNotNull(book.title, book.authorLine.ifEmpty { null }, book.catalogUrl).joinToString(" — ")
-                } + "\n" + DetailLink.url(DetailLink.Book(saved?.bookKey ?: book.key))
+                    link != null -> "${book.title}\n\n$appLink\n\n${context.getString(R.string.share_see_book)}\n$link"
+                    saved != null -> "${BookShareText.line(saved)}\n\n$appLink"
+                    else -> listOfNotNull(book.title, book.authorLine.ifEmpty { null }, book.catalogUrl).joinToString(" — ") + "\n\n$appLink"
+                }
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, text)

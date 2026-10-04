@@ -93,7 +93,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val credits by viewModel.credits.collectAsState()
 
     val context = LocalContext.current
-    /** Shares the title: an app link that opens this very page for the contact, plus its themoviedb.org page. */
+    /** Shares the title: the app link that opens this very page for the contact first, then its themoviedb.org page. */
     val shareTitle: () -> Unit = share@{
         val (name, key) = when (val s = state) {
             is MovieDetailState.Saved -> s.movie.title to s.movie.titleKey
@@ -102,7 +102,11 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
         }
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "$name\n${TitleKey.url(key)}\n${DetailLink.url(DetailLink.Movie(key))}")
+            putExtra(Intent.EXTRA_TEXT, listOf(
+                name,
+                "\n" + context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Movie(key)),
+                "\n" + context.getString(R.string.share_see_movie) + "\n" + TitleKey.url(key),
+            ).joinToString("\n"))
         }
         context.startActivity(Intent.createChooser(send, context.getString(R.string.share_movie_chooser)))
     }

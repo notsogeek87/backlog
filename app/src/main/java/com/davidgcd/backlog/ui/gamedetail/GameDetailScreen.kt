@@ -89,7 +89,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var sharing by remember { mutableStateOf(false) }
-    /** Shares the game: an app link that opens this very page for the contact, plus the igdb.com page when IGDB has one. */
+    /** Shares the game: the app link that opens this very page for the contact first, then the igdb.com page when IGDB has one. */
     val shareGame: () -> Unit = share@{
         val (name, igdbId) = when (val s = state) {
             is GameDetailState.InBacklog -> s.entity.name to s.entity.igdbId
@@ -102,7 +102,11 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                 val link = viewModel.gameLink()
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, listOfNotNull(name, link, DetailLink.url(DetailLink.Game(igdbId))).joinToString("\n"))
+                    putExtra(Intent.EXTRA_TEXT, listOfNotNull(
+                        name,
+                        "\n" + context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Game(igdbId)),
+                        link?.let { "\n" + context.getString(R.string.share_see_game) + "\n" + it },
+                    ).joinToString("\n"))
                 }
                 context.startActivity(Intent.createChooser(send, context.getString(R.string.share_game_chooser)))
             } finally {

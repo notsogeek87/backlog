@@ -8,6 +8,10 @@
     <string name="action_discover">Découvrir</string>
     <string name="action_settings">Réglages</string>
     <string name="action_share_game">Partager ce jeu</string>
+    <string name="share_open_in_app">Ouvre cette fiche dans l\'app Backlog pour l\'ajouter à ta liste :</string>
+    <string name="share_see_game">Voir la fiche du jeu sur IGDB :</string>
+    <string name="share_see_movie">Voir la fiche sur TMDB :</string>
+    <string name="share_see_book">Voir la fiche du livre :</string>
     <string name="share_game_chooser">Partager ce jeu avec…</string>
     <string name="action_share_movie">Partager ce titre</string>
     <string name="share_movie_chooser">Partager ce titre avec…</string>
