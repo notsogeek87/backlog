@@ -15,7 +15,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import com.davidgcd.backlog.ui.components.glassRailItemColors
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.foundation.layout.fillMaxSize
@@ -214,8 +214,6 @@ fun BacklogNavHost(
     // The bar only shows on the three top-level surfaces; game detail is a pushed screen with a back arrow.
     val showBottomBar = topLevelDestinations.any { top -> currentDestination?.hierarchy?.any { it.route == top.route } == true }
 
-    // Wide windows (unfolded foldable, tablet) get a side rail; phones keep the bottom bar.
-    val useRail = LocalConfiguration.current.screenWidthDp >= RAIL_MIN_WIDTH_DP
     val navigateTo: (String) -> Unit = { route ->
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -224,6 +222,10 @@ fun BacklogNavHost(
         }
     }
 
+    // Wide windows (unfolded foldable, tablet, landscape) get a side rail; phones keep the bottom bar.
+    // Measured from the real window width: LocalConfiguration goes stale since the activity handles its own configChanges.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    val useRail = maxWidth >= RAIL_MIN_WIDTH_DP.dp
     Row(modifier = Modifier.fillMaxSize()) {
     if (showBottomBar && useRail) {
         NavigationRail(containerColor = GlassNavBarColor) {
@@ -476,6 +478,7 @@ fun BacklogNavHost(
             )
             LibraryImportScreen(viewModel = viewModel, providerId = provider, onBack = { navController.popBackStack() })
         }
+    }
     }
     }
     }
