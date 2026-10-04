@@ -11,6 +11,7 @@ import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.util.DebugLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -63,7 +64,21 @@ class GameDetailViewModel(
     private val _frenchSummary = MutableStateFlow<String?>(null)
     val frenchSummary: StateFlow<String?> = _frenchSummary
 
+    /** Null while loading or when there is none; the card is then hidden. */
+    private val _trailer = MutableStateFlow<Trailer?>(null)
+    val trailer: StateFlow<Trailer?> = _trailer
+
     init {
+        viewModelScope.launch {
+            _trailer.value = try {
+                repository.trailer(gameId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                DebugLog.log("GameDetailViewModel: trailer($gameId) failed: ${t::class.simpleName}: ${t.message}")
+                null
+            }
+        }
         repository.observeGame(gameId)
             .onEach { entity ->
                 if (entity != null) {

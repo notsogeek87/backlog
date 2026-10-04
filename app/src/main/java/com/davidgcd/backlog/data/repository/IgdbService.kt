@@ -4,6 +4,8 @@ import com.davidgcd.backlog.data.library.GameCatalog
 import com.davidgcd.backlog.data.remote.IgdbApi
 import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.GameVideo
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.util.RateLimiter
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -137,6 +139,17 @@ class IgdbService(private val api: IgdbApi) : GameCatalog {
             api.games(apicalypse.toRequestBody()).forEach { game -> game.url?.let { urls[game.id] = it } }
         }
         return urls
+    }
+
+    /** The best YouTube trailer of a game (French when one is titled as such); null when IGDB has none. */
+    suspend fun getTrailer(gameId: Long): Trailer? {
+        RateLimiter.igdb.acquire()
+        val apicalypse = """
+            fields video_id,name;
+            where game = $gameId;
+            limit 20;
+        """.trimIndent()
+        return GameVideo.pickTrailer(api.gameVideos(apicalypse.toRequestBody()))
     }
 
     override suspend fun resolveExternalIds(externalSourceId: Int, externalIds: List<String>): Map<String, Long> {

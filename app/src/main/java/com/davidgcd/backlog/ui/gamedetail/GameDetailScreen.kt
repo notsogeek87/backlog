@@ -59,6 +59,8 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.Trailer
+import com.davidgcd.backlog.ui.components.TrailerCard
 import com.davidgcd.backlog.ui.components.GlassPill
 import com.davidgcd.backlog.ui.components.GlassBadgeButton
 import com.davidgcd.backlog.ui.components.label
@@ -84,6 +86,7 @@ import com.davidgcd.backlog.util.ReleaseDateFormatting
 fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val ratings by viewModel.ratings.collectAsState()
+    val trailer by viewModel.trailer.collectAsState()
     val frenchSummary by viewModel.frenchSummary.collectAsState()
 
     val context = LocalContext.current
@@ -173,6 +176,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     is GameDetailState.InBacklog -> GameDetailContent(
                         display = current.entity.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
+                        trailer = trailer,
                         inBacklog = true,
                         isArchived = current.entity.isArchived,
                         status = current.entity.gameStatus,
@@ -184,6 +188,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     is GameDetailState.Remote -> GameDetailContent(
                         display = current.game.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
+                        trailer = trailer,
                         inBacklog = false,
                         isArchived = false,
                         status = GameStatus.BACKLOG,
@@ -212,6 +217,7 @@ private fun Centered(content: @Composable () -> Unit) {
 private fun GameDetailContent(
     display: GameDisplay,
     ratings: RatingsState,
+    trailer: Trailer?,
     inBacklog: Boolean,
     isArchived: Boolean,
     status: GameStatus,
@@ -246,7 +252,7 @@ private fun GameDetailContent(
                     modifier = Modifier.weight(0.6f).fillMaxHeight().verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    DetailBody(display, ratings, inBacklog, status, onStatusChange)
+                    DetailBody(display, ratings, trailer, inBacklog, status, onStatusChange)
                 }
             }
         } else {
@@ -260,7 +266,7 @@ private fun GameDetailContent(
             ) {
                 DetailHero(display, isArchived, coverWidth = 132.dp, stacked = false)
                 DetailTags(display)
-                DetailBody(display, ratings, inBacklog, status, onStatusChange)
+                DetailBody(display, ratings, trailer, inBacklog, status, onStatusChange)
                 DetailActions(inBacklog, isArchived, onArchiveToggle, onRemoveRequest = { confirmRemove = true }, onAdd = onAdd)
             }
         }
@@ -341,6 +347,7 @@ private fun DetailTags(display: GameDisplay) {
 private fun DetailBody(
     display: GameDisplay,
     ratings: RatingsState,
+    trailer: Trailer?,
     inBacklog: Boolean,
     status: GameStatus,
     onStatusChange: (GameStatus) -> Unit,
@@ -365,6 +372,8 @@ private fun DetailBody(
     if (display.totalRating != null || !ratings.isEmpty) {
         RatingsCard(display.totalRating, ratings)
     }
+
+    trailer?.let { TrailerCard(it) }
 
     display.summary?.let { summary ->
         GlassCard(modifier = Modifier.fillMaxWidth()) {

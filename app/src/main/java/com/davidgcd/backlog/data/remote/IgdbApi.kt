@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.remote
 
 import com.davidgcd.backlog.model.ExternalGame
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.GameVideo
 import com.davidgcd.backlog.model.SearchHit
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -24,6 +25,9 @@ interface IgdbApi {
 
     @POST("v4/search")
     suspend fun search(@Body apicalypseQuery: RequestBody): List<SearchHit>
+
+    @POST("v4/game_videos")
+    suspend fun gameVideos(@Body apicalypseQuery: RequestBody): List<GameVideo>
 
     /** Maps a store's own ids (Steam AppID…) to IGDB game ids. */
     @POST("v4/external_games")

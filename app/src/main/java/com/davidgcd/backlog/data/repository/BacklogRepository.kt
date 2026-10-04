@@ -7,6 +7,7 @@ import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.model.Ranking
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.Genre
 import com.davidgcd.backlog.model.Platform
 import com.squareup.moshi.Moshi
@@ -36,6 +37,9 @@ class BacklogRepository(
     suspend fun findEntity(igdbId: Long): GameEntity? = gameDao.findById(igdbId)
 
     suspend fun gameUrls(ids: List<Long>): Map<Long, String> = igdbService.getGameUrls(ids)
+
+    /** Live trailer of a game (French when possible); never cached. */
+    suspend fun trailer(igdbId: Long): Trailer? = igdbService.getTrailer(igdbId)
 
     suspend fun searchGames(query: String): List<Game> = igdbService.searchGames(query, partial = true)
 

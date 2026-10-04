@@ -78,6 +78,7 @@ import com.davidgcd.backlog.ui.components.GlassCard
 import com.davidgcd.backlog.ui.components.GlassPill
 import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.components.GradientProgressBar
+import com.davidgcd.backlog.ui.components.TrailerCard
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
@@ -456,22 +457,6 @@ private fun MovieContent(
                 TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
-    }
-}
-
-/** "Bande-annonce": opens the YouTube video, in French when one exists (otherwise flagged as original version). */
-@Composable
-private fun TrailerCard(trailer: Trailer) {
-    val context = LocalContext.current
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.trailer_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            GlassButton(
-                text = stringResource(if (trailer.isFrench) R.string.trailer_watch_fr else R.string.trailer_watch_vo),
-                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(trailer.url))) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
     }
 }
 
