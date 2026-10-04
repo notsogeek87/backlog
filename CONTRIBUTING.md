@@ -11,6 +11,7 @@
 ```bash
 gradle testDebugUnitTest           # tests unitaires (ceux de la CI, sans émulateur) ; ou ./gradlew si le wrapper est généré
 cd server && npm test                # serveur de partage (Node ≥ 20)
+python3 tools/check_docs_links.py    # liens relatifs des .md (aussi en CI : docs-links.yml)
 ```
 La CI (`.github/workflows/android-build.yml`) build et teste chaque push ; `play-store-bundle.yml` publie sur Google Play, uniquement en déclenchement manuel.
 
