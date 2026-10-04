@@ -14,8 +14,8 @@ object Changelog {
         ChangelogEntry(2, "Recherche dans toutes les catégories", "La recherche affiche d'abord l'onglet courant, puis les résultats des autres catégories (jeux, films/séries, livres)."),
         ChangelogEntry(3, "Partage d'une fiche", "Partage un jeu, un film, une série ou un livre par lien : il s'ouvre directement dans l'app de ton contact."),
         ChangelogEntry(4, "Navigation adaptée aux grands écrans", "Rail latéral en paysage et sur les appareils pliables ouverts."),
-        ChangelogEntry(5, "Bande-annonce", "Les fiches films et séries proposent la bande-annonce, en français quand elle existe."),
-        ChangelogEntry(6, "Bande-annonce des jeux", "Les fiches jeux proposent aussi leur bande-annonce, en français quand une version française existe."),
+        ChangelogEntry(5, "Bande-annonce", "Les fiches films et séries ont leur bande-annonce, à regarder directement dans la page, en français quand elle existe."),
+        ChangelogEntry(6, "Bande-annonce des jeux", "Les fiches jeux ont aussi leur bande-annonce, à regarder directement dans la page, en français quand une version française existe."),
     )
 
     /** Dernière entrée connue des versions d'avant ce journal : une mise à jour depuis celles-ci présente la suite. */
