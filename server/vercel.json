@@ -2,6 +2,7 @@
   "regions": ["fra1"],
   "rewrites": [
     { "source": "/b/:id", "destination": "/api/view?id=:id" },
+    { "source": "/.well-known/assetlinks.json", "destination": "/api/assetlinks" },
     { "source": "/open/:kind/:id", "destination": "/api/open?kind=:kind&id=:id" }
   ],
   "crons": [{ "path": "/api/purge", "schedule": "17 3 * * *" }]
