@@ -82,6 +82,7 @@ import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.TmdbImage
+import com.davidgcd.backlog.util.DetailLink
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,16 +93,16 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val credits by viewModel.credits.collectAsState()
 
     val context = LocalContext.current
-    /** Shares the title's themoviedb.org page. */
+    /** Shares the title: an app link that opens this very page for the contact, plus its themoviedb.org page. */
     val shareTitle: () -> Unit = share@{
-        val (name, link) = when (val s = state) {
-            is MovieDetailState.Saved -> s.movie.title to TitleKey.url(s.movie.titleKey)
-            is MovieDetailState.Remote -> s.title.title to s.title.tmdbUrl
+        val (name, key) = when (val s = state) {
+            is MovieDetailState.Saved -> s.movie.title to s.movie.titleKey
+            is MovieDetailState.Remote -> s.title.title to s.title.id
             else -> return@share
         }
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "$name\n$link")
+            putExtra(Intent.EXTRA_TEXT, "$name\n${TitleKey.url(key)}\n${DetailLink.url(DetailLink.Movie(key))}")
         }
         context.startActivity(Intent.createChooser(send, context.getString(R.string.share_movie_chooser)))
     }

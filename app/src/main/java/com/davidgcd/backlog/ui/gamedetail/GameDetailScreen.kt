@@ -75,6 +75,7 @@ import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.components.GradientProgressBar
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.theme.Glass
+import com.davidgcd.backlog.util.DetailLink
 import com.davidgcd.backlog.util.IgdbImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
@@ -88,11 +89,11 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var sharing by remember { mutableStateOf(false) }
-    /** Shares the game's igdb.com page; falls back to its name when IGDB has no page to give. */
+    /** Shares the game: an app link that opens this very page for the contact, plus the igdb.com page when IGDB has one. */
     val shareGame: () -> Unit = share@{
-        val name = when (val s = state) {
-            is GameDetailState.InBacklog -> s.entity.name
-            is GameDetailState.Remote -> s.game.name
+        val (name, igdbId) = when (val s = state) {
+            is GameDetailState.InBacklog -> s.entity.name to s.entity.igdbId
+            is GameDetailState.Remote -> s.game.name to s.game.id
             else -> return@share
         }
         scope.launch {
@@ -101,7 +102,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                 val link = viewModel.gameLink()
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, if (link != null) "$name\n$link" else name)
+                    putExtra(Intent.EXTRA_TEXT, listOfNotNull(name, link, DetailLink.url(DetailLink.Game(igdbId))).joinToString("\n"))
                 }
                 context.startActivity(Intent.createChooser(send, context.getString(R.string.share_game_chooser)))
             } finally {

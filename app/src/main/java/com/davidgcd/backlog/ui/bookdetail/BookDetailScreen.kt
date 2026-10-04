@@ -85,6 +85,7 @@ import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.BookLanguages
 import com.davidgcd.backlog.util.BookShareText
+import com.davidgcd.backlog.util.DetailLink
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,7 +149,7 @@ fun BookDetailScreen(
                     link != null -> "${book.title}\n$link"
                     saved != null -> BookShareText.line(saved)
                     else -> listOfNotNull(book.title, book.authorLine.ifEmpty { null }, book.catalogUrl).joinToString(" — ")
-                }
+                } + "\n" + DetailLink.url(DetailLink.Book(saved?.bookKey ?: book.key))
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, text)

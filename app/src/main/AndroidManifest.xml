@@ -39,6 +39,20 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- A detail page shared by a contact: the https link (opened straight into the app when the
+                 phone allows it) or its backlog:// twin, used by the "Ouvrir dans l'app" button of the web page. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="library.lielu.eu" android:pathPrefix="/open/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="backlog" android:host="open" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>

@@ -124,6 +124,7 @@ import com.davidgcd.backlog.ui.ranking.RankingScreen
 import com.davidgcd.backlog.ui.ranking.RankingViewModel
 import com.davidgcd.backlog.ui.ranking.RankingViewModelFactory
 import com.davidgcd.backlog.ui.settings.SettingsViewModelFactory
+import com.davidgcd.backlog.util.DetailLink
 
 private object Routes {
     const val BACKLOG = "backlog"
@@ -186,6 +187,8 @@ fun BacklogNavHost(
     updateViewModel: AppUpdateViewModel,
     openGameId: Long? = null,
     onOpenGameHandled: () -> Unit = {},
+    openLink: DetailLink? = null,
+    onOpenLinkHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     // A notification tap asks for a game's detail screen; open it once, then clear the request.
@@ -193,6 +196,18 @@ fun BacklogNavHost(
         if (openGameId != null) {
             navController.navigate(Routes.gameDetail(openGameId)) { launchSingleTop = true }
             onOpenGameHandled()
+        }
+    }
+    // A link shared by a contact asks for a game / film / book detail page; open it once, then clear the request.
+    LaunchedEffect(openLink) {
+        if (openLink != null) {
+            val route = when (openLink) {
+                is DetailLink.Game -> Routes.gameDetail(openLink.igdbId)
+                is DetailLink.Movie -> Routes.movieDetail(openLink.titleKey)
+                is DetailLink.Book -> Routes.bookDetail(openLink.bookKey)
+            }
+            navController.navigate(route) { launchSingleTop = true }
+            onOpenLinkHandled()
         }
     }
     val librarySharer = remember(repository, movieRepository, bookRepository, shareLinkService) {

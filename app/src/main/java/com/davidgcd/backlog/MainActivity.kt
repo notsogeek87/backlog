@@ -26,6 +26,7 @@ import com.davidgcd.backlog.ui.theme.BacklogTheme
 import com.davidgcd.backlog.ui.update.AppUpdateViewModel
 import com.davidgcd.backlog.ui.update.AppUpdateViewModelFactory
 import com.davidgcd.backlog.ui.update.UpdatePrompt
+import com.davidgcd.backlog.util.DetailLink
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -38,10 +39,14 @@ class MainActivity : ComponentActivity() {
     /** Game a tapped notification asked to open; consumed by the NavHost once it has navigated. */
     private var pendingGameId by mutableStateOf<Long?>(null)
 
+    /** Detail page a shared link asked to open; consumed by the NavHost once it has navigated. */
+    private var pendingLink by mutableStateOf<DetailLink?>(null)
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingGameId = gameIdFrom(intent)
+        pendingLink = DetailLink.parse(intent.data)
     }
 
     private fun gameIdFrom(intent: Intent?): Long? =
@@ -50,7 +55,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Only on a fresh launch: after a config-driven recreate the tap was already handled.
-        if (savedInstanceState == null) pendingGameId = gameIdFrom(intent)
+        if (savedInstanceState == null) {
+            pendingGameId = gameIdFrom(intent)
+            pendingLink = DetailLink.parse(intent.data)
+        }
         // Dark-only glass UI: light system bar icons regardless of the device theme.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
@@ -99,6 +107,8 @@ class MainActivity : ComponentActivity() {
                         updateViewModel = updateViewModel,
                         openGameId = pendingGameId,
                         onOpenGameHandled = { pendingGameId = null },
+                        openLink = pendingLink,
+                        onOpenLinkHandled = { pendingLink = null },
                     )
                 }
             }
