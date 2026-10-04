@@ -6,6 +6,7 @@ import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -96,6 +97,14 @@ class TmdbClient(
         val id = TitleKey.tmdbId(key) ?: return null
         val body = call("GET", "/${TitleKey.prefix(kind)}/$id/watch/providers")
         return TmdbParsers.parseWatchProviders(body, WatchProviders.REGION)
+    }
+
+    /** The trailer of [key], in French when TMDB has one, else in another language; null when none. */
+    suspend fun trailer(key: String): Trailer? {
+        val kind = TitleKey.kind(key) ?: return null
+        val id = TitleKey.tmdbId(key) ?: return null
+        val body = call("GET", "/${TitleKey.prefix(kind)}/$id/videos", mapOf("include_video_language" to "fr,en,null"))
+        return TmdbParsers.parseTrailer(body)
     }
 
     /** Genre id → French name, both films and series; empty (no genre badges) if TMDB can't be asked. */

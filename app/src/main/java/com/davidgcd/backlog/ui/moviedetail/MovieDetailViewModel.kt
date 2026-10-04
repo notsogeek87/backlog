@@ -7,6 +7,7 @@ import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
@@ -47,12 +48,17 @@ class MovieDetailViewModel(
     private val _credits = MutableStateFlow<List<CastMember>>(emptyList())
     val credits: StateFlow<List<CastMember>> = _credits
 
+    /** Null while loading or when there is none; the card is then hidden. */
+    private val _trailer = MutableStateFlow<Trailer?>(null)
+    val trailer: StateFlow<Trailer?> = _trailer
+
     private var refreshed = false
     private var remoteLoadStarted = false
 
     init {
         loadProviders()
         loadCredits()
+        loadTrailer()
         repository.observe(titleKey)
             .onEach { movie ->
                 if (movie != null) {
@@ -77,6 +83,18 @@ class MovieDetailViewModel(
                 throw e
             } catch (t: Throwable) {
                 ProvidersState.Unavailable
+            }
+        }
+    }
+
+    private fun loadTrailer() {
+        viewModelScope.launch {
+            _trailer.value = try {
+                repository.trailer(titleKey)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                null
             }
         }
     }

@@ -10,6 +10,7 @@ import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.model.MovieRanking
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
@@ -74,6 +75,9 @@ class MovieRepository(
 
     /** Live "where to watch" for France; never cached, since availability changes. */
     suspend fun watchProviders(titleKey: String): WatchProviders? = tmdb.watchProviders(titleKey)
+
+    /** Live trailer (French when possible); never cached. */
+    suspend fun trailer(titleKey: String): Trailer? = tmdb.trailer(titleKey)
 
     suspend fun add(title: MediaTitle, status: WatchStatus = WatchStatus.TO_WATCH) {
         if (dao.findById(title.id) != null) return

@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import com.davidgcd.backlog.model.TitleKind
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProvider
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -91,6 +92,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val state by viewModel.state.collectAsState()
     val providers by viewModel.providers.collectAsState()
     val credits by viewModel.credits.collectAsState()
+    val trailer by viewModel.trailer.collectAsState()
 
     val context = LocalContext.current
     /** Shares the title: the app link that opens this very page for the contact first, then its themoviedb.org page. */
@@ -163,6 +165,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                     is MovieDetailState.NotFound -> Centered { Text(stringResource(R.string.movie_not_found)) }
                     is MovieDetailState.Saved -> MovieContent(
                         providers = providers,
+                        trailer = trailer,
                         credits = credits,
                         title = current.movie.toMediaTitle(),
                         saved = current.movie,
@@ -175,6 +178,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                     )
                     is MovieDetailState.Remote -> MovieContent(
                         providers = providers,
+                        trailer = trailer,
                         credits = credits,
                         title = current.title,
                         saved = null,
@@ -269,6 +273,7 @@ private fun Centered(content: @Composable () -> Unit) {
 @Composable
 private fun MovieContent(
     providers: ProvidersState,
+    trailer: Trailer?,
     credits: List<CastMember>,
     title: MediaTitle,
     saved: MovieEntity?,
@@ -364,6 +369,8 @@ private fun MovieContent(
                 }
             }
 
+            trailer?.let { TrailerCard(it) }
+
             WhereToWatchCard(providers)
 
             title.plot?.let { plot ->
@@ -449,6 +456,22 @@ private fun MovieContent(
                 TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
+    }
+}
+
+/** "Bande-annonce": opens the YouTube video, in French when one exists (otherwise flagged as original version). */
+@Composable
+private fun TrailerCard(trailer: Trailer) {
+    val context = LocalContext.current
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.trailer_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            GlassButton(
+                text = stringResource(if (trailer.isFrench) R.string.trailer_watch_fr else R.string.trailer_watch_vo),
+                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(trailer.url))) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

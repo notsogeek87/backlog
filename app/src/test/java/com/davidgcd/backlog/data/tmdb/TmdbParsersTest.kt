@@ -2,6 +2,7 @@ package com.davidgcd.backlog.data.tmdb
 
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
+import com.davidgcd.backlog.model.Trailer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -193,5 +194,20 @@ class TmdbParsersTest {
         val person = TmdbParsers.parsePersonFilmography(json, asDirector = true, genreNames = genres)!!
         assertEquals(listOf("movie:157336", "movie:27205"), person.titles.map { it.id })
         assertNull(TmdbParsers.parsePersonFilmography("nope", asDirector = true, genreNames = genres))
+    }
+
+    @Test
+    fun `trailer prefers a French YouTube trailer, else another language, else null`() {
+        val json = """{"results":[
+          {"site":"YouTube","type":"Teaser","key":"teaser","iso_639_1":"fr"},
+          {"site":"Vimeo","type":"Trailer","key":"vimeo","iso_639_1":"fr"},
+          {"site":"YouTube","type":"Trailer","key":"en1","iso_639_1":"en","official":true},
+          {"site":"YouTube","type":"Trailer","key":"fr1","iso_639_1":"fr","official":false}]}"""
+        assertEquals(Trailer("fr1", isFrench = true), TmdbParsers.parseTrailer(json))
+        val onlyEn = """{"results":[{"site":"YouTube","type":"Trailer","key":"en1","iso_639_1":"en"}]}"""
+        assertEquals(Trailer("en1", isFrench = false), TmdbParsers.parseTrailer(onlyEn))
+        assertEquals("https://www.youtube.com/watch?v=en1", TmdbParsers.parseTrailer(onlyEn)!!.url)
+        assertNull(TmdbParsers.parseTrailer("""{"results":[]}"""))
+        assertNull(TmdbParsers.parseTrailer("nope"))
     }
 }

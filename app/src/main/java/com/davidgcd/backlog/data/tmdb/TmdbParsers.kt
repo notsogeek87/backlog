@@ -6,6 +6,7 @@ import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchProvider
+import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.util.TmdbImage
 import org.json.JSONArray
@@ -173,6 +174,23 @@ object TmdbParsers {
             free = (providers("free") + providers("ads")).distinctBy { it.id },
         )
         return result.takeUnless { it.isEmpty }
+    }
+
+    /**
+     * `/movie|tv/{id}/videos`: the best YouTube trailer — French first, then any other language
+     * (original version) — official ones before the rest; null when TMDB lists none.
+     */
+    fun parseTrailer(json: String): Trailer? {
+        val videos = runCatching { JSONObject(json).optJSONArray("results")?.objects() }.getOrNull() ?: return null
+        return videos
+            .filter { it.optString("site") == "YouTube" && it.optString("type") == "Trailer" && it.optString("key").isNotEmpty() }
+            .sortedWith(
+                compareByDescending<JSONObject> { it.optString("iso_639_1") == "fr" }
+                    .thenByDescending { it.optBoolean("official", false) }
+                    .thenByDescending { it.optString("iso_639_1") == "en" },
+            )
+            .firstOrNull()
+            ?.let { Trailer(it.optString("key"), isFrench = it.optString("iso_639_1") == "fr") }
     }
 
     /** `{"request_token":"…"}` / `{"session_id":"…"}` style single-string fields. */

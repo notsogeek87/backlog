@@ -441,6 +441,9 @@
     </plurals>
     <string name="tmdb_import_rated">Notes lues : %1$d</string>
     <string name="tmdb_import_watchlist">Watchlist lue : %1$d</string>
+    <string name="trailer_title">Bande-annonce</string>
+    <string name="trailer_watch_fr">Regarder la bande-annonce (VF)</string>
+    <string name="trailer_watch_vo">Regarder la bande-annonce (VO)</string>
     <string name="where_to_watch_title">Où regarder ?</string>
     <string name="where_to_watch_subscription">Abonnement</string>
     <string name="where_to_watch_rent">Location</string>
