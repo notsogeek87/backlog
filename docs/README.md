@@ -8,7 +8,7 @@
 |---------|---------|
 | `architecture/` | ADR datés (`AAAA-MM-JJ-sujet.md`), architecture de l'app, design system, audits |
 | `api/` | Fournisseurs de données et API (IGDB, Steam, TMDB, livres, Metacritic) et serveur de partage |
-| `guides/` | Procédures : imports, sauvegarde, localisation, tests, nouveautés |
+| `guides/` | Procédures : imports, sauvegarde, localisation, tests, bandes-annonces, nouveautés |
 | `legacy/` | Documentation obsolète conservée (vide pour l'instant) |
 | `brand/` | Logos et visuels (pas de texte) |
 
@@ -31,6 +31,7 @@
 - [Sauvegarde et restauration](guides/backup-restore.md)
 - [Localisation](guides/localisation.md)
 - [Tests](guides/testing.md)
+- [Bandes-annonces](guides/trailers.md)
 - [Fenêtre « Nouveautés »](guides/whats-new.md)
 
 ## Écrire de la doc
