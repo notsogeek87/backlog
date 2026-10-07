@@ -121,7 +121,6 @@ fun MoviesScreen(
     viewModel: MoviesViewModel,
     onMovieClick: (String) -> Unit,
     onOpenTmdbImport: () -> Unit,
-    onOpenRanking: () -> Unit = {},
     crossSearch: CrossSearch? = null,
     mediaSwitch: @Composable () -> Unit = {},
     searchRequest: SearchRequest? = null,
@@ -280,9 +279,6 @@ fun MoviesScreen(
                         { toggleArchive(current) },
                     ),
                 )
-                if (!current.isArchived) {
-                    add(QuickAction(stringResource(R.string.quick_action_top), Icons.Filled.VerticalAlignTop, { viewModel.moveToTop(current) }))
-                }
                 add(
                     QuickAction(
                         stringResource(R.string.quick_action_share),
@@ -337,7 +333,6 @@ fun MoviesScreen(
                         OverflowMenuButton(
                             listOf(
                                 OverflowAction(stringResource(R.string.action_share_movies), onClick = share.start, enabled = !share.sharing),
-                                OverflowAction(stringResource(R.string.action_my_ranking), onClick = onOpenRanking),
                                 OverflowAction(stringResource(R.string.movies_empty_import), onClick = onOpenTmdbImport),
                             ),
                         )

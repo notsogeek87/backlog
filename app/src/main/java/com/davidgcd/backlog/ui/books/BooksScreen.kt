@@ -126,7 +126,6 @@ import kotlinx.coroutines.launch
 fun BooksScreen(
     viewModel: BooksViewModel,
     onBookClick: (String) -> Unit,
-    onOpenRanking: () -> Unit = {},
     crossSearch: CrossSearch? = null,
     mediaSwitch: @Composable () -> Unit = {},
     searchRequest: SearchRequest? = null,
@@ -277,7 +276,6 @@ fun BooksScreen(
                     if (current.isFavorite) Icons.Filled.FavoriteBorder else Icons.Filled.Favorite,
                     { viewModel.setFavorite(current, !current.isFavorite) },
                 ),
-                QuickAction(stringResource(R.string.quick_action_top), Icons.Filled.VerticalAlignTop, { viewModel.moveToTop(current) }),
                 QuickAction(
                     stringResource(R.string.quick_action_share),
                     Icons.Filled.Share,
@@ -328,7 +326,6 @@ fun BooksScreen(
                         OverflowMenuButton(
                             listOf(
                                 OverflowAction(stringResource(R.string.action_share_books), onClick = share.start, enabled = !share.sharing),
-                                OverflowAction(stringResource(R.string.action_my_ranking), onClick = onOpenRanking),
                             ),
                         )
                     }

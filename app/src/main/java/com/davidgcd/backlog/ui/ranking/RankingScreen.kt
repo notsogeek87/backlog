@@ -85,7 +85,8 @@ fun RankingScreen(
     onItemClick: (MediaType, String) -> Unit,
     onAddItems: (MediaType) -> Unit,
 ) {
-    var media by rememberSaveable { mutableStateOf(initialMedia) }
+    // Seuls les jeux se classent à la main (classement type backlog) ; films, séries et livres se jugent à leurs notes.
+    val media = initialMedia
     val viewModel = viewModelFor(media)
     val items by viewModel.items.collectAsState()
 
@@ -105,14 +106,6 @@ fun RankingScreen(
         },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                GlassPill(stringResource(R.string.media_games), selected = media == MediaType.GAMES, onClick = { media = MediaType.GAMES })
-                GlassPill(stringResource(R.string.media_movies), selected = media == MediaType.MOVIES, onClick = { media = MediaType.MOVIES })
-                GlassPill(stringResource(R.string.media_books), selected = media == MediaType.BOOKS, onClick = { media = MediaType.BOOKS })
-            }
             if (items.isEmpty()) {
                 LibraryEmptyState(
                     message = stringResource(

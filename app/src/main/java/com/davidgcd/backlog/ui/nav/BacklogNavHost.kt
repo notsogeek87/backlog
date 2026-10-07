@@ -365,7 +365,6 @@ fun BacklogNavHost(
                         onOpenTmdbImport = {
                             navController.navigate(if (tmdbAccount != null) Routes.TMDB_IMPORT else Routes.TMDB_LOGIN)
                         },
-                        onOpenRanking = { navController.navigate(Routes.ranking(MediaType.MOVIES)) },
                         crossSearch = crossSearch,
                         mediaSwitch = mediaSwitch,
                         searchRequest = searchRequest,
@@ -377,7 +376,6 @@ fun BacklogNavHost(
                     BooksScreen(
                         viewModel = viewModel,
                         onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
-                        onOpenRanking = { navController.navigate(Routes.ranking(MediaType.BOOKS)) },
                         crossSearch = crossSearch,
                         mediaSwitch = mediaSwitch,
                         searchRequest = searchRequest,

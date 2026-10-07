@@ -54,7 +54,7 @@
   et `AutoExportPreferences` mémorise le résultat du dernier passage (affiché dans
   Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
 - Classement personnel (`GameEntity.userRank`, migration 4→5, 1 = le plus aimé) : écran
-  `ui/ranking/` (glisser-déposer + tout en haut / tout en bas + « placer à la position N », trois médias, ouvert depuis le menu « ⋮ » de la Bibliothèque), tri « Mon classement »,
+  `ui/ranking/` (jeux seulement : glisser-déposer + tout en haut / tout en bas + « placer à la position N », ouvert depuis le menu « ⋮ » de la Bibliothèque), tri « Mon classement »,
   colonne CSV `rank`. `model/Ranking` est le seul endroit qui ordonne (classés d'abord, puis non
   classés par date d'ajout, archivés exclus). Le partage en tient compte : liste numérotée « Mon
   classement » en tête, sur la page publique comme dans le texte de repli ; les autres jeux restent

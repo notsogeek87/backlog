@@ -28,7 +28,7 @@ Icône filtre → feuille unique : tri, affichage (Tous / Souhaités / Possédé
 | Balayer vers la droite | Statut suivant (Backlog → Joué → Terminé ; À voir → En cours → Vu ; Souhaité → Backlog) |
 | Balayer vers la gauche | Archiver / désarchiver |
 | Toucher le badge de statut | Menu des statuts |
-| Appui long | Actions rapides : statut, archiver, placer en tête du classement, partager, retirer |
+| Appui long | Actions rapides : statut, archiver, placer en tête du classement (jeux), partager, retirer |
 
 Chaque changement affiche un Snackbar « Annuler ». Les livres (grille de jaquettes) : badge de statut et appui long (favori, classement, partage, retrait). Pour TalkBack, les mêmes actions sont des actions personnalisées de la ligne.
 
@@ -40,8 +40,8 @@ Chaque changement affiche un Snackbar « Annuler ». Les livres (grille de jaque
 - Le fond de la fiche prend la couleur dominante de la jaquette.
 - Jeux : note de 1 à 10, proposée quand on passe un jeu à « Terminé ».
 
-## Classement (jeux, films & séries, livres)
-Bibliothèque > menu « ⋮ » > Mon classement. Tirer une ligne par la poignée (l'écran défile seul près des bords) ; **doubles flèches** = tout en haut / tout en bas ; **toucher le numéro** = « placer à la position N » (utile avec des centaines d'entrées). Un classement est écrit dans Room une seule fois, au dépôt.
+## Classement (jeux)
+Le classement type backlog ne concerne que les **jeux** ; films, séries et livres se jugent à leurs notes (1–10, 1–5 étoiles). Jeux : Bibliothèque > menu « ⋮ » > Mon classement. Tirer une ligne par la poignée (l'écran défile seul près des bords) ; **doubles flèches** = tout en haut / tout en bas ; **toucher le numéro** = « placer à la position N » (utile avec des centaines d'entrées). Un classement est écrit dans Room une seule fois, au dépôt.
 
 ## Ce soir, je fais quoi ?
 Carte de l'accueil : média (Tout / Jeux / Films & séries / Livres) × temps (moins de 1 h 30 / une soirée / sans limite) → trois idées (`model/Tonight`). Ordre : déjà commencé, puis ce qui traîne depuis longtemps, bien noté et qui tient dans le temps. « Autre idée » change le tirage. Films : durée TMDB ; livres : pages ÷ 40 par heure ; **jeux : durée inconnue, toujours proposés**.

@@ -19,7 +19,7 @@ Périmètre : navigation, listes (jeux, films & séries, livres), recherche, fil
 | 9 | Moy. | Barre du haut à 5 icônes. | Recherche + Filtrer/trier + menu « ⋮ » (partager, classement, import TMDB). |
 | 10 | Moy. | Recherche, partage, état vide, chips recopiés 3 fois. | `LibraryParts`, `ShareFlow`, `FilterSheet`, `QuickActionsSheet`, `SwipeActions` partagés. |
 | 11 | Moy. | Un jeu à venir était ajouté en « Backlog ». | `GameStatus.suggestedFor` : « Souhaité » si pas encore sorti ; appui long sur « + » pour choisir le statut. |
-| 12 | Basse | Classement : état vide aligné à gauche, jeux seulement. | État vide centré avec action ; classement pour les trois médias. |
+| 12 | Basse | Classement : état vide aligné à gauche, jeux seulement. | État vide centré avec action ; classement conservé pour les jeux seulement (films, séries et livres se jugent à leurs notes). |
 | 13 | Basse | Pseudo de partage enregistré à chaque frappe ; journal de debug visible. | Enregistrement après 600 ms de pause ; journal caché derrière 7 touchers sur la version. |
 | 14 | Basse | Pas de note perso pour les jeux. | Note 1–10 (`GameEntity.userRating`), demandée au passage à « Terminé ». |
 | 15 | Basse | Suppression sans annulation ; Découvrir rechargé à chaque ouverture ; spinner dans le vide. | Suppression sans dialogue + Snackbar « Annuler » (`AppSnackbar`) ; cache mémoire `StaleCache` (frais 10 min, affiché tout de suite, rafraîchi en arrière-plan) ; `SkeletonList`. |
