@@ -69,3 +69,10 @@ fun AddButton(contentDescription: String, onAdd: () -> Unit, choices: List<AddCh
 
 /** Une recherche demandée de l'extérieur (raccourci d'icône, lien ou texte partagé vers l'app) : média visé et texte à chercher. */
 data class SearchRequest(val media: MediaType, val query: String?)
+
+/** Recherche en cours dans la Bibliothèque, gardée hors des écrans pour survivre au changement Jeux / Films & séries / Livres. */
+class SearchCarry {
+    var scope: SearchScope? = null
+    var query: String = ""
+    fun clear() { scope = null; query = "" }
+}

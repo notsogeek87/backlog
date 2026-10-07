@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.davidgcd.backlog.model.Medium
 import com.davidgcd.backlog.ui.components.AppSnackbar
 import com.davidgcd.backlog.ui.components.LocalAppSnackbar
+import com.davidgcd.backlog.ui.components.SearchCarry
 import com.davidgcd.backlog.ui.components.SearchRequest
 import com.davidgcd.backlog.ui.home.HomeScreen
 import com.davidgcd.backlog.ui.home.HomeViewModel
@@ -233,6 +234,7 @@ fun BacklogNavHost(
     var libraryMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
     // A search asked from outside a list (home, app shortcut, shared text); the list of that media consumes it once.
     var searchRequest by remember { mutableStateOf<SearchRequest?>(null) }
+    val searchCarry = remember { SearchCarry() }
     // One shared search for the other categories: typing on any tab also finds games, films & séries and books.
     val crossSearchViewModel: CrossSearchViewModel = viewModel(factory = CrossSearchViewModelFactory(repository, movieRepository, bookRepository))
     val crossSearch = CrossSearch(
@@ -355,6 +357,7 @@ fun BacklogNavHost(
                         mediaSwitch = mediaSwitch,
                         searchRequest = searchRequest,
                         onSearchRequestHandled = { searchRequest = null },
+                        searchCarry = searchCarry,
                     )
                 }
                 MediaType.MOVIES -> {
@@ -369,6 +372,7 @@ fun BacklogNavHost(
                         mediaSwitch = mediaSwitch,
                         searchRequest = searchRequest,
                         onSearchRequestHandled = { searchRequest = null },
+                        searchCarry = searchCarry,
                     )
                 }
                 MediaType.BOOKS -> {
@@ -380,6 +384,7 @@ fun BacklogNavHost(
                         mediaSwitch = mediaSwitch,
                         searchRequest = searchRequest,
                         onSearchRequestHandled = { searchRequest = null },
+                        searchCarry = searchCarry,
                     )
                 }
             }

@@ -93,6 +93,7 @@ import com.davidgcd.backlog.ui.components.QuickAction
 import com.davidgcd.backlog.ui.components.QuickActionsSheet
 import com.davidgcd.backlog.ui.components.RemovableChip
 import com.davidgcd.backlog.ui.components.SearchFeedback
+import com.davidgcd.backlog.ui.components.SearchCarry
 import com.davidgcd.backlog.ui.components.SearchRequest
 import com.davidgcd.backlog.ui.components.SearchScope
 import com.davidgcd.backlog.ui.components.SearchScopePills
@@ -130,6 +131,8 @@ fun BooksScreen(
     mediaSwitch: @Composable () -> Unit = {},
     searchRequest: SearchRequest? = null,
     onSearchRequestHandled: () -> Unit = {},
+    /** Recherche à reprendre quand on change de catégorie depuis la barre Jeux / Films & séries / Livres. */
+    searchCarry: SearchCarry? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -177,17 +180,23 @@ fun BooksScreen(
         query = initial
         showSearch = true
         runSearch(initial, target)
+        searchCarry?.let { it.scope = target; it.query = initial }
     }
 
     fun closeSearch() {
         showSearch = false
         query = ""
+        searchCarry?.clear()
         runSearch("", SearchScope.CATALOG)
         viewModel.setLibraryQuery("")
     }
 
     BackHandler(enabled = showSearch) { closeSearch() }
     LaunchedEffect(showSearch, searchScope) { if (showSearch) searchFocus.requestFocus() }
+    LaunchedEffect(Unit) {
+        val carried = searchCarry?.scope
+        if (carried != null && searchRequest == null) openSearch(carried, searchCarry?.query.orEmpty())
+    }
     LaunchedEffect(searchRequest) {
         if (searchRequest != null && searchRequest.media == MediaType.BOOKS) {
             openSearch(SearchScope.CATALOG, searchRequest.query.orEmpty())
@@ -341,7 +350,7 @@ fun BooksScreen(
             if (showSearch) {
                 LibrarySearchField(
                     query = query,
-                    onQueryChange = { query = it; runSearch(it, searchScope) },
+                    onQueryChange = { query = it; searchCarry?.let { c -> c.scope = searchScope; c.query = it }; runSearch(it, searchScope) },
                     placeholder = stringResource(if (searchScope == SearchScope.LIBRARY) R.string.search_library_placeholder else R.string.books_search_placeholder),
                     focusRequester = searchFocus,
                     onSearch = { runSearch(query, searchScope) },
