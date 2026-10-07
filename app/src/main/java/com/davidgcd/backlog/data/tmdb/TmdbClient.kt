@@ -70,6 +70,13 @@ class TmdbClient(
         return TmdbParsers.parseDetails(body, kind)
     }
 
+    /** Last aired and next episode of a series; null for a film, an unknown id or an unreadable answer. */
+    suspend fun episodes(key: String): SeriesEpisodes? {
+        if (TitleKey.kind(key) != TitleKind.SERIES) return null
+        val id = TitleKey.tmdbId(key) ?: return null
+        return TmdbParsers.parseEpisodes(call("GET", "/tv/$id"))
+    }
+
     /** Director(s) and top-billed actors of [key], with their photos; empty when TMDB lists none. */
     suspend fun credits(key: String): List<CastMember> {
         val kind = TitleKey.kind(key) ?: return emptyList()

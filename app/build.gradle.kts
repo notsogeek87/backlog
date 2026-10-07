@@ -143,7 +143,6 @@ dependencies {
     // Couleur dominante de la jaquette (fond des fiches) et widget d'écran d'accueil (Glance).
     implementation("androidx.palette:palette-ktx:1.0.0")
     implementation("androidx.glance:glance-appwidget:1.1.0")
-    implementation("androidx.glance:glance-material3:1.1.0")
 
     // Background release-day check (equivalent to the iOS nightly BGTask)
     implementation("androidx.work:work-runtime-ktx:2.9.1")
@@ -154,8 +153,12 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
+    // Smoke tests of the Compose components under Robolectric (themes, semantics, drag): no emulator needed.
+    testImplementation(platform("androidx.compose:compose-bom:2024.09.03"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.03"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

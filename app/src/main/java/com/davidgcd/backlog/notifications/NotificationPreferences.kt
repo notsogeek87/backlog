@@ -23,6 +23,8 @@ class NotificationPreferences(private val context: Context) {
     private val minuteKey = intPreferencesKey("release_reminder_minute")
     private val dateChangeAlertsKey = booleanPreferencesKey("date_change_alerts_enabled")
     private val platformChangeAlertsKey = booleanPreferencesKey("platform_change_alerts_enabled")
+    private val dealAlertsKey = booleanPreferencesKey("deal_alerts_enabled")
+    private val episodeAlertsKey = booleanPreferencesKey("episode_alerts_enabled")
 
     val releaseRemindersEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[releaseRemindersKey] ?: true
@@ -42,6 +44,20 @@ class NotificationPreferences(private val context: Context) {
 
     val platformChangeAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[platformChangeAlertsKey] ?: true
+    }
+
+    /** « Promo Steam » : prévenir quand un jeu souhaité est en promotion. */
+    val dealAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[dealAlertsKey] ?: true }
+
+    /** « Nouvel épisode » : prévenir quand une série de la liste diffuse un épisode. */
+    val episodeAlertsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[episodeAlertsKey] ?: true }
+
+    suspend fun setDealAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[dealAlertsKey] = enabled }
+    }
+
+    suspend fun setEpisodeAlertsEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[episodeAlertsKey] = enabled }
     }
 
     suspend fun setReleaseRemindersEnabled(enabled: Boolean) {

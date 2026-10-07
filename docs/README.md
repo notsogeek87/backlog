@@ -17,7 +17,7 @@
 ### Architecture
 - [Architecture de l'app (MVVM)](architecture/overview.md)
 - [Design system « Glass night »](architecture/design-system.md)
-- [Audit UX/UI](architecture/ux-audit.md)
+- [Audit UX/UI (octobre 2026)](architecture/ux-audit.md)
 - ADR : [import de bibliothèques de jeux](architecture/2026-09-29-library-providers.md) · [films et séries TMDB](architecture/2026-09-30-films-series-tmdb.md) · [livres Open Library](architecture/2026-10-01-livres-open-library.md)
 
 ### API
@@ -31,6 +31,7 @@
 - [Sauvegarde et restauration](guides/backup-restore.md)
 - [Localisation](guides/localisation.md)
 - [Tests](guides/testing.md)
+- [Navigation, recherche et gestes](guides/navigation-et-gestes.md)
 - [Bandes-annonces](guides/trailers.md)
 - [Fenêtre « Nouveautés »](guides/whats-new.md)
 

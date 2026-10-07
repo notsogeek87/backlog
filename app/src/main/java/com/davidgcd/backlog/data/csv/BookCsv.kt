@@ -52,6 +52,7 @@ object BookCsv {
             "favorite" to b.isFavorite.toString(),
             "rating" to b.userRating?.toString().orEmpty(),
             "addedAt" to b.addedAt.toString(),
+            CsvColumn.COMPLETED_AT.header to b.completedAt?.toString().orEmpty(),
         )
         return HEADER.map { values[it].orEmpty() }
     }
@@ -87,6 +88,7 @@ object BookCsv {
             userRating = field("rating")?.toIntOrNull()?.takeIf { it in 1..5 },
             addedAt = field("addedAt")?.toLongOrNull() ?: now,
             updatedAt = now,
+            completedAt = field(CsvColumn.COMPLETED_AT.header)?.toLongOrNull(),
         )
         // Same key rule as a book found by search, so a re-imported export lands on the same row.
         return base.copy(bookKey = BookKey.of(base.toBook()))

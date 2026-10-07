@@ -11,6 +11,7 @@ import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.suggestedFor
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.util.DebugLog
 import kotlinx.coroutines.CancellationException
@@ -159,8 +160,9 @@ class GameDetailViewModel(
         }
     }
 
-    fun addToBacklog(game: Game) {
-        viewModelScope.launch { repository.addToBacklog(game) }
+    /** Sans [status] : « Souhaité » pour un jeu pas encore sorti, « Backlog » sinon. */
+    fun addToBacklog(game: Game, status: GameStatus? = null) {
+        viewModelScope.launch { repository.addToBacklog(game, status ?: GameStatus.suggestedFor(game.firstReleaseDate)) }
     }
 
     fun setArchived(entity: GameEntity, archived: Boolean) {
@@ -171,6 +173,14 @@ class GameDetailViewModel(
     fun setStatus(entity: GameEntity, status: GameStatus) {
         viewModelScope.launch { repository.setStatus(entity, status) }
     }
+
+    /** 1–10, or null to clear; touching the current note again clears it. */
+    fun setUserRating(entity: GameEntity, rating: Int) {
+        viewModelScope.launch { repository.setUserRating(entity, rating.takeIf { it != entity.userRating }) }
+    }
+
+    /** Puts back the row just removed (the « Annuler » of the Snackbar); suspend so it outlives this screen's scope. */
+    suspend fun restore(entity: GameEntity) = repository.restore(entity)
 
     fun remove(entity: GameEntity, onDone: () -> Unit = {}) {
         viewModelScope.launch {

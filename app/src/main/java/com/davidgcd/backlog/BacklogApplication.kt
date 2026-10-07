@@ -97,6 +97,10 @@ class BacklogApplication : Application() {
     lateinit var bookRepository: BookRepository
         private set
 
+    /** Prix Steam des jeux souhaités, pour l'alerte « promo ». */
+    lateinit var steamPriceService: com.davidgcd.backlog.data.remote.SteamPriceService
+        private set
+
     /** Apparence (thème, couleurs dynamiques), aperçu des bandes-annonces, drapeaux « déjà demandé ». */
     lateinit var uiPreferences: com.davidgcd.backlog.ui.prefs.UiPreferences
         private set
@@ -214,6 +218,7 @@ class BacklogApplication : Application() {
         metacriticService = MetacriticService(metacriticApi)
         shareLinkService = ShareLinkService(this, OkHttpClient.Builder().callTimeout(12, TimeUnit.SECONDS).build())
         csvExportService = CsvExportService(this)
+        steamPriceService = com.davidgcd.backlog.data.remote.SteamPriceService(OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build())
 
         // Films & séries: the official TMDB API. The key ships in the APK like the other keys (Secrets.kt);
         // a user's session (their account access) lives in no-backup storage, never in the key.

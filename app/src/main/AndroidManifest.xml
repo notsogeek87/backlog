@@ -52,6 +52,40 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="backlog" android:host="open" />
             </intent-filter>
+            <!-- Raccourcis d'icône : backlog://action/add/{games|movies|books}, backlog://action/recap. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="backlog" android:host="action" />
+            </intent-filter>
+            <!-- « Partager vers Backlog » : un lien Steam, TMDB, Goodreads…, un ISBN ou un titre arrive ici et prépare la recherche. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Widget « En cours / prochaine sortie » (Glance). -->
+        <receiver
+            android:name=".widget.BacklogWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/backlog_widget_info" />
+        </receiver>
+
+        <!-- « Mon année » partagée en image : le PNG écrit dans le cache est confié à l'app de partage. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

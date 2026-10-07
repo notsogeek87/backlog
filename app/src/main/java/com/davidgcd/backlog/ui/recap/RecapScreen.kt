@@ -147,10 +147,11 @@ private fun RecapCard(recap: YearRecap) {
             RecapStat((recap.moviesWatched + recap.seriesWatched).toString(), stringResource(R.string.recap_movies), Modifier.weight(1f))
             RecapStat(recap.booksRead.toString(), stringResource(R.string.recap_books), Modifier.weight(1f))
         }
+        val resources = LocalContext.current.resources
         val details = buildList {
             if (recap.minutesWatched > 0) add(stringResource(R.string.recap_hours_watched, recap.minutesWatched / 60))
-            if (recap.pagesRead > 0) add(stringResource(R.string.recap_pages_read, recap.pagesRead))
-            add(stringResource(R.string.recap_added, recap.added))
+            if (recap.pagesRead > 0) add(resources.getQuantityString(R.plurals.recap_pages_read, recap.pagesRead, recap.pagesRead))
+            add(resources.getQuantityString(R.plurals.recap_added, recap.added, recap.added))
         }
         Text(details.joinToString(" · "), color = Color(0xFFB4BCD0), style = MaterialTheme.typography.bodyMedium)
         if (recap.topGenres.isNotEmpty()) {

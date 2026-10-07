@@ -105,9 +105,9 @@ fun TrailerCard(trailer: Trailer) {
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun YouTubePlayer(videoId: String, modifier: Modifier) {
+private fun YouTubePlayer(videoId: String, modifier: Modifier, muted: Boolean = false) {
     val context = LocalContext.current
-    val webView = remember(videoId) {
+    val webView = remember(videoId, muted) {
         WebView(context).apply {
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             setBackgroundColor(android.graphics.Color.BLACK)
@@ -115,10 +115,12 @@ private fun YouTubePlayer(videoId: String, modifier: Modifier) {
             settings.domStorageEnabled = true
             settings.mediaPlaybackRequiresUserGesture = false
             webViewClient = WebViewClient()
+            // Aperçu : muet, en boucle, sans commandes ; lecture normale : son et commandes.
+            val muteParams = if (muted) "&mute=1&loop=1&playlist=$videoId&controls=0&modestbranding=1" else ""
             val html = """
                 <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
                 <style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%}</style></head>
-                <body><iframe src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&hl=fr&cc_lang_pref=fr&cc_load_policy=1"
+                <body><iframe src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&hl=fr&cc_lang_pref=fr&cc_load_policy=1$muteParams"
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>
             """.trimIndent()
             loadDataWithBaseURL("https://www.youtube-nocookie.com", html, "text/html", "utf-8", null)
@@ -164,4 +166,71 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+
+private enum class HeroMode { Thumbnail, Preview, Full }
+
+/**
+ * La bande-annonce en tête de fiche : une grande vignette 16:9 (rien n'est chargé depuis YouTube avant un toucher), ou,
+ * si l'utilisateur a activé « Aperçu animé » dans les Réglages, un aperçu muet en boucle ; toucher lance la lecture avec le son.
+ */
+@Composable
+fun TrailerHero(trailer: Trailer, preview: Boolean, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var mode by remember(trailer.youtubeKey, preview) { mutableStateOf(if (preview) HeroMode.Preview else HeroMode.Thumbnail) }
+    val shape = RoundedCornerShape(20.dp)
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(shape).background(Color.Black)) {
+            when (mode) {
+                HeroMode.Full -> YouTubePlayer(trailer.youtubeKey, modifier = Modifier.fillMaxSize())
+                HeroMode.Preview -> {
+                    YouTubePlayer(trailer.youtubeKey, modifier = Modifier.fillMaxSize(), muted = true)
+                    // The preview is a picture: a tap on it starts the real playback, with sound.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(onClickLabel = stringResource(R.string.trailer_play_sound)) { mode = HeroMode.Full },
+                    )
+                }
+                HeroMode.Thumbnail -> {
+                    AsyncImage(
+                        model = "https://i.ytimg.com/vi/${trailer.youtubeKey}/hqdefault.jpg",
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(onClickLabel = stringResource(R.string.trailer_play)) { mode = HeroMode.Full },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.PlayArrow,
+                            contentDescription = stringResource(R.string.trailer_play),
+                            tint = Color.White,
+                            modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.55f)).padding(14.dp),
+                        )
+                    }
+                }
+            }
+            if (mode != HeroMode.Full) {
+                Text(
+                    stringResource(if (trailer.isFrench) R.string.trailer_title_fr else R.string.trailer_title_vo),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+        }
+        TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(trailer.url))) }, modifier = Modifier.align(Alignment.End)) {
+            Text(stringResource(R.string.trailer_open_youtube))
+        }
+    }
 }

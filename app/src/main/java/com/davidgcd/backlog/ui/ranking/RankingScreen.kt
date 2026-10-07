@@ -143,7 +143,7 @@ fun RankingScreen(
 }
 
 @Composable
-private fun RankingList(items: List<RankItem>, onMove: (from: Int, to: Int) -> Unit, onItemClick: (String) -> Unit) {
+internal fun RankingList(items: List<RankItem>, onMove: (from: Int, to: Int) -> Unit, onItemClick: (String) -> Unit) {
     val listState = rememberLazyListState()
     val drag = remember(listState) { DragReorderState(listState) }
     val scope = rememberCoroutineScope()
@@ -272,8 +272,7 @@ private fun RankRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (dragging) Modifier.shadow(12.dp, androidx.compose.foundation.shape.RoundedCornerShape(20.dp)) else Modifier)
-            .semantics(mergeDescendants = false) { customActions = a11yActions },
+            .then(if (dragging) Modifier.shadow(12.dp, androidx.compose.foundation.shape.RoundedCornerShape(20.dp)) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -291,7 +290,8 @@ private fun RankRow(
             fontWeight = FontWeight.Bold,
             color = if (item.ranked) Glass.Cyan else Glass.TextMuted,
         )
-        GlassCard(modifier = Modifier.weight(1f), onClick = onClick) {
+        // The moves are custom actions of the card itself: it is the one node TalkBack focuses (its parts are merged into it).
+        GlassCard(modifier = Modifier.weight(1f).semantics { customActions = a11yActions }, onClick = onClick) {
             Row(
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raccourcis d'icône (appui long sur l'icône de l'app) : chacun ouvre la recherche du bon catalogue, ou le bilan. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_game"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_game"
+        android:shortcutLongLabel="@string/shortcut_add_game_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="backlog://action/add/games"
+            android:targetClass="com.davidgcd.backlog.MainActivity"
+            android:targetPackage="com.davidgcd.backlog" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_movie"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_movie"
+        android:shortcutLongLabel="@string/shortcut_add_movie_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="backlog://action/add/movies"
+            android:targetClass="com.davidgcd.backlog.MainActivity"
+            android:targetPackage="com.davidgcd.backlog" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_book"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_book"
+        android:shortcutLongLabel="@string/shortcut_add_book_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="backlog://action/add/books"
+            android:targetClass="com.davidgcd.backlog.MainActivity"
+            android:targetPackage="com.davidgcd.backlog" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="recap"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_recap"
+        android:shortcutShortLabel="@string/shortcut_recap"
+        android:shortcutLongLabel="@string/shortcut_recap_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="backlog://action/recap"
+            android:targetClass="com.davidgcd.backlog.MainActivity"
+            android:targetPackage="com.davidgcd.backlog" />
+    </shortcut>
+</shortcuts>

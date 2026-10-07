@@ -559,8 +559,6 @@
     <string name="recap_movies">Films &amp; séries</string>
     <string name="recap_books">Livres</string>
     <string name="recap_hours_watched">%1$d h devant l\'écran</string>
-    <string name="recap_pages_read">%1$d pages lues</string>
-    <string name="recap_added">%1$d ajouts</string>
     <string name="recap_top_genres">Genres préférés</string>
     <string name="recap_picks">Coups de cœur</string>
     <string name="recap_share_image">Partager en image</string>
@@ -568,4 +566,61 @@
     <string name="recap_share_chooser">Partager mon année avec…</string>
     <string name="recap_share_header">Mon année %1$d sur Backlog</string>
     <string name="recap_share_line">%1$d jeux terminés, %2$d films &amp; séries vus, %3$d livres lus.</string>
+
+    <!-- Fiches détail -->
+    <string name="action_add_to_wishlist">Ajouter à mes souhaits</string>
+    <string name="game_my_rating">Ma note</string>
+    <string name="game_rate_prompt_title">Terminé ! Une note ?</string>
+    <string name="game_rate_prompt_message">Qu\'as-tu pensé de %1$s ?</string>
+    <string name="trailer_play_sound">Lire avec le son</string>
+
+    <!-- Alertes utiles -->
+    <string name="notification_channel_deal">Promotions Steam</string>
+    <string name="notification_channel_episode">Nouveaux épisodes</string>
+    <string name="notification_deal_text">En promotion sur Steam : -%1$d %% (%2$s)</string>
+    <string name="notification_episode_text">Nouvel épisode %1$s %2$s</string>
+    <string name="settings_deal_alerts_title">Promotions Steam</string>
+    <string name="settings_deal_alerts_subtitle">Me notifier quand un jeu souhaité est en promotion (−20 % ou plus)</string>
+    <string name="settings_episode_alerts_title">Nouveaux épisodes</string>
+    <string name="settings_episode_alerts_subtitle">Me notifier quand une série de ma liste diffuse un nouvel épisode</string>
+
+    <!-- Réglages: apparence, à propos, notifications -->
+    <string name="settings_section_appearance">Apparence</string>
+    <string name="settings_theme_title">Thème</string>
+    <string name="theme_system">Système</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_amoled">AMOLED</string>
+    <string name="settings_dynamic_colors_title">Couleurs dynamiques</string>
+    <string name="settings_dynamic_colors_subtitle">L\'accent de l\'app reprend les couleurs de ton fond d\'écran (Android 12+)</string>
+    <string name="settings_trailer_preview_title">Aperçu animé des bandes-annonces</string>
+    <string name="settings_trailer_preview_subtitle">Lit un aperçu muet dès l\'ouverture d\'une fiche. Consomme des données mobiles.</string>
+    <string name="settings_section_about">À propos</string>
+    <string name="settings_about_hint">Touche sept fois pour afficher les outils de debug</string>
+    <string name="settings_debug_unlocked">Outils de debug activés</string>
+    <string name="notif_banner_title">Les notifications sont désactivées</string>
+    <string name="notif_banner_message">Sans autorisation, aucun rappel ni aucune alerte ne peut t\'être envoyé.</string>
+
+    <!-- Widget, raccourcis -->
+    <string name="widget_label">Backlog : en cours</string>
+    <string name="widget_description">Ce que tu as en cours et la prochaine sortie.</string>
+    <string name="widget_next_release">Prochaine sortie</string>
+    <string name="widget_empty">Rien en cours. Ouvre l\'app pour ajouter un jeu, un film ou un livre.</string>
+    <string name="shortcut_add_game">Ajouter un jeu</string>
+    <string name="shortcut_add_game_long">Ajouter un jeu à ma liste</string>
+    <string name="shortcut_add_movie">Ajouter un film</string>
+    <string name="shortcut_add_movie_long">Ajouter un film ou une série</string>
+    <string name="shortcut_add_book">Ajouter un livre</string>
+    <string name="shortcut_add_book_long">Ajouter un livre à ma bibliothèque</string>
+    <string name="shortcut_recap">Mon année</string>
+    <string name="shortcut_recap_long">Voir mon année</string>
+
+    <plurals name="recap_added">
+        <item quantity="one">%1$d ajout</item>
+        <item quantity="other">%1$d ajouts</item>
+    </plurals>
+    <plurals name="recap_pages_read">
+        <item quantity="one">%1$d page lue</item>
+        <item quantity="other">%1$d pages lues</item>
+    </plurals>
 </resources>

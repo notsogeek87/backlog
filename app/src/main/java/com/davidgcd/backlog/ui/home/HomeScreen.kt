@@ -88,6 +88,7 @@ fun HomeScreen(
     onOpenRecap: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
+    val nudge = rememberNudgeState()
     Scaffold(
         containerColor = Color.Transparent,
         contentColor = Glass.Text,
@@ -128,7 +129,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item(key = "tonight") { TonightCard(state.tonightPool, onOpen) }
-            if (state.upcoming.isNotEmpty()) item(key = "notif") { NotificationNudge() }
+            if (state.upcoming.isNotEmpty() && nudge.visible) item(key = "notif") { NotificationNudgeCard(nudge) }
             if (state.inProgress.isNotEmpty()) {
                 item(key = "continue") {
                     Column {
@@ -302,33 +303,43 @@ private fun formatDuration(minutes: Int): String = when {
     else -> "${minutes / 60} h ${"%02d".format(minutes % 60)}"
 }
 
+/** État de la carte « Être prévenu des sorties ? » : visible tant que l'autorisation manque et n'a pas déjà été demandée. */
+private class NudgeState(val visible: Boolean, val enable: () -> Unit, val later: () -> Unit)
+
 /**
  * Demande la permission de notifications au bon moment : quand on affiche des sorties à venir, pas au lancement.
  * Une seule fois ; refusée, elle ne revient pas (les Réglages permettent de l'activer ensuite).
  */
 @Composable
-private fun NotificationNudge() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-    val prefs = LocalUiPreferences.current ?: return
+private fun rememberNudgeState(): NudgeState {
+    val prefs = LocalUiPreferences.current
     val context = LocalContext.current
     var granted by remember { mutableStateOf(hasNotificationPermission(context)) }
-    var asked by remember { mutableStateOf(prefs.notificationPermissionAsked) }
+    var asked by remember { mutableStateOf(prefs?.notificationPermissionAsked ?: true) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
-    if (granted || asked) return
+    return NudgeState(
+        visible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && prefs != null && !granted && !asked,
+        enable = {
+            prefs?.notificationPermissionAsked = true
+            asked = true
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        },
+        later = {
+            prefs?.notificationPermissionAsked = true
+            asked = true
+        },
+    )
+}
+
+@Composable
+private fun NotificationNudgeCard(nudge: NudgeState) {
     GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.notif_nudge_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text(stringResource(R.string.notif_nudge_message), style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted)
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = {
-                    prefs.notificationPermissionAsked = true
-                    asked = true
-                }) { Text(stringResource(R.string.notif_nudge_later)) }
-                TextButton(onClick = {
-                    prefs.notificationPermissionAsked = true
-                    asked = true
-                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }) { Text(stringResource(R.string.notif_nudge_enable)) }
+                TextButton(onClick = nudge.later) { Text(stringResource(R.string.notif_nudge_later)) }
+                TextButton(onClick = nudge.enable) { Text(stringResource(R.string.notif_nudge_enable)) }
             }
         }
     }

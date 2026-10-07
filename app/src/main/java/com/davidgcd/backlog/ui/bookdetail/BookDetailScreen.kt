@@ -79,6 +79,9 @@ import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassCard
 import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
+import com.davidgcd.backlog.ui.components.DetailBackdrop
+import com.davidgcd.backlog.ui.components.LocalAppSnackbar
+import com.davidgcd.backlog.ui.components.StickyActionBar
 import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
@@ -103,6 +106,7 @@ fun BookDetailScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val openLabel = stringResource(R.string.action_open)
+    val appSnackbar = LocalAppSnackbar.current
 
     val cover = when (val s = state) {
         is BookDetailState.Saved -> s.book.coverUrl
@@ -163,27 +167,25 @@ fun BookDetailScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // The cover tints the screen: blurred, dimmed, faded into the night canvas (blur needs API 31+).
-        if (cover != null) {
-            Box(modifier = Modifier.fillMaxWidth().height(460.dp).clipToBounds()) {
-                AsyncImage(
-                    model = cover,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().scale(1.2f).blur(28.dp).alpha(0.5f),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(listOf(Color(0x26050A14), Glass.Bg))),
-                )
-            }
-        }
+        // The cover tints the screen: blurred, veiled in its dominant colour, faded into the canvas.
+        DetailBackdrop(cover)
 
         Scaffold(
             containerColor = Color.Transparent,
             contentColor = Glass.Text,
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                // « Ajouter » stays in reach whatever the scroll position (unless the book is already saved).
+                (state as? BookDetailState.Remote)?.takeIf { it.duplicateKey == null }?.let { remote ->
+                    StickyActionBar {
+                        GradientButton(
+                            text = stringResource(R.string.action_add_to_books),
+                            onClick = { addBook(remote.book) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     colors = glassTopAppBarColors(),
@@ -228,7 +230,17 @@ fun BookDetailScreen(
                         savedBooks = savedBooks,
                         onStatusChange = { viewModel.setStatus(current.book, it) },
                         onRate = { viewModel.setUserRating(current.book, it) },
-                        onRemove = { viewModel.remove(current.book, onDone = onBack) },
+                        // No confirmation dialog: the book goes, and the Snackbar on the list behind offers « Annuler ».
+                        onRemove = {
+                            val removed = current.book
+                            viewModel.remove(removed) {
+                                onBack()
+                                appSnackbar?.show(
+                                    context.getString(R.string.snackbar_removed, removed.title),
+                                    context.getString(R.string.action_undo),
+                                ) { viewModel.restore(removed) }
+                            }
+                        },
                         onAdd = addBook,
                         onOpenBook = onOpenBook,
                     )
@@ -273,7 +285,6 @@ private fun BookContent(
     onAdd: (Book) -> Unit,
     onOpenBook: (String) -> Unit,
 ) {
-    var confirmRemove by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -345,12 +356,6 @@ private fun BookContent(
                             TextButton(onClick = { onOpenBook(duplicateKey) }) { Text(stringResource(R.string.action_open)) }
                         }
                     }
-                } else {
-                    GradientButton(
-                        text = stringResource(R.string.action_add_to_books),
-                        onClick = { onAdd(book) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             }
 
@@ -382,31 +387,13 @@ private fun BookContent(
                 if (saved != null) {
                     GlassButton(
                         text = stringResource(R.string.action_remove_from_books),
-                        onClick = { confirmRemove = true },
+                        onClick = onRemove,
                         modifier = Modifier.fillMaxWidth(),
                         contentColor = MaterialTheme.colorScheme.error,
                     )
                 }
             }
         }
-    }
-
-    if (confirmRemove) {
-        AlertDialog(
-            onDismissRequest = { confirmRemove = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            title = { Text(stringResource(R.string.remove_confirm_title)) },
-            text = { Text(stringResource(R.string.remove_book_confirm_message, book.title)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmRemove = false
-                    onRemove()
-                }) { Text(stringResource(R.string.action_remove), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
-        )
     }
 }
 

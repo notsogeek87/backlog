@@ -10,6 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.glance.appwidget.updateAll
+import androidx.lifecycle.lifecycleScope
+import com.davidgcd.backlog.widget.BacklogWidget
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,6 +67,7 @@ class MainActivity : ComponentActivity() {
     private fun handle(intent: Intent?) {
         pendingGameId = gameIdFrom(intent)
         pendingLink = DetailLink.parse(intent?.data)
+            ?: intent?.getStringExtra(NotificationIds.EXTRA_TITLE_KEY)?.let { key -> DetailLink.parse("movie", key) }
         pendingAction = null
         val data = intent?.data
         when {
@@ -170,6 +175,12 @@ class MainActivity : ComponentActivity() {
               }
             }
         }
+    }
+
+    /** Rafraîchit le widget quand l'app passe en arrière-plan : c'est là que la liste vient de changer. */
+    override fun onStop() {
+        super.onStop()
+        lifecycleScope.launch { runCatching { BacklogWidget().updateAll(applicationContext) } }
     }
 
     private companion object {

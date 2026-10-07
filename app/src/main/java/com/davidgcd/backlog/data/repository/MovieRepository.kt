@@ -80,6 +80,9 @@ class MovieRepository(
     /** Live trailer (French when possible); never cached. */
     suspend fun trailer(titleKey: String): Trailer? = tmdb.trailer(titleKey)
 
+    /** Last aired / next episode of a series (for the « nouvel épisode » alert); null for a film or when TMDB can't say. */
+    suspend fun episodes(titleKey: String): com.davidgcd.backlog.data.tmdb.SeriesEpisodes? = tmdb.episodes(titleKey)
+
     suspend fun add(title: MediaTitle, status: WatchStatus = WatchStatus.TO_WATCH) {
         if (dao.findById(title.id) != null) return
         dao.upsert(title.toEntity(status))

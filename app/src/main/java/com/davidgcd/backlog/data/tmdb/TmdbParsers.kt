@@ -70,6 +70,17 @@ object TmdbParsers {
     }
 
     /** `/movie/{id}` or `/tv/{id}` with `append_to_response=credits`. */
+    /** Le dernier épisode diffusé et le prochain d'une série (`/tv/{id}`) ; null si la réponse est illisible. */
+    fun parseEpisodes(json: String): SeriesEpisodes? {
+        val o = runCatching { JSONObject(json) }.getOrNull() ?: return null
+        fun JSONObject.episode(): EpisodeInfo? {
+            val season = optInt("season_number", -1).takeIf { it >= 0 } ?: return null
+            val number = optInt("episode_number", -1).takeIf { it >= 1 } ?: return null
+            return EpisodeInfo(season, number, parseDate(optString("air_date").ifEmpty { null }), optString("name").ifEmpty { null })
+        }
+        return SeriesEpisodes(o.optJSONObject("last_episode_to_air")?.episode(), o.optJSONObject("next_episode_to_air")?.episode())
+    }
+
     fun parseDetails(json: String, kind: TitleKind): MediaTitle? {
         val o = runCatching { JSONObject(json) }.getOrNull() ?: return null
         val tmdbId = o.optLong("id", -1).takeIf { it >= 0 } ?: return null
@@ -220,4 +231,25 @@ object TmdbParsers {
 
     /** TMDB genre ids of news (10763) and talk shows (10767). */
     private val NON_FICTION_GENRES = setOf(10763, 10767)
+}
+
+/** Un épisode d'une série : numéroté `S02E05`, avec sa date de diffusion (UTC, secondes) quand TMDB la connaît. */
+data class EpisodeInfo(val season: Int, val number: Int, val airDate: Long?, val name: String?) {
+    val label: String get() = "S%02dE%02d".format(season, number)
+}
+
+data class SeriesEpisodes(val last: EpisodeInfo?, val next: EpisodeInfo?)
+
+/** Quand prévenir d'un nouvel épisode : diffusé tout récemment, et pas déjà annoncé. */
+object EpisodeRules {
+    const val RECENT_DAYS = 3L
+    private const val DAY_SECONDS = 86_400L
+
+    fun shouldNotify(last: EpisodeInfo?, lastNotifiedLabel: String?, nowEpochSeconds: Long): Boolean {
+        last ?: return false
+        val aired = last.airDate ?: return false
+        if (last.label == lastNotifiedLabel) return false
+        val ageDays = (nowEpochSeconds - aired) / DAY_SECONDS
+        return aired <= nowEpochSeconds + DAY_SECONDS && ageDays <= RECENT_DAYS
+    }
 }

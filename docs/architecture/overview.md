@@ -22,8 +22,10 @@
   Steam, gratuit, ne lève jamais — pas de note = pas de carte, jamais de
   message d'erreur), `MetacriticService` (même règle "pas d'erreur
   visible", mais **scaffold non branché** : voir "Ce qui manque encore").
-- `ui/nav/` — `BacklogNavHost`, le seul `NavHost` de l'app (Backlog → détail
-  d'un jeu, Backlog → Réglages).
+- `ui/nav/` — `BacklogNavHost`, le seul `NavHost` de l'app : quatre onglets (Accueil, Bibliothèque, Découvrir, Réglages), détails, classement, « Mon année ». `AppAction` porte ce qu'un raccourci, le widget ou un texte partagé demande à l'ouverture. Voir [navigation et gestes](../guides/navigation-et-gestes.md).
+- `ui/home/`, `ui/recap/` — accueil « Aujourd'hui » (`HomeViewModel` agrège les trois médias) et « Mon année » ; logique pure dans `model/Tonight`, `model/YearRecap`, `model/StatusFlow`.
+- `ui/prefs/` — `UiPreferences` (SharedPreferences, lues avant la première frame) : thème, couleurs dynamiques, aperçu des bandes-annonces, drapeaux « déjà demandé ».
+- `widget/` — widget Glance « en cours / prochaine sortie ».
 - `ui/` — écrans Compose + ViewModels, un package par écran : `ui/backlog/`
   (liste + recherche IGDB + tri/filtre — `BacklogSort`/`BacklogFilter`,
   genre/plateforme dérivés des `GameEntity` du backlog, jamais figés en dur),
@@ -36,8 +38,8 @@
   (`DiscoverCategory` : Populaires = `total_rating_count`, Mieux notés =
   `total_rating`, Tendances = sorties des ~18 derniers mois les plus notées,
   Nouveautés = sorties des ~3 derniers mois, À venir = `hypes`), équivalent simplifié de Découvertes/
-  `PopularGamesLoader` sur iOS (pas de cache disque ni de stale-while-
-  revalidate pour l'instant) ; les jeux déjà dans le backlog sont filtrés
+  `PopularGamesLoader` sur iOS (cache mémoire stale-while-revalidate `StaleCache`, 10 min ;
+  pas de cache disque) ; les jeux déjà dans le backlog sont filtrés
   côté client.
 - `data/csv/` — `CsvColumn` (en-têtes machine, `yyyy-MM-dd`, jamais
   traduits — même règle que `CSVColumn` sur iOS), `CsvFormat` (lecture/
@@ -52,7 +54,7 @@
   et `AutoExportPreferences` mémorise le résultat du dernier passage (affiché dans
   Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
 - Classement personnel (`GameEntity.userRank`, migration 4→5, 1 = le plus aimé) : écran
-  `ui/ranking/` (flèches monter/descendre, ouvert depuis la barre du Backlog), tri « Mon classement »,
+  `ui/ranking/` (glisser-déposer + tout en haut / tout en bas + « placer à la position N », trois médias, ouvert depuis le menu « ⋮ » de la Bibliothèque), tri « Mon classement »,
   colonne CSV `rank`. `model/Ranking` est le seul endroit qui ordonne (classés d'abord, puis non
   classés par date d'ajout, archivés exclus). Le partage en tient compte : liste numérotée « Mon
   classement » en tête, sur la page publique comme dans le texte de repli ; les autres jeux restent

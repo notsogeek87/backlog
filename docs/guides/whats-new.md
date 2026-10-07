@@ -9,7 +9,7 @@ Après l'installation d'une nouvelle version, l'app affiche une seule fois les n
 Ajouter une entrée **en fin de liste** dans `Changelog.entries` (`ui/whatsnew/Changelog.kt`) avec le prochain `id` (jamais réutilisé ni réordonné) :
 
 ```kotlin
-ChangelogEntry(7, "Titre court", "Une phrase qui explique ce que ça change pour l'utilisateur."),
+ChangelogEntry(16, "Titre court", "Une phrase qui explique ce que ça change pour l'utilisateur."),
 ```
 
 ## Fonctionnement

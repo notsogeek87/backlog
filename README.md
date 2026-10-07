@@ -40,6 +40,10 @@ Couches `model/`, `data/` (local, remote, repository, csv, share), `ui/`, `notif
 [docs/architecture/overview.md](docs/architecture/overview.md). `BacklogRepository` reste la seule source de vérité
 entre Room et les API distantes. Design system : [docs/architecture/design-system.md](docs/architecture/design-system.md).
 
+## Navigation et gestes
+
+Quatre onglets (Accueil, Bibliothèque, Découvrir, Réglages), recherche « Ma liste / Catalogue », balayages, classement par glisser-déposer, widget, « Mon année »… : voir le [guide](docs/guides/navigation-et-gestes.md) et l'[audit UX](docs/architecture/ux-audit.md).
+
 ## Import de bibliothèque Steam
 
 Réglages → *Mes plateformes*. Voir [ADR](docs/architecture/2026-09-29-library-providers.md),
@@ -78,11 +82,9 @@ Toute la documentation est indexée dans [docs/README.md](docs/README.md) ; pour
 ## Ce qui manque encore (prochaines étapes suggérées)
 
 - Un vrai fournisseur Metacritic branché sur `MetacriticApi` (voir plus haut)
-- Widget Home Screen (Glance, équivalent App Group/WidgetKit)
 - Sync cloud multi-appareils (Firebase ou backend perso)
 - Traduire les messages d'erreur/résultats qui restent en anglais (voir
   "Localisation FR/EN" ci-dessus)
-- Cache disque + stale-while-revalidate pour Découvertes (actuellement un
-  fetch à chaque ouverture de l'écran)
+- Cache **disque** pour Découvrir (le cache mémoire stale-while-revalidate existe déjà)
 - Tests instrumentés (androidTest) pour la navigation et les permissions,
   au-delà de ce que Robolectric peut couvrir en JVM

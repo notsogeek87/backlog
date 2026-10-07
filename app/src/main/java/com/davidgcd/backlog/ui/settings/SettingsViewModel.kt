@@ -66,6 +66,20 @@ class SettingsViewModel(
     val platformChangeAlertsEnabled: StateFlow<Boolean> = preferences.platformChangeAlertsEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
+    val dealAlertsEnabled: StateFlow<Boolean> = preferences.dealAlertsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    val episodeAlertsEnabled: StateFlow<Boolean> = preferences.episodeAlertsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setDealAlertsEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.setDealAlertsEnabled(enabled) }
+    }
+
+    fun setEpisodeAlertsEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.setEpisodeAlertsEnabled(enabled) }
+    }
+
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> = _isImporting
 

@@ -78,7 +78,11 @@ import com.davidgcd.backlog.ui.components.GlassCard
 import com.davidgcd.backlog.ui.components.GlassPill
 import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.components.GradientProgressBar
-import com.davidgcd.backlog.ui.components.TrailerCard
+import com.davidgcd.backlog.ui.components.TrailerHero
+import com.davidgcd.backlog.ui.components.DetailBackdrop
+import com.davidgcd.backlog.ui.components.LocalAppSnackbar
+import com.davidgcd.backlog.ui.components.StickyActionBar
+import com.davidgcd.backlog.ui.prefs.LocalUiPreferences
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.ui.components.tint
@@ -94,6 +98,8 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val providers by viewModel.providers.collectAsState()
     val credits by viewModel.credits.collectAsState()
     val trailer by viewModel.trailer.collectAsState()
+    val appSnackbar = LocalAppSnackbar.current
+    val trailerPreview by (LocalUiPreferences.current?.trailerPreview ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }).collectAsState()
 
     val context = LocalContext.current
     /** Shares the title: the app link that opens this very page for the contact first, then its themoviedb.org page. */
@@ -121,26 +127,24 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     }?.let { TmdbImage.poster(it) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // The poster tints the screen: blurred, dimmed, faded into the night canvas (blur needs API 31+).
-        if (backdrop != null) {
-            Box(modifier = Modifier.fillMaxWidth().height(460.dp).clipToBounds()) {
-                AsyncImage(
-                    model = backdrop,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().scale(1.2f).blur(28.dp).alpha(0.5f),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(listOf(Color(0x26050A14), Glass.Bg))),
-                )
-            }
-        }
+        // The poster tints the screen: blurred, veiled in its dominant colour, faded into the canvas.
+        DetailBackdrop(backdrop)
 
         Scaffold(
             containerColor = Color.Transparent,
             contentColor = Glass.Text,
+            bottomBar = {
+                // « Ajouter » stays in reach whatever the scroll position.
+                (state as? MovieDetailState.Remote)?.let { remote ->
+                    StickyActionBar {
+                        GradientButton(
+                            text = stringResource(R.string.action_add_to_movies),
+                            onClick = { viewModel.add(remote.title) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     colors = glassTopAppBarColors(),
@@ -173,8 +177,18 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                         onStatusChange = { viewModel.setStatus(current.movie, it) },
                         onRate = { viewModel.setUserRating(current.movie, it) },
                         onArchiveToggle = { viewModel.setArchived(current.movie, !current.movie.isArchived) },
-                        onRemove = { viewModel.remove(current.movie, onDone = onBack) },
-                        onAdd = {},
+                        // No confirmation dialog: the title goes, and the Snackbar on the list behind offers « Annuler ».
+                        onRemove = {
+                            val removed = current.movie
+                            viewModel.remove(removed) {
+                                onBack()
+                                appSnackbar?.show(
+                                    context.getString(R.string.snackbar_removed, removed.title),
+                                    context.getString(R.string.action_undo),
+                                ) { viewModel.restore(removed) }
+                            }
+                        },
+                        trailerPreview = trailerPreview,
                         onPersonClick = onPersonClick,
                     )
                     is MovieDetailState.Remote -> MovieContent(
@@ -187,7 +201,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                         onRate = {},
                         onArchiveToggle = {},
                         onRemove = {},
-                        onAdd = { viewModel.add(current.title) },
+                        trailerPreview = trailerPreview,
                         onPersonClick = onPersonClick,
                     )
                 }
@@ -212,7 +226,7 @@ private fun CastRow(people: List<CastMember>, kind: TitleKind, onPersonClick: (L
                         .clip(RoundedCornerShape(12.dp))
                         .then(
                             person.personId?.let { id ->
-                                Modifier.clickable { onPersonClick(id, person.isDirector) }
+                                Modifier.clickable(role = androidx.compose.ui.semantics.Role.Button, onClickLabel = person.name) { onPersonClick(id, person.isDirector) }
                             } ?: Modifier,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -282,10 +296,9 @@ private fun MovieContent(
     onRate: (Int) -> Unit,
     onArchiveToggle: () -> Unit,
     onRemove: () -> Unit,
-    onAdd: () -> Unit,
+    trailerPreview: Boolean,
     onPersonClick: (Long, Boolean) -> Unit,
 ) {
-    var confirmRemove by remember { mutableStateOf(false) }
     var askRating by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -298,6 +311,7 @@ private fun MovieContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            trailer?.let { TrailerHero(it, trailerPreview) }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
                 GameCover(imageId = null, width = 132.dp, imageUrl = TmdbImage.poster(title.posterUrl))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -352,7 +366,7 @@ private fun MovieContent(
                             Text(stringResource(R.string.ratings_tmdb), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted, modifier = Modifier.weight(1f))
                             Text("%.1f / 10".format(java.util.Locale.FRENCH, rating), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         }
-                        GradientProgressBar((rating / 10.0).toFloat())
+                        GradientProgressBar((rating / 10.0).toFloat(), description = "%.1f / 10".format(java.util.Locale.FRENCH, rating))
                     }
                 }
             }
@@ -369,8 +383,6 @@ private fun MovieContent(
                     }
                 }
             }
-
-            trailer?.let { TrailerCard(it) }
 
             WhereToWatchCard(providers)
 
@@ -392,12 +404,6 @@ private fun MovieContent(
                         onClick = onArchiveToggle,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                } else {
-                    GradientButton(
-                        text = stringResource(R.string.action_add_to_movies),
-                        onClick = onAdd,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
                 GlassButton(
                     text = stringResource(R.string.action_open_tmdb),
@@ -407,7 +413,7 @@ private fun MovieContent(
                 if (saved != null) {
                     GlassButton(
                         text = stringResource(R.string.action_remove_from_movies),
-                        onClick = { confirmRemove = true },
+                        onClick = onRemove,
                         modifier = Modifier.fillMaxWidth(),
                         contentColor = MaterialTheme.colorScheme.error,
                     )
@@ -437,24 +443,6 @@ private fun MovieContent(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { askRating = false }) { Text(stringResource(R.string.action_skip)) }
-            },
-        )
-    }
-
-    if (confirmRemove) {
-        AlertDialog(
-            onDismissRequest = { confirmRemove = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            title = { Text(stringResource(R.string.remove_confirm_title)) },
-            text = { Text(stringResource(R.string.remove_movie_confirm_message, title.title)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmRemove = false
-                    onRemove()
-                }) { Text(stringResource(R.string.action_remove), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }

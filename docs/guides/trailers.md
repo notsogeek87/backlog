@@ -3,7 +3,8 @@
 **Pour qui / pourquoi** : utilisateurs qui regardent une bande-annonce depuis une fiche, et contributeurs qui touchent à la sélection (VF/VO) ou au lecteur.
 
 ## Côté utilisateur
-- Fiche **jeu** (IGDB) et fiche **film/série** (TMDB) : carte « Bande-annonce (VF) » ou « (VO) ».
+- Fiche **jeu** (IGDB) et fiche **film/série** (TMDB) : grande vignette 16:9 **en tête de page**, légendée « Bande-annonce (VF) » ou « (VO) ».
+- Option **Réglages > Apparence > Aperçu animé** (désactivée par défaut, consomme des données) : un aperçu muet en boucle démarre à l'ouverture ; un toucher lance la lecture avec le son (`TrailerHero`).
 - La **vignette** s'affiche d'abord ; rien n'est chargé depuis YouTube avant le toucher sur ▶. Le lecteur intégré démarre alors dans la fiche.
 - « Ouvrir dans YouTube » reste disponible quand le propriétaire interdit l'intégration.
 - Aucune carte si le titre n'a pas de vidéo. Les bandes-annonces sont récupérées en direct à chaque ouverture, jamais mises en cache.

@@ -48,6 +48,8 @@ class CsvImportService(
         val archivedIndex = header.indexOf(CsvColumn.ARCHIVED.header)
         val statusIndex = header.indexOf(CsvColumn.STATUS.header)
         val rankIndex = header.indexOf(CsvColumn.RANK.header)
+        val ratingIndex = header.indexOf(CsvColumn.USER_RATING.header)
+        val completedIndex = header.indexOf(CsvColumn.COMPLETED_AT.header)
         // Files written before books existed have no type column: every row is a game.
         val typeIndex = header.indexOf(BookCsv.TYPE_HEADER)
 
@@ -80,6 +82,8 @@ class CsvImportService(
                     ?.let { fields.getOrNull(it) }?.let(GameStatus::fromName) ?: GameStatus.BACKLOG
 
                 val rank = rankIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toIntOrNull()?.takeIf { it > 0 }
+                val rating = ratingIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toIntOrNull()?.takeIf { it in 1..10 }
+                val completedAt = completedIndex.takeIf { it >= 0 }?.let { fields.getOrNull(it) }?.trim()?.toLongOrNull()
 
                 try {
                     val game = when {
@@ -102,6 +106,11 @@ class CsvImportService(
                         repository.findEntity(game.id)?.let { repository.setStatus(it, status) }
                     }
                     if (rank != null) repository.setRank(game.id, rank)
+                    repository.findEntity(game.id)?.let { saved ->
+                        if (rating != null) repository.setUserRating(saved, rating)
+                        // The date the game was finished (a re-import must not move it to today).
+                        if (completedAt != null && status == GameStatus.COMPLETED) repository.setCompletedAt(saved, completedAt)
+                    }
                     added++
                 } catch (t: kotlinx.coroutines.CancellationException) {
                     throw t

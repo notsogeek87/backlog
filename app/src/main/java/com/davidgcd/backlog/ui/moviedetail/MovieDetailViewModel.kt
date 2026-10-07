@@ -155,6 +155,9 @@ class MovieDetailViewModel(
         viewModelScope.launch { repository.setUserRating(movie, rating.takeIf { it != movie.userRating }) }
     }
 
+    /** Puts back the title just removed (the « Annuler » of the Snackbar); suspend so it outlives this screen's scope. */
+    suspend fun restore(movie: MovieEntity) = repository.restore(movie)
+
     fun setArchived(movie: MovieEntity, archived: Boolean) {
         viewModelScope.launch { repository.setArchived(movie, archived) }
     }

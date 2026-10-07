@@ -150,6 +150,9 @@ class BookDetailViewModel(
         viewModelScope.launch { repository.setUserRating(book, rating.takeIf { it != book.userRating }) }
     }
 
+    /** Puts back the book just removed (the « Annuler » of the Snackbar); suspend so it outlives this screen's scope. */
+    suspend fun restore(book: BookEntity) = repository.restore(book)
+
     /** [onDone] runs once the row is deleted, so leaving the screen can't cancel the delete mid-flight. */
     fun remove(book: BookEntity, onDone: () -> Unit = {}) {
         viewModelScope.launch {

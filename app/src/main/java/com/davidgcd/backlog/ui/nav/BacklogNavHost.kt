@@ -175,9 +175,9 @@ private val topLevelDestinations = listOf(
 )
 
 /**
- * The app's one NavHost — mirrors the iOS app's rule of a single navigation
- * stack per top-level surface, kept as one stack here since there is a
- * single tab for this first pass (no Accueil/Backlog split yet, see README).
+ * The app's one NavHost. Four top-level surfaces (Accueil, Bibliothèque, Découvrir, Réglages) share one back stack
+ * with per-tab saved state; detail screens, the ranking and « Mon année » are pushed on top. The Library hosts the
+ * games / films & séries / books lists behind one media switch.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

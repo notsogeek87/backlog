@@ -40,6 +40,18 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.davidgcd.backlog.ui.prefs.ThemeMode
+import com.davidgcd.backlog.ui.prefs.LocalUiPreferences
+import com.davidgcd.backlog.ui.home.hasNotificationPermission
+import com.davidgcd.backlog.ui.components.GlassPill
+import com.davidgcd.backlog.BuildConfig
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import android.content.Intent
+import android.os.Build
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -92,6 +104,8 @@ fun SettingsScreen(
     val minute by viewModel.minute.collectAsState()
     val dateChangeAlertsEnabled by viewModel.dateChangeAlertsEnabled.collectAsState()
     val platformChangeAlertsEnabled by viewModel.platformChangeAlertsEnabled.collectAsState()
+    val dealAlertsEnabled by viewModel.dealAlertsEnabled.collectAsState()
+    val episodeAlertsEnabled by viewModel.episodeAlertsEnabled.collectAsState()
     val isImporting by viewModel.isImporting.collectAsState()
     val importResult by viewModel.importResult.collectAsState()
     val importProgress by viewModel.importProgress.collectAsState()
@@ -144,6 +158,9 @@ fun SettingsScreen(
         ) {
             platformsContent()
 
+            SectionTitle(stringResource(R.string.settings_section_appearance), topPadding = 8.dp)
+            AppearanceCard()
+
             SectionTitle(stringResource(R.string.settings_section_games), topPadding = 8.dp)
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
@@ -164,6 +181,8 @@ fun SettingsScreen(
                 }
             }
 
+            NotificationPermissionBanner(needed = releaseRemindersEnabled || dateChangeAlertsEnabled || platformChangeAlertsEnabled || dealAlertsEnabled || episodeAlertsEnabled)
+
             SectionTitle(stringResource(R.string.settings_section_changes), topPadding = 8.dp)
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
@@ -179,6 +198,20 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_platform_change_subtitle),
                         checked = platformChangeAlertsEnabled,
                         onCheckedChange = viewModel::setPlatformChangeAlertsEnabled,
+                    )
+                    HorizontalDivider(color = Glass.Border)
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_deal_alerts_title),
+                        subtitle = stringResource(R.string.settings_deal_alerts_subtitle),
+                        checked = dealAlertsEnabled,
+                        onCheckedChange = viewModel::setDealAlertsEnabled,
+                    )
+                    HorizontalDivider(color = Glass.Border)
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_episode_alerts_title),
+                        subtitle = stringResource(R.string.settings_episode_alerts_subtitle),
+                        checked = episodeAlertsEnabled,
+                        onCheckedChange = viewModel::setEpisodeAlertsEnabled,
                     )
                 }
             }
@@ -257,12 +290,30 @@ fun SettingsScreen(
 
             updatesContent()
 
-            SectionTitle(stringResource(R.string.settings_section_debug), topPadding = 8.dp)
-            GlassButton(
-                text = stringResource(R.string.settings_view_debug_log),
-                onClick = { showDebugLog = true },
-                modifier = Modifier.fillMaxWidth(),
+            val uiPrefs = LocalUiPreferences.current
+            val debugUnlocked by (uiPrefs?.debugUnlocked ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }).collectAsState()
+            val unlockedMessage = stringResource(R.string.settings_debug_unlocked)
+            val aboutScope = rememberCoroutineScope()
+            SectionTitle(stringResource(R.string.settings_section_about), topPadding = 8.dp)
+            AboutRow(
+                versionText = stringResource(R.string.settings_update_version, BuildConfig.VERSION_NAME),
+                hint = if (debugUnlocked) null else stringResource(R.string.settings_about_hint),
+                onSevenTaps = {
+                    if (uiPrefs != null && !debugUnlocked) {
+                        uiPrefs.unlockDebug()
+                        aboutScope.launch { snackbarHostState.showSnackbar(unlockedMessage) }
+                    }
+                },
             )
+            // The debug log is a developer tool: hidden until the version line has been tapped seven times.
+            if (debugUnlocked) {
+                SectionTitle(stringResource(R.string.settings_section_debug), topPadding = 8.dp)
+                GlassButton(
+                    text = stringResource(R.string.settings_view_debug_log),
+                    onClick = { showDebugLog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Spacer(Modifier.height(16.dp))
         }
     }
@@ -332,9 +383,16 @@ fun SettingsScreen(
 @Composable
 private fun ShareNameRow(saved: String, onSave: (String) -> Unit) {
     var text by remember(saved) { mutableStateOf(saved) }
+    // Saved once the typing pauses, not on every keystroke.
+    LaunchedEffect(text) {
+        if (text != saved) {
+            kotlinx.coroutines.delay(600)
+            onSave(text)
+        }
+    }
     androidx.compose.material3.OutlinedTextField(
         value = text,
-        onValueChange = { text = it.take(ShareLinkService.MAX_OWNER_LENGTH); onSave(text) },
+        onValueChange = { text = it.take(ShareLinkService.MAX_OWNER_LENGTH) },
         label = { Text(stringResource(R.string.settings_share_name_title)) },
         supportingText = { Text(stringResource(R.string.settings_share_name_hint)) },
         singleLine = true,
@@ -539,4 +597,105 @@ private fun DebugLogDialog(onDismiss: () -> Unit) {
 private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText("Backlog debug log", text))
+}
+
+
+/** Apparence : thème (système, sombre, clair, AMOLED), couleurs dynamiques (Android 12+), aperçu animé des bandes-annonces. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AppearanceCard() {
+    val prefs = LocalUiPreferences.current ?: return
+    val mode by prefs.themeMode.collectAsState()
+    val dynamic by prefs.dynamicColors.collectAsState()
+    val preview by prefs.trailerPreview.collectAsState()
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.settings_theme_title), style = MaterialTheme.typography.bodyLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ThemeMode.entries.forEach { option ->
+                        GlassPill(stringResource(option.labelRes()), selected = mode == option, onClick = { prefs.setThemeMode(option) })
+                    }
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                HorizontalDivider(color = Glass.Border)
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dynamic_colors_title),
+                    subtitle = stringResource(R.string.settings_dynamic_colors_subtitle),
+                    checked = dynamic,
+                    onCheckedChange = prefs::setDynamicColors,
+                )
+            }
+            HorizontalDivider(color = Glass.Border)
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_trailer_preview_title),
+                subtitle = stringResource(R.string.settings_trailer_preview_subtitle),
+                checked = preview,
+                onCheckedChange = prefs::setTrailerPreview,
+            )
+        }
+    }
+}
+
+private fun ThemeMode.labelRes(): Int = when (this) {
+    ThemeMode.SYSTEM -> R.string.theme_system
+    ThemeMode.DARK -> R.string.theme_dark
+    ThemeMode.LIGHT -> R.string.theme_light
+    ThemeMode.AMOLED -> R.string.theme_amoled
+}
+
+/**
+ * Les alertes ne partent que si Android autorise les notifications : quand une alerte est active sans l'autorisation,
+ * on le dit ici et un bouton la demande (ou ouvre les réglages d'Android si elle a déjà été refusée).
+ */
+@Composable
+private fun NotificationPermissionBanner(needed: Boolean) {
+    if (!needed || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+    val context = LocalContext.current
+    val prefs = LocalUiPreferences.current
+    var granted by remember { mutableStateOf(hasNotificationPermission(context)) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        granted = ok
+        if (!ok && prefs?.notificationPermissionAsked == true) {
+            context.startActivity(
+                Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName),
+            )
+        }
+        prefs?.notificationPermissionAsked = true
+    }
+    if (granted) return
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.notif_banner_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.notif_banner_message), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GlassButton(
+                text = stringResource(R.string.notif_nudge_enable),
+                onClick = { launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/** Version installée ; sept touchers dessus débloquent le journal de debug (outil de développeur, caché par défaut). */
+@Composable
+private fun AboutRow(versionText: String, hint: String?, onSevenTaps: () -> Unit) {
+    var taps by remember { mutableStateOf(0) }
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = {
+            taps += 1
+            if (taps >= 7) {
+                taps = 0
+                onSevenTaps()
+            }
+        },
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(versionText, style = MaterialTheme.typography.bodyLarge)
+            hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
 }

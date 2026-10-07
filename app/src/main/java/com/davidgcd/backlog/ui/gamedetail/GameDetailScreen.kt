@@ -60,7 +60,12 @@ import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.model.Trailer
-import com.davidgcd.backlog.ui.components.TrailerCard
+import com.davidgcd.backlog.ui.components.TrailerHero
+import com.davidgcd.backlog.ui.components.DetailBackdrop
+import com.davidgcd.backlog.ui.components.LocalAppSnackbar
+import com.davidgcd.backlog.ui.components.StickyActionBar
+import com.davidgcd.backlog.ui.prefs.LocalUiPreferences
+import com.davidgcd.backlog.model.suggestedFor
 import com.davidgcd.backlog.ui.components.GlassPill
 import com.davidgcd.backlog.ui.components.GlassBadgeButton
 import com.davidgcd.backlog.ui.components.label
@@ -88,6 +93,8 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val ratings by viewModel.ratings.collectAsState()
     val trailer by viewModel.trailer.collectAsState()
     val frenchSummary by viewModel.frenchSummary.collectAsState()
+    val appSnackbar = LocalAppSnackbar.current
+    val trailerPreview by (LocalUiPreferences.current?.trailerPreview ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }).collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -125,27 +132,25 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // The game's own artwork tints the screen: blurred, dimmed, faded into the night canvas.
-        // (Blur is API 31+; older devices just get the dimmed, unblurred image.)
-        if (backdropId != null) {
-            Box(modifier = Modifier.fillMaxWidth().height(460.dp).clipToBounds()) {
-                AsyncImage(
-                    model = IgdbImage.url(backdropId, IgdbImage.Size.CoverBig),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().scale(1.2f).blur(28.dp).alpha(0.5f),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(listOf(Color(0x26050A14), Glass.Bg))),
-                )
-            }
-        }
+        // The game's own artwork tints the screen: blurred, veiled in its dominant colour, faded into the canvas.
+        DetailBackdrop(backdropId?.let { IgdbImage.url(it, IgdbImage.Size.CoverBig) })
 
         Scaffold(
             containerColor = Color.Transparent,
             contentColor = Glass.Text,
+            bottomBar = {
+                // « Ajouter » stays in reach whatever the scroll position (it used to sit under the summary).
+                (state as? GameDetailState.Remote)?.let { remote ->
+                    val wish = GameStatus.suggestedFor(remote.game.firstReleaseDate) == GameStatus.WISHLIST
+                    StickyActionBar {
+                        GradientButton(
+                            text = stringResource(if (wish) R.string.action_add_to_wishlist else R.string.action_add_to_backlog),
+                            onClick = { viewModel.addToBacklog(remote.game) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     colors = glassTopAppBarColors(),
@@ -180,10 +185,22 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         inBacklog = true,
                         isArchived = current.entity.isArchived,
                         status = current.entity.gameStatus,
+                        userRating = current.entity.userRating,
+                        trailerPreview = trailerPreview,
                         onStatusChange = { viewModel.setStatus(current.entity, it) },
+                        onRate = { viewModel.setUserRating(current.entity, it) },
                         onArchiveToggle = { viewModel.setArchived(current.entity, !current.entity.isArchived) },
-                        onRemove = { viewModel.remove(current.entity, onDone = onBack) },
-                        onAdd = {},
+                        // No confirmation dialog: the row goes, and the Snackbar on the list behind offers « Annuler ».
+                        onRemove = {
+                            val removed = current.entity
+                            viewModel.remove(removed) {
+                                onBack()
+                                appSnackbar?.show(
+                                    context.getString(R.string.snackbar_removed, removed.name),
+                                    context.getString(R.string.action_undo),
+                                ) { viewModel.restore(removed) }
+                            }
+                        },
                     )
                     is GameDetailState.Remote -> GameDetailContent(
                         display = current.game.toDisplay().withSummary(frenchSummary),
@@ -192,10 +209,12 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         inBacklog = false,
                         isArchived = false,
                         status = GameStatus.BACKLOG,
+                        userRating = null,
+                        trailerPreview = trailerPreview,
                         onStatusChange = {},
+                        onRate = {},
                         onArchiveToggle = {},
                         onRemove = {},
-                        onAdd = { viewModel.addToBacklog(current.game) },
                     )
                 }
             }
@@ -221,12 +240,19 @@ private fun GameDetailContent(
     inBacklog: Boolean,
     isArchived: Boolean,
     status: GameStatus,
+    userRating: Int?,
+    trailerPreview: Boolean,
     onStatusChange: (GameStatus) -> Unit,
+    onRate: (Int) -> Unit,
     onArchiveToggle: () -> Unit,
     onRemove: () -> Unit,
-    onAdd: () -> Unit,
 ) {
-    var confirmRemove by remember { mutableStateOf(false) }
+    var askRating by remember { mutableStateOf(false) }
+    // Marking a game finished is the moment to note it (skippable, only while unrated).
+    val changeStatus: (GameStatus) -> Unit = { option ->
+        if (option == GameStatus.COMPLETED && status != GameStatus.COMPLETED && userRating == null) askRating = true
+        onStatusChange(option)
+    }
 
     // Phones: one centred, width-capped column. Wide windows (unfolded foldable, tablet): the
     // cover/identity block sits beside the details instead of leaving a phone layout floating in the middle.
@@ -246,13 +272,14 @@ private fun GameDetailContent(
                 ) {
                     DetailHero(display, isArchived, coverWidth = 200.dp, stacked = true)
                     DetailTags(display)
-                    DetailActions(inBacklog, isArchived, onArchiveToggle, onRemoveRequest = { confirmRemove = true }, onAdd = onAdd)
+                    DetailActions(inBacklog, isArchived, onArchiveToggle, onRemove)
                 }
                 Column(
                     modifier = Modifier.weight(0.6f).fillMaxHeight().verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    DetailBody(display, ratings, trailer, inBacklog, status, onStatusChange)
+                    trailer?.let { TrailerHero(it, trailerPreview) }
+                    DetailBody(display, ratings, inBacklog, status, userRating, changeStatus, onRate)
                 }
             }
         } else {
@@ -264,30 +291,36 @@ private fun GameDetailContent(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                trailer?.let { TrailerHero(it, trailerPreview) }
                 DetailHero(display, isArchived, coverWidth = 132.dp, stacked = false)
                 DetailTags(display)
-                DetailBody(display, ratings, trailer, inBacklog, status, onStatusChange)
-                DetailActions(inBacklog, isArchived, onArchiveToggle, onRemoveRequest = { confirmRemove = true }, onAdd = onAdd)
+                DetailBody(display, ratings, inBacklog, status, userRating, changeStatus, onRate)
+                DetailActions(inBacklog, isArchived, onArchiveToggle, onRemove)
             }
         }
     }
 
 
-    if (confirmRemove) {
+    if (askRating) {
         AlertDialog(
-            onDismissRequest = { confirmRemove = false },
+            onDismissRequest = { askRating = false },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            title = { Text(stringResource(R.string.remove_confirm_title)) },
-            text = { Text(stringResource(R.string.remove_confirm_message, display.name)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmRemove = false
-                    onRemove()
-                }) { Text(stringResource(R.string.action_remove), color = MaterialTheme.colorScheme.error) }
+            title = { Text(stringResource(R.string.game_rate_prompt_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.game_rate_prompt_message, display.name))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        (1..10).forEach { n ->
+                            GlassPill(text = "$n", selected = false, onClick = {
+                                askRating = false
+                                onRate(n)
+                            })
+                        }
+                    }
+                }
             },
-            dismissButton = {
-                TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { askRating = false }) { Text(stringResource(R.string.action_skip)) } },
         )
     }
 }
@@ -347,10 +380,11 @@ private fun DetailTags(display: GameDisplay) {
 private fun DetailBody(
     display: GameDisplay,
     ratings: RatingsState,
-    trailer: Trailer?,
     inBacklog: Boolean,
     status: GameStatus,
+    userRating: Int?,
     onStatusChange: (GameStatus) -> Unit,
+    onRate: (Int) -> Unit,
 ) {
     if (inBacklog) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -367,13 +401,20 @@ private fun DetailBody(
         }
     }
 
+    if (inBacklog) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.game_my_rating), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                (1..10).forEach { n -> GlassPill(text = "$n", selected = userRating == n, onClick = { onRate(n) }) }
+            }
+        }
+    }
+
     // Never renders "No score available" — a game with no score just has no section here,
     // same rule as the iOS app's Notes (GameRatingsSection): missing is not an error.
     if (display.totalRating != null || !ratings.isEmpty) {
         RatingsCard(display.totalRating, ratings)
     }
-
-    trailer?.let { TrailerCard(it) }
 
     display.summary?.let { summary ->
         GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -387,35 +428,28 @@ private fun DetailBody(
     }
 }
 
-// One clear primary action; the destructive one is visually demoted and confirmed.
+// The primary action (« Ajouter ») lives in the sticky bar; here only the secondary ones. Removing has no
+// confirmation dialog: it is undone from the Snackbar instead.
 @Composable
 private fun DetailActions(
     inBacklog: Boolean,
     isArchived: Boolean,
     onArchiveToggle: () -> Unit,
-    onRemoveRequest: () -> Unit,
-    onAdd: () -> Unit,
+    onRemove: () -> Unit,
 ) {
+    if (!inBacklog) return
     Column(modifier = Modifier.padding(top = 8.dp, bottom = 24.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (inBacklog) {
-            GlassButton(
-                text = stringResource(if (isArchived) R.string.action_unarchive else R.string.action_archive),
-                onClick = onArchiveToggle,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            GlassButton(
-                text = stringResource(R.string.action_remove_from_backlog),
-                onClick = onRemoveRequest,
-                modifier = Modifier.fillMaxWidth(),
-                contentColor = MaterialTheme.colorScheme.error,
-            )
-        } else {
-            GradientButton(
-                text = stringResource(R.string.action_add_to_backlog),
-                onClick = onAdd,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        GlassButton(
+            text = stringResource(if (isArchived) R.string.action_unarchive else R.string.action_archive),
+            onClick = onArchiveToggle,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        GlassButton(
+            text = stringResource(R.string.action_remove_from_backlog),
+            onClick = onRemove,
+            modifier = Modifier.fillMaxWidth(),
+            contentColor = MaterialTheme.colorScheme.error,
+        )
     }
 }
 
@@ -446,7 +480,7 @@ private fun ScoreRow(label: String, valueText: String, fraction: Double, caption
             Text(label, style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted, modifier = Modifier.weight(1f))
             Text(valueText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
-        GradientProgressBar(fraction.toFloat())
+        GradientProgressBar(fraction.toFloat(), description = "$label : $valueText")
         // API wording (Steam verdicts, review counts) is shown as sent, never translated.
         caption?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted) }
     }

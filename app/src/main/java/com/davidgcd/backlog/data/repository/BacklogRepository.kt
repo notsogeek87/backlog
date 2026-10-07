@@ -70,6 +70,11 @@ class BacklogRepository(
         gameDao.setUserRating(entity.igdbId, rating?.coerceIn(1, 10))
     }
 
+    /** The date a finished game was finished (restored from a CSV file); only meaningful while it is completed. */
+    suspend fun setCompletedAt(entity: GameEntity, completedAt: Long) {
+        gameDao.update((gameDao.findById(entity.igdbId) ?: entity).copy(completedAt = completedAt))
+    }
+
     /** Puts back a row removed a moment ago (the « Annuler » of a deletion), exactly as it was. */
     suspend fun restore(entity: GameEntity) {
         gameDao.upsert(entity)

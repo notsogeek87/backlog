@@ -60,7 +60,7 @@ class BookCsvTest {
         val gameHeaders = CsvColumn.EXPORT_ORDER.map { it.header }
         assertEquals(listOf("type") + gameHeaders + BookCsv.EXTRA_COLUMNS, BookCsv.HEADER)
         assertEquals(
-            listOf("name", "igdbId", "releaseDate", "genres", "platforms", "archived", "steamAppId", "status", "rank"),
+            listOf("name", "igdbId", "releaseDate", "genres", "platforms", "archived", "steamAppId", "status", "rank", "userRating", "completedAt"),
             gameHeaders,
         )
     }
