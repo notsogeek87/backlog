@@ -47,4 +47,11 @@ class TonightTest {
         assertEquals(300, Tonight.readingMinutes(200))
         assertTrue(Tonight.readingMinutes(null) == null && Tonight.readingMinutes(0) == null)
     }
+
+    @Test
+    fun `with every medium selected the picks alternate instead of being all games`() {
+        val games = (1..6).map { game("g$it", inProgress = true) }
+        val picks = Tonight.suggest(games + movie("m", 100) + TonightCandidate(Medium.BOOK, "b", "b", addedAt = now - 5 * day), null, TimeBudget.LONG, now)
+        assertEquals(setOf(Medium.GAME, Medium.MOVIE, Medium.BOOK), picks.map { it.medium }.toSet())
+    }
 }

@@ -51,12 +51,21 @@ object Tonight {
         now: Long,
         seed: Long = 0L,
         count: Int = 3,
-    ): List<TonightCandidate> =
-        candidates
+    ): List<TonightCandidate> {
+        val ranked = candidates
             .filter { medium == null || it.medium == medium }
             .filter { fits(it, budget) }
             .sortedByDescending { score(it, budget, now, seed) }
-            .take(count)
+        if (medium != null) return ranked.take(count)
+        // « Tout » : les médias alternent (le meilleur de chacun d'abord) au lieu de laisser les jeux, plus nombreux
+        // et souvent « en cours », occuper toutes les places.
+        val perMedium = ranked.groupBy { it.medium }.values.map { it.iterator() }
+        val picks = mutableListOf<TonightCandidate>()
+        while (picks.size < count && perMedium.any { it.hasNext() }) {
+            perMedium.forEach { if (picks.size < count && it.hasNext()) picks += it.next() }
+        }
+        return picks.sortedByDescending { score(it, budget, now, seed) }
+    }
 
     internal fun fits(candidate: TonightCandidate, budget: TimeBudget): Boolean {
         val max = budget.maxMinutes ?: return true
