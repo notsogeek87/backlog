@@ -303,16 +303,16 @@ private fun RankRow(
                     GameCover(item.coverImageId, width = 48.dp, imageUrl = item.coverUrl)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = Glass.Text, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     item.subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
                 // « Tout en haut » / « tout en bas » stay one tap away: with hundreds of entries dragging is not enough.
                 Column {
                     IconButton(modifier = Modifier.size(44.dp), enabled = index > 0, onClick = onMoveTop) {
-                        Icon(Icons.Filled.KeyboardDoubleArrowUp, contentDescription = top)
+                        Icon(Icons.Filled.KeyboardDoubleArrowUp, contentDescription = top, tint = if (index > 0) Glass.Text else Glass.TextMuted.copy(alpha = 0.4f))
                     }
                     IconButton(modifier = Modifier.size(44.dp), enabled = index < count - 1, onClick = onMoveBottom) {
-                        Icon(Icons.Filled.KeyboardDoubleArrowDown, contentDescription = bottom)
+                        Icon(Icons.Filled.KeyboardDoubleArrowDown, contentDescription = bottom, tint = if (index < count - 1) Glass.Text else Glass.TextMuted.copy(alpha = 0.4f))
                     }
                 }
                 Icon(
