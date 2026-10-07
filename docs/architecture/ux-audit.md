@@ -16,7 +16,7 @@ Périmètre : navigation, listes (jeux, films & séries, livres), recherche, fil
 | 6 | Moy. | Permission de notifications demandée au lancement, jusqu'à 3 fenêtres d'affilée. | Demande contextuelle (carte sur l'accueil quand il y a des sorties, bannière dans Réglages) ; `WhatsNewPrompt` attend la fenêtre de mise à jour. |
 | 7 | Moy. | Tuiles de stats inertes ; « Souhaité » à la fois statut et portée. | Tuiles = filtre de statut (état sélectionné) ; la portée Tous/Souhaités/Possédés passe dans la feuille de filtres. |
 | 8 | Moy. | Filtre et tri en longs menus à radios, sans compteur, tri actif invisible. | `FilterSortSheet` (puces, bouton « Voir N résultats »), libellé « Tri : … » sous le titre de section. |
-| 9 | Moy. | Barre du haut à 5 icônes. | Recherche + Filtrer/trier + menu « ⋮ » (partager, classement, import TMDB). |
+| 9 | Moy. | Barre du haut à 5 icônes. | Recherche + Filtrer/trier + Partager (toujours visible) + menu « ⋮ » (classement des jeux, import TMDB). |
 | 10 | Moy. | Recherche, partage, état vide, chips recopiés 3 fois. | `LibraryParts`, `ShareFlow`, `FilterSheet`, `QuickActionsSheet`, `SwipeActions` partagés. |
 | 11 | Moy. | Un jeu à venir était ajouté en « Backlog ». | `GameStatus.suggestedFor` : « Souhaité » si pas encore sorti ; appui long sur « + » pour choisir le statut. |
 | 12 | Basse | Classement : état vide aligné à gauche, jeux seulement. | État vide centré avec action ; classement conservé pour les jeux seulement (films, séries et livres se jugent à leurs notes). |

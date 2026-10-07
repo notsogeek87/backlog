@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.VerticalAlignTop
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -330,11 +331,15 @@ fun MoviesScreen(
                                 tint = if (filter.isActive) Glass.Cyan else Glass.Text,
                             )
                         }
+                        IconButton(onClick = share.start, enabled = !share.sharing) {
+                            if (share.sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_movies))
+                            }
+                        }
                         OverflowMenuButton(
-                            listOf(
-                                OverflowAction(stringResource(R.string.action_share_movies), onClick = share.start, enabled = !share.sharing),
-                                OverflowAction(stringResource(R.string.movies_empty_import), onClick = onOpenTmdbImport),
-                            ),
+                            listOf(OverflowAction(stringResource(R.string.movies_empty_import), onClick = onOpenTmdbImport)),
                         )
                     }
                 },

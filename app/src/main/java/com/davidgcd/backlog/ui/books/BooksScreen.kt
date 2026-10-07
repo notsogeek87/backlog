@@ -323,11 +323,13 @@ fun BooksScreen(
                                 tint = if (filter.isActive) Glass.Cyan else Glass.Text,
                             )
                         }
-                        OverflowMenuButton(
-                            listOf(
-                                OverflowAction(stringResource(R.string.action_share_books), onClick = share.start, enabled = !share.sharing),
-                            ),
-                        )
+                        IconButton(onClick = share.start, enabled = !share.sharing) {
+                            if (share.sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_books))
+                            }
+                        }
                     }
                 },
             )

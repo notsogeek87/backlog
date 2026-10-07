@@ -346,11 +346,15 @@ fun BacklogScreen(
                                 tint = if (filter.isActive || filter.scope != BacklogScope.ALL) Glass.Cyan else Glass.Text,
                             )
                         }
+                        IconButton(onClick = share.start, enabled = !share.sharing) {
+                            if (share.sharing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
+                            } else {
+                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_backlog))
+                            }
+                        }
                         OverflowMenuButton(
-                            listOf(
-                                OverflowAction(stringResource(R.string.action_share_backlog), onClick = share.start, enabled = !share.sharing),
-                                OverflowAction(stringResource(R.string.action_my_ranking), onClick = onOpenRanking),
-                            ),
+                            listOf(OverflowAction(stringResource(R.string.action_my_ranking), onClick = onOpenRanking)),
                         )
                     }
                 },
