@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed icon (Android 13+): single-tint silhouette of the media case (clapper bars, cover, game pad). -->
+<!-- Icône thématique (Android 13+) : la claquette ouverte avec la manette, en aplat. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.6"
-        android:pathData="M35.02,40.3h36.07a2.85,2.85 0 0 1 2.85,2.85v31.32a2.85,2.85 0 0 1 -2.85,2.85h-36.07a2.85,2.85 0 0 1 -2.85,-2.85v-31.32a2.85,2.85 0 0 1 2.85,-2.85zM39.76,43.71L42.61,43.71L44.13,41.05L41.28,41.05zM45.84,43.71L48.68,43.71L50.2,41.05L47.35,41.05zM51.91,43.71L54.76,43.71L56.28,41.05L53.43,41.05zM57.99,43.71L60.83,43.71L62.35,41.05L59.5,41.05zM64.06,43.71L66.91,43.71L68.43,41.05L65.58,41.05z" />
-    <group android:rotation="-9" android:pivotX="32.17" android:pivotY="39.73">
-    <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M33.31,34.79h39.49a1.14,1.14 0 0 1 1.14,1.14v2.66a1.14,1.14 0 0 1 -1.14,1.14h-39.49a1.14,1.14 0 0 1 -1.14,-1.14v-2.66a1.14,1.14 0 0 1 1.14,-1.14zM35.01,39.16L37.86,39.16L39.95,35.36L36.91,35.36zM41.09,39.16L43.94,39.16L46.03,35.36L42.99,35.36zM47.16,39.16L50.01,39.16L52.1,35.36L49.06,35.36zM53.24,39.16L56.09,39.16L58.18,35.36L55.14,35.36zM59.31,39.16L62.16,39.16L64.25,35.36L61.21,35.36zM65.39,39.16L68.24,39.16L70.33,35.36L67.29,35.36z" />
-    </group>
-    <path android:fillColor="#FFFFFFFF" android:fillAlpha="1"
-        android:pathData="M47.26,53.2L64.35,53.2C67.67,53.2 69.28,56.05 69.66,60.8C70.04,65.54 69.28,69.53 66.43,69.53C64.16,69.53 63.21,66.68 61.88,64.6C61.02,63.27 60.07,62.89 58.65,62.89L52.96,62.89C51.53,62.89 50.58,63.27 49.73,64.6C48.4,66.68 47.45,69.53 45.17,69.53C42.32,69.53 41.56,65.54 41.94,60.8C42.32,56.05 43.94,53.2 47.26,53.2zM48.11,57.19L48.11,58.62L46.69,58.62L46.69,59.75L48.11,59.75L48.11,61.18L49.25,61.18L49.25,59.75L50.68,59.75L50.68,58.62L49.25,58.62L49.25,57.19zM61.69,56.81a0.95,0.95 0 1 0 1.9,0a0.95,0.95 0 1 0 -1.9,0zM59.88,58.62a0.95,0.95 0 1 0 1.9,0a0.95,0.95 0 1 0 -1.9,0zM63.49,58.62a0.95,0.95 0 1 0 1.9,0a0.95,0.95 0 1 0 -1.9,0zM61.69,60.42a0.95,0.95 0 1 0 1.9,0a0.95,0.95 0 1 0 -1.9,0z" />
+    <!-- Battant incliné -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M24,40 L78,26 Q81,25.5 82,28 L83.5,34 Q84,36 82,36.6 L27,50 Q24,50.5 23.5,48 L22.5,43 Q22,41 24,40 Z" />
+    <!-- Corps de la claquette, manette découpée -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M27,52 L81,52 Q86,52 86,57 L86,79 Q86,84 81,84 L27,84 Q22,84 22,79 L22,57 Q22,52 27,52 Z M37,77 Q35,68 41,64 L47,62 L61,62 L67,64 Q73,68 71,77 Q69,80 66,77 L62,72 L46,72 L42,77 Q39,80 37,77 Z" />
 </vector>

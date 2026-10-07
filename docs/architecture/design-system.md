@@ -49,7 +49,8 @@ Utilisés à la place : nombre de jeux actifs/archivés (tuiles), ajouts récent
 - Le thème clair est une déclinaison (même verre, bordures et fond adaptés) : le contraste y reste à mesurer sur appareil.
 - Non compilé localement (pas de SDK Android) : validation par la CI `android-build`.
 
-## Logo
-Un seul objet fusionnant les trois médias : un livre (dos sombre, marque-page teal) dont le haut est une claquette complète (barre fixe + battant articulé rayé), avec une manette (jeu) en couverture. Contours bleu nuit, halo teal, dégradés doux, sur fond bleu nuit. Sobre, sans mascotte ni texte.
-- Sources : `docs/brand/logo.png` (logo complet, 1254×1254), `docs/brand/logo-512.png`, `docs/brand/play-store-icon-512.png` (fiche Play Store, 512×512).
-- Android : icône adaptative (`mipmap-anydpi-v26/ic_launcher*.xml`, avec variante monochrome Android 13+), splash Android 12+ (`values-v31/themes.xml`), marque in-app `drawable-nodpi/ic_logo_mark.png` (en-tête Backlog, état vide).
+## Logo et identité visuelle
+Identité (octobre 2026) : une **claquette ouverte** (films), une **manette** sur l'ardoise (jeux) et un **marque-page cyan** (livres), sur fond bleu nuit, avec le mot-symbole « backlog » (« log » en dégradé cyan→bleu) et la ligne « Films · Jeux vidéo · Livres ». L'app n'utilise que **l'emblème** (sans texte ni petites icônes) ; les couleurs de l'identité sont celles du thème (fond nuit, accent cyan→bleu).
+- Sources : `docs/brand/logo.png` (identité complète, 1254×1254), `docs/brand/emblem.png` (emblème détouré, fond transparent), `docs/brand/logo-512.png`, `docs/brand/play-store-icon-512.png` (fiche Play Store, emblème sur fond nuit, 512×512).
+- Android : icône adaptative (`mipmap-anydpi-v26/ic_launcher*.xml` : fond uni `#0A0F1E`, emblème dans la zone sûre de 66 %, variante monochrome Android 13+ en aplat), splash Android 12+ (`values-v31/themes.xml`), marque in-app `drawable-nodpi/ic_logo_mark.png` (barres du haut, états vides).
+- L'emblème a été détouré depuis l'image d'identité (fond sombre retiré par remplissage depuis les bords, bords adoucis) : pour le refaire, partir de `logo.png`.
