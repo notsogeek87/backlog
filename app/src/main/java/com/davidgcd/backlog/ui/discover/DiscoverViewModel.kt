@@ -1,5 +1,8 @@
 package com.davidgcd.backlog.ui.discover
 
+import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.suggestedFor
+import com.davidgcd.backlog.util.StaleCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -55,20 +58,35 @@ class DiscoverViewModel(private val repository: BacklogRepository) : ViewModel()
         // A slower response for a previously selected list must never overwrite the current one.
         loadJob?.cancel()
         val category = _category.value
-        loadJob = viewModelScope.launch {
+        // Stale-while-revalidate: a list already seen shows at once, and is only re-fetched once it is old.
+        val cached = cache.get(category)
+        if (cached != null) {
+            _state.value = DiscoverState.Loaded(cached.value)
+            if (cached.fresh) return
+        } else {
             _state.value = DiscoverState.Loading
-            _state.value = try {
-                DiscoverState.Loaded(repository.getDiscoverGames(category))
+        }
+        loadJob = viewModelScope.launch {
+            try {
+                val fresh = repository.getDiscoverGames(category)
+                cache.put(category, fresh)
+                _state.value = DiscoverState.Loaded(fresh)
             } catch (t: CancellationException) {
                 throw t
             } catch (t: Throwable) {
-                DiscoverState.Error
+                // A failed refresh keeps the list that is already on screen.
+                if (cached == null) _state.value = DiscoverState.Error
             }
         }
     }
 
-    fun addToBacklog(game: Game) {
-        viewModelScope.launch { repository.addToBacklog(game) }
+    /** Sans [status] : « Souhaité » pour un jeu pas encore sorti, « Backlog » sinon. */
+    fun addToBacklog(game: Game, status: GameStatus? = null) {
+        viewModelScope.launch { repository.addToBacklog(game, status ?: GameStatus.suggestedFor(game.firstReleaseDate)) }
+    }
+
+    private companion object {
+        val cache = StaleCache<DiscoverCategory, List<Game>>()
     }
 }
 

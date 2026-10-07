@@ -15,7 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.CircularProgressIndicator
+import com.davidgcd.backlog.ui.components.SkeletonList
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +40,11 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.suggestedFor
+import com.davidgcd.backlog.ui.components.AddButton
+import com.davidgcd.backlog.ui.components.AddChoice
+import com.davidgcd.backlog.ui.components.label
 import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.ui.components.GameListItem
 import com.davidgcd.backlog.ui.components.GlassButton
@@ -64,6 +69,16 @@ fun DiscoverScreen(
     val state by viewModel.state.collectAsState()
     val backlogIds by viewModel.backlogIds.collectAsState()
     val category by viewModel.category.collectAsState()
+    val addGame: (Game, GameStatus?) -> Unit = { game, status ->
+        val used = status ?: GameStatus.suggestedFor(game.firstReleaseDate)
+        viewModel.addToBacklog(game, status)
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(
+                context.getString(if (used == GameStatus.WISHLIST) R.string.snackbar_added_wishlist else R.string.snackbar_added, game.name),
+            )
+        }
+    }
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -94,11 +109,7 @@ fun DiscoverScreen(
                 }
             }
             when (val current = state) {
-                is DiscoverState.Loading -> Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) { CircularProgressIndicator(color = Glass.Cyan) }
+                is DiscoverState.Loading -> SkeletonList()
 
                 is DiscoverState.Error -> Column(
                     modifier = Modifier.fillMaxSize(),
@@ -141,20 +152,13 @@ fun DiscoverScreen(
                                         modifier = Modifier.padding(12.dp),
                                     )
                                 } else {
-                                    // Same icon action as search results: consistent add affordance app-wide.
-                                    IconButton(onClick = {
-                                        viewModel.addToBacklog(game)
-                                        scope.launch {
-                                            snackbarHostState.currentSnackbarData?.dismiss()
-                                            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, game.name))
-                                        }
-                                    }) {
-                                        Icon(
-                                            Icons.Filled.Add,
-                                            contentDescription = stringResource(R.string.action_add_to_backlog),
-                                            tint = Glass.Cyan,
-                                        )
-                                    }
+                                    // Same add affordance as search results: a tap adds with the suggested status
+                                    // (« Souhaité » for an upcoming game), a long press chooses another one.
+                                    AddButton(
+                                        contentDescription = stringResource(R.string.action_add_to_backlog),
+                                        onAdd = { addGame(game, null) },
+                                        choices = GameStatus.entries.map { status -> AddChoice(status.label()) { addGame(game, status) } },
+                                    )
                                 }
                             },
                         )

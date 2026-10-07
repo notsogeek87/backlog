@@ -23,9 +23,10 @@ import com.davidgcd.backlog.R
 
 /** Fenêtre « Nouveautés » affichée une seule fois après une mise à jour, listant ce qui a changé depuis la version précédente. */
 @Composable
-fun WhatsNewPrompt(store: WhatsNewStore) {
+fun WhatsNewPrompt(store: WhatsNewStore, enabled: Boolean = true) {
     var entries by remember { mutableStateOf<List<ChangelogEntry>>(emptyList()) }
-    LaunchedEffect(Unit) { entries = store.takeUnseen() }
+    // Waits while another dialog (a proposed update) is up: one window at a time.
+    LaunchedEffect(enabled) { if (enabled) entries = store.takeUnseen() }
     if (entries.isEmpty()) return
 
     AlertDialog(

@@ -8,7 +8,7 @@ class MigrationsTest {
     @Test
     fun `migrations form one unbroken chain from version 1 to the current schema`() {
         val steps = Migrations.ALL.map { it.startVersion to it.endVersion }
-        assertEquals((1..8).map { it to it + 1 }, steps)
+        assertEquals((1..9).map { it to it + 1 }, steps)
     }
 
     @Test

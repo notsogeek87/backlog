@@ -18,6 +18,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.model.suggestedFor
+import com.davidgcd.backlog.ui.components.AddButton
 import com.davidgcd.backlog.data.repository.BacklogRepository
 import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.MovieRepository
@@ -128,7 +130,7 @@ class CrossSearchViewModel(
     }
 
     fun addGame(game: Game) {
-        viewModelScope.launch { games.addToBacklog(game) }
+        viewModelScope.launch { games.addToBacklog(game, com.davidgcd.backlog.model.GameStatus.suggestedFor(game.firstReleaseDate)) }
     }
 
     fun addMovie(title: MediaTitle) {
@@ -200,9 +202,10 @@ fun LazyListScope.crossSearchItems(
                             modifier = Modifier.padding(12.dp),
                         )
                     } else {
-                        IconButton(onClick = { vm.addGame(game); onAdded(game.name) }) {
-                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_to_backlog), tint = Glass.Cyan)
-                        }
+                        AddButton(
+                            contentDescription = stringResource(R.string.action_add_to_backlog),
+                            onAdd = { vm.addGame(game); onAdded(game.name) },
+                        )
                     }
                 },
             )

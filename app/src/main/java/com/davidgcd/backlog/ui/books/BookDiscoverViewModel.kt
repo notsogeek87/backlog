@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.ui.books
 
+import com.davidgcd.backlog.util.StaleCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -56,14 +57,27 @@ class BookDiscoverViewModel(private val repository: BookRepository) : ViewModel(
         // A slower answer for a previously selected list must never overwrite the current one.
         loadJob?.cancel()
         val chart = _chart.value
-        loadJob = viewModelScope.launch {
+        // Stale-while-revalidate: a list already seen shows at once, and is only re-fetched once it is old.
+        val cached = cache.get(chart)
+        if (cached != null) {
+            _loaded.value = BookDiscoverState.Loaded(cached.value)
+            if (cached.fresh) return
+        } else {
             _loaded.value = BookDiscoverState.Loading
-            _loaded.value = try {
-                repository.chart(chart).let { if (it.isEmpty()) BookDiscoverState.Error else BookDiscoverState.Loaded(it) }
+        }
+        loadJob = viewModelScope.launch {
+            try {
+                val fresh = repository.chart(chart)
+                if (fresh.isNotEmpty()) {
+                    cache.put(chart, fresh)
+                    _loaded.value = BookDiscoverState.Loaded(fresh)
+                } else if (cached == null) {
+                    _loaded.value = BookDiscoverState.Error
+                }
             } catch (t: CancellationException) {
                 throw t
             } catch (t: Throwable) {
-                BookDiscoverState.Error
+                if (cached == null) _loaded.value = BookDiscoverState.Error
             }
         }
     }
@@ -74,6 +88,10 @@ class BookDiscoverViewModel(private val repository: BookRepository) : ViewModel(
             onResult(result)
             if (result is BookAddResult.Added) repository.enrich(result.key)
         }
+    }
+
+    private companion object {
+        val cache = StaleCache<BookChart, List<Book>>()
     }
 }
 

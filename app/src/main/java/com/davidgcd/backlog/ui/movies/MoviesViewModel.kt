@@ -16,6 +16,7 @@ import com.davidgcd.backlog.model.MovieRanking
 import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchStatus
+import com.davidgcd.backlog.util.LibraryQuery
 import com.davidgcd.backlog.ui.backlog.SearchError
 import com.davidgcd.backlog.util.AppLogger
 import com.davidgcd.backlog.util.TmdbImage
@@ -90,8 +91,18 @@ class MoviesViewModel(
         .map { list -> list.flatMap { it.genreList }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val visible: StateFlow<List<MovieEntity>> = combine(movies, _sort, _filter) { list, sort, filter ->
+    private val _libraryQuery = MutableStateFlow("")
+
+    /** Texte tapé dans « Ma liste » : filtre instantané, accents et casse ignorés. */
+    val libraryQuery: StateFlow<String> = _libraryQuery
+
+    fun setLibraryQuery(query: String) {
+        _libraryQuery.value = query
+    }
+
+    val visible: StateFlow<List<MovieEntity>> = combine(movies, _sort, _filter, _libraryQuery) { list, sort, filter, query ->
         list
+            .filter { LibraryQuery.matches(query, it.title, it.directors, it.cast) }
             .filter { filter.showArchived || !it.isArchived }
             .filter { filter.kind == null || it.titleKind == filter.kind }
             .filter { filter.status == null || it.watchStatus == filter.status }
@@ -188,6 +199,28 @@ class MoviesViewModel(
 
     fun setArchived(movie: MovieEntity, archived: Boolean) {
         viewModelScope.launch { repository.setArchived(movie, archived) }
+    }
+
+    fun setStatus(movie: MovieEntity, status: WatchStatus) {
+        viewModelScope.launch { repository.setStatus(movie, status) }
+    }
+
+    fun remove(movie: MovieEntity) {
+        viewModelScope.launch { repository.remove(movie) }
+    }
+
+    /** Remet en place un titre retiré à l'instant (« Annuler »). */
+    fun restore(movie: MovieEntity) {
+        viewModelScope.launch { repository.restore(movie) }
+    }
+
+    /** Place le titre en tête du classement perso (action rapide d'un appui long). */
+    fun moveToTop(movie: MovieEntity) {
+        viewModelScope.launch {
+            val order = MovieRanking.order(repository.allMovies())
+            val index = order.indexOfFirst { it.titleKey == movie.titleKey }
+            if (index > 0) repository.applyRanking(MovieRanking.moveTo(order, index, 0))
+        }
     }
 }
 

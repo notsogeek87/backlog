@@ -40,6 +40,10 @@ data class BookEntity(
     val userRating: Int? = null,
     val addedAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
+    /** Personal ranking, 1 = most loved. Null = not ranked yet (listed after the ranked books). */
+    val userRank: Int? = null,
+    /** When the book was last marked read (UTC epoch millis); null if it never was. Feeds « Mon année ». */
+    val completedAt: Long? = null,
 )
 
 val BookEntity.readStatus: ReadStatus get() = ReadStatus.fromName(status)

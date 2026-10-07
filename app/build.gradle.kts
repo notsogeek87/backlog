@@ -140,6 +140,11 @@ dependencies {
     implementation("com.lielu:lielugit-updater:1.0.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 
+    // Couleur dominante de la jaquette (fond des fiches) et widget d'écran d'accueil (Glance).
+    implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation("androidx.glance:glance-appwidget:1.1.0")
+    implementation("androidx.glance:glance-material3:1.1.0")
+
     // Background release-day check (equivalent to the iOS nightly BGTask)
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 

@@ -17,6 +17,8 @@ import com.davidgcd.backlog.model.BookDuplicates
 import com.davidgcd.backlog.model.BookKey
 import com.davidgcd.backlog.model.BookRanking
 import com.davidgcd.backlog.model.BookSource
+import com.davidgcd.backlog.model.BookTop
+import com.davidgcd.backlog.model.CompletionClock
 import com.davidgcd.backlog.model.BookText
 import com.davidgcd.backlog.model.ReadStatus
 import com.davidgcd.backlog.util.BookLanguages
@@ -204,7 +206,15 @@ class BookRepository(
     }
 
     suspend fun setStatus(entity: BookEntity, status: ReadStatus) =
-        dao.update(entity.copy(status = status.name, updatedAt = now()))
+        dao.update(entity.copy(status = status.name, updatedAt = now(), completedAt = CompletionClock.next(entity.completedAt, status == ReadStatus.READ)))
+
+    /** Applies a new personal order (first = most loved); only rows whose rank changes are written. */
+    suspend fun applyRanking(newOrder: List<BookEntity>) {
+        BookTop.changes(newOrder).forEach { (key, rank) -> dao.setRank(key, rank) }
+    }
+
+    /** Puts back a book removed a moment ago (the « Annuler » of a deletion), exactly as it was. */
+    suspend fun restore(entity: BookEntity) = dao.upsert(entity)
 
     suspend fun setFavorite(entity: BookEntity, favorite: Boolean) =
         dao.update(entity.copy(isFavorite = favorite, updatedAt = now()))

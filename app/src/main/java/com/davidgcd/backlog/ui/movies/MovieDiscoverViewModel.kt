@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.ui.movies
 
+import com.davidgcd.backlog.util.StaleCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -49,17 +50,28 @@ class MovieDiscoverViewModel(private val repository: MovieRepository) : ViewMode
         // A slower response for a previously selected chart must never overwrite the current one.
         loadJob?.cancel()
         val chart = _chart.value
-        loadJob = viewModelScope.launch {
+        // Stale-while-revalidate: a chart already seen shows at once, and is only re-fetched once it is old.
+        val cached = cache.get(chart)
+        if (cached != null) {
+            _state.value = MovieDiscoverState.Loaded(cached.value)
+            if (cached.fresh) return
+        } else {
             _state.value = MovieDiscoverState.Loading
-            _state.value = try {
+        }
+        loadJob = viewModelScope.launch {
+            try {
                 // Charts list hundreds of titles; the first page is what anyone browses.
-                repository.chart(chart).take(MAX_TITLES).let {
-                    if (it.isEmpty()) MovieDiscoverState.Error else MovieDiscoverState.Loaded(it)
+                val fresh = repository.chart(chart).take(MAX_TITLES)
+                if (fresh.isNotEmpty()) {
+                    cache.put(chart, fresh)
+                    _state.value = MovieDiscoverState.Loaded(fresh)
+                } else if (cached == null) {
+                    _state.value = MovieDiscoverState.Error
                 }
             } catch (t: CancellationException) {
                 throw t
             } catch (t: Throwable) {
-                MovieDiscoverState.Error
+                if (cached == null) _state.value = MovieDiscoverState.Error
             }
         }
     }
@@ -70,6 +82,7 @@ class MovieDiscoverViewModel(private val repository: MovieRepository) : ViewMode
 
     private companion object {
         const val MAX_TITLES = 50
+        val cache = StaleCache<MovieChart, List<MediaTitle>>()
     }
 }
 

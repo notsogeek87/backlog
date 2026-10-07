@@ -2,9 +2,10 @@ package com.davidgcd.backlog.ui.books
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,11 +15,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,36 +28,28 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,19 +58,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
@@ -87,27 +78,47 @@ import com.davidgcd.backlog.data.local.readStatus
 import com.davidgcd.backlog.data.repository.BookAddResult
 import com.davidgcd.backlog.model.ReadStatus
 import com.davidgcd.backlog.ui.backlog.SearchError
+import com.davidgcd.backlog.ui.components.AddButton
 import com.davidgcd.backlog.ui.components.BookCover
+import com.davidgcd.backlog.ui.components.FilterSortSheet
 import com.davidgcd.backlog.ui.components.GameListItem
-import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassPill
-import com.davidgcd.backlog.ui.components.GradientButton
-import com.davidgcd.backlog.ui.components.ShareScopeDialog
-import com.davidgcd.backlog.ui.components.labelRes
+import com.davidgcd.backlog.ui.components.LibraryEmptyState
+import com.davidgcd.backlog.ui.components.LibrarySearchField
+import com.davidgcd.backlog.ui.components.MediaType
+import com.davidgcd.backlog.ui.components.OverflowAction
+import com.davidgcd.backlog.ui.components.OverflowMenuButton
+import com.davidgcd.backlog.ui.components.QuickAction
+import com.davidgcd.backlog.ui.components.QuickActionsSheet
+import com.davidgcd.backlog.ui.components.RemovableChip
+import com.davidgcd.backlog.ui.components.SearchFeedback
+import com.davidgcd.backlog.ui.components.SearchRequest
+import com.davidgcd.backlog.ui.components.SearchScope
+import com.davidgcd.backlog.ui.components.SearchScopePills
+import com.davidgcd.backlog.ui.components.SectionHeader
+import com.davidgcd.backlog.ui.components.SheetChoice
+import com.davidgcd.backlog.ui.components.SheetSection
+import com.davidgcd.backlog.ui.components.SortLabel
 import com.davidgcd.backlog.ui.components.StatCard
+import com.davidgcd.backlog.ui.components.StatusBadgeMenu
+import com.davidgcd.backlog.ui.components.StatusChoice
 import com.davidgcd.backlog.ui.components.countLabelRes
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.components.label
+import com.davidgcd.backlog.ui.components.labelRes
+import com.davidgcd.backlog.ui.components.NoResultsMessage
+import com.davidgcd.backlog.ui.components.rememberShareFlow
+import com.davidgcd.backlog.ui.components.shareDetailLink
 import com.davidgcd.backlog.ui.components.tint
-import com.davidgcd.backlog.ui.theme.Glass
-import com.davidgcd.backlog.util.BookImage
-import com.davidgcd.backlog.ui.components.MediaType
 import com.davidgcd.backlog.ui.search.CrossSearch
 import com.davidgcd.backlog.ui.search.CrossSearchState
 import com.davidgcd.backlog.ui.search.crossSearchItems
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.davidgcd.backlog.ui.theme.Glass
+import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.BookShareText
+import com.davidgcd.backlog.util.DetailLink
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,20 +126,29 @@ import kotlinx.coroutines.launch
 fun BooksScreen(
     viewModel: BooksViewModel,
     onBookClick: (String) -> Unit,
+    onOpenRanking: () -> Unit = {},
     crossSearch: CrossSearch? = null,
+    mediaSwitch: @Composable () -> Unit = {},
+    searchRequest: SearchRequest? = null,
+    onSearchRequestHandled: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val openLabel = stringResource(R.string.action_open)
+    val undoLabel = stringResource(R.string.action_undo)
 
     var query by remember { mutableStateOf("") }
-    var showSearch by remember { mutableStateOf(false) }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
+    var searchScope by rememberSaveable { mutableStateOf(SearchScope.LIBRARY) }
+    var showSheet by remember { mutableStateOf(false) }
+    var quickActionsFor by remember { mutableStateOf<BookEntity?>(null) }
     val searchFocus = remember { FocusRequester() }
 
     val visible by viewModel.visible.collectAsState()
     val sort by viewModel.sort.collectAsState()
     val filter by viewModel.filter.collectAsState()
+    val libraryQuery by viewModel.libraryQuery.collectAsState()
     val subjects by viewModel.availableSubjects.collectAsState()
     val isEmpty by viewModel.isEmpty.collectAsState()
     val statusCounts by viewModel.statusCounts.collectAsState()
@@ -140,88 +160,140 @@ fun BooksScreen(
     val searchError by viewModel.searchError.collectAsState()
 
     val crossState by (crossSearch?.viewModel?.state ?: remember { MutableStateFlow(CrossSearchState()) }).collectAsState()
-    fun runSearch(text: String) {
-        viewModel.search(text)
-        crossSearch?.viewModel?.search(text, MediaType.BOOKS)
-    }
-    val onCrossAdded: (String) -> Unit = { name ->
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, name), duration = SnackbarDuration.Short)
+
+    fun runSearch(text: String, target: SearchScope) {
+        if (target == SearchScope.CATALOG) {
+            viewModel.setLibraryQuery("")
+            viewModel.search(text)
+            crossSearch?.viewModel?.search(text, MediaType.BOOKS)
+        } else {
+            viewModel.setLibraryQuery(text)
+            viewModel.search("")
+            crossSearch?.viewModel?.search("", MediaType.BOOKS)
         }
+    }
+
+    fun openSearch(target: SearchScope, initial: String = "") {
+        searchScope = target
+        query = initial
+        showSearch = true
+        runSearch(initial, target)
     }
 
     fun closeSearch() {
         showSearch = false
         query = ""
-        runSearch("")
+        runSearch("", SearchScope.CATALOG)
+        viewModel.setLibraryQuery("")
     }
 
     BackHandler(enabled = showSearch) { closeSearch() }
-    LaunchedEffect(showSearch) { if (showSearch) searchFocus.requestFocus() }
+    LaunchedEffect(showSearch, searchScope) { if (showSearch) searchFocus.requestFocus() }
+    LaunchedEffect(searchRequest) {
+        if (searchRequest != null && searchRequest.media == MediaType.BOOKS) {
+            openSearch(SearchScope.CATALOG, searchRequest.query.orEmpty())
+            onSearchRequestHandled()
+        }
+    }
 
-    var sharing by remember { mutableStateOf(false) }
-    var showScopeDialog by remember { mutableStateOf(false) }
-
-    val shareList: () -> Unit = {
+    val snack: (String) -> Unit = { text ->
         scope.launch {
-            sharing = true
-            try {
-                val books = viewModel.booksToShare()
-                val header = context.resources.getQuantityString(R.plurals.share_books_header, books.size, books.size)
-                // A public page (covers, best note first) when the server answers; otherwise the plain-text list.
-                val publicLink = viewModel.publishShareLink(header, books)
-                val text = if (publicLink != null) {
-                    "$header\n$publicLink"
-                } else {
-                    BookShareText.build(
-                        books,
-                        BookShareText.Labels(
-                            header = { header },
-                            status = { status -> context.getString(status.labelRes()) },
-                            ratings = context.getString(R.string.share_books_ratings),
-                        ),
-                    )
-                }
-                val send = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, text)
-                }
-                context.startActivity(Intent.createChooser(send, context.getString(R.string.share_books_chooser)))
-            } finally {
-                sharing = false
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(text, duration = SnackbarDuration.Short)
+        }
+    }
+    val snackWithUndo: (String, () -> Unit) -> Unit = { text, undo ->
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val result = snackbarHostState.showSnackbar(message = text, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) undo()
+        }
+    }
+    val onCrossAdded: (String) -> Unit = { name -> snack(context.getString(R.string.snackbar_added, name)) }
+
+    val changeStatus: (BookEntity, ReadStatus) -> Unit = { book, status ->
+        val previous = book.readStatus
+        if (previous != status) {
+            viewModel.setStatus(book, status)
+            snackWithUndo(context.getString(R.string.snackbar_status_changed, book.title, context.getString(status.labelRes()))) {
+                viewModel.setStatus(book, previous)
             }
         }
     }
 
-    val shareLibrary: () -> Unit = {
-        scope.launch {
-            sharing = true
-            try {
-                val header = context.getString(R.string.share_library_header)
-                // No server reachable: fall back to this tab's plain text rather than sharing nothing.
-                val publicLink = viewModel.publishLibraryLink(header)
-                if (publicLink == null) {
-                    shareList()
-                } else {
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "$header\n$publicLink")
-                    }
-                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_library_chooser)))
-                }
-            } finally {
-                sharing = false
+    val share = rememberShareFlow(
+        tabHintRes = R.string.share_scope_tab_books_hint,
+        publishLibraryLink = viewModel::publishLibraryLink,
+        shareTab = { ctx ->
+            val books = viewModel.booksToShare()
+            val header = ctx.resources.getQuantityString(R.plurals.share_books_header, books.size, books.size)
+            // A public page (covers, best note first) when the server answers; otherwise the plain-text list.
+            val publicLink = viewModel.publishShareLink(header, books)
+            val text = if (publicLink != null) {
+                "$header\n$publicLink"
+            } else {
+                BookShareText.build(
+                    books,
+                    BookShareText.Labels(
+                        header = { header },
+                        status = { status -> ctx.getString(status.labelRes()) },
+                        ratings = ctx.getString(R.string.share_books_ratings),
+                    ),
+                )
             }
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+            ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.share_books_chooser)))
+        },
+    )
+
+    if (showSheet) {
+        val resultLabel = when (visible.size) {
+            0 -> stringResource(R.string.filter_sheet_show_none)
+            1 -> stringResource(R.string.filter_sheet_show_one)
+            else -> stringResource(R.string.filter_sheet_show_count, visible.size)
         }
+        FilterSortSheet(
+            sections = bookSheetSections(sort, filter, subjects, viewModel),
+            resultLabel = resultLabel,
+            onReset = if (filter.isActive) ({ viewModel.setFilter(BookFilter()) }) else null,
+            onDismiss = { showSheet = false },
+        )
     }
 
-    if (showScopeDialog) {
-        ShareScopeDialog(
-            tabHintRes = R.string.share_scope_tab_books_hint,
-            onLibrary = { showScopeDialog = false; shareLibrary() },
-            onTab = { showScopeDialog = false; shareList() },
-            onDismiss = { showScopeDialog = false },
+    quickActionsFor?.let { book ->
+        val current = visible.firstOrNull { it.bookKey == book.bookKey } ?: book
+        QuickActionsSheet(
+            title = current.title,
+            statusLabel = stringResource(R.string.quick_actions_status),
+            statusChoices = ReadStatus.entries.map { status ->
+                StatusChoice(status.label(), status.tint(), selected = current.readStatus == status, onSelect = { changeStatus(current, status) })
+            },
+            actions = listOf(
+                QuickAction(
+                    stringResource(if (current.isFavorite) R.string.quick_action_unfavorite else R.string.quick_action_favorite),
+                    if (current.isFavorite) Icons.Filled.FavoriteBorder else Icons.Filled.Favorite,
+                    { viewModel.setFavorite(current, !current.isFavorite) },
+                ),
+                QuickAction(stringResource(R.string.quick_action_top), Icons.Filled.VerticalAlignTop, { viewModel.moveToTop(current) }),
+                QuickAction(
+                    stringResource(R.string.quick_action_share),
+                    Icons.Filled.Share,
+                    { shareDetailLink(context, current.title, DetailLink.url(DetailLink.Book(current.bookKey)), context.getString(R.string.share_book_chooser)) },
+                ),
+                QuickAction(
+                    stringResource(R.string.action_remove),
+                    Icons.Filled.Delete,
+                    {
+                        viewModel.remove(current)
+                        snackWithUndo(context.getString(R.string.snackbar_removed, current.title)) { viewModel.restore(current) }
+                    },
+                    destructive = true,
+                ),
+            ),
+            onDismiss = { quickActionsFor = null },
         )
     }
 
@@ -235,29 +307,29 @@ fun BooksScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(painter = painterResource(R.drawable.ic_logo_mark), contentDescription = null, modifier = Modifier.size(28.dp))
                         Spacer(Modifier.width(10.dp))
-                        Text(
-                            stringResource(R.string.books_title),
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.headlineSmall,
-                        )
+                        Text(stringResource(R.string.library_title), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
                     }
                 },
                 actions = {
-                    if (!showSearch) {
-                        IconButton(onClick = { showScopeDialog = true }, enabled = !sharing) {
-                            if (sharing) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Glass.Text)
-                            } else {
-                                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.action_share_books))
-                            }
-                        }
-                        SortMenuButton(current = sort, onSelect = viewModel::setSort)
-                        FilterMenuButton(current = filter, availableSubjects = subjects, onChange = viewModel::setFilter)
-                    }
-                    IconButton(onClick = { if (showSearch) closeSearch() else showSearch = true }) {
+                    IconButton(onClick = { if (showSearch) closeSearch() else openSearch(if (isEmpty) SearchScope.CATALOG else SearchScope.LIBRARY) }) {
                         Icon(
                             if (showSearch) Icons.Filled.Close else Icons.Filled.Search,
                             contentDescription = stringResource(if (showSearch) R.string.action_close_search else R.string.action_search),
+                        )
+                    }
+                    if (!showSearch) {
+                        IconButton(onClick = { showSheet = true }) {
+                            Icon(
+                                Icons.Filled.FilterList,
+                                contentDescription = stringResource(R.string.filter_sheet_title),
+                                tint = if (filter.isActive) Glass.Cyan else Glass.Text,
+                            )
+                        }
+                        OverflowMenuButton(
+                            listOf(
+                                OverflowAction(stringResource(R.string.action_share_books), onClick = share.start, enabled = !share.sharing),
+                                OverflowAction(stringResource(R.string.action_my_ranking), onClick = onOpenRanking),
+                            ),
                         )
                     }
                 },
@@ -266,57 +338,31 @@ fun BooksScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
+            mediaSwitch()
             if (showSearch) {
-                TextField(
-                    value = query,
-                    onValueChange = {
-                        query = it
-                        runSearch(it)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .focusRequester(searchFocus),
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Glass.GlassStrong,
-                        unfocusedContainerColor = Glass.GlassTop,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = Glass.Cyan,
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { runSearch(query) }),
-                    placeholder = { Text(stringResource(R.string.books_search_placeholder)) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = ""; runSearch("") }) {
-                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_clear))
-                            }
-                        }
-                    },
+                LibrarySearchField(
+                    query = query,
+                    onQueryChange = { query = it; runSearch(it, searchScope) },
+                    placeholder = stringResource(if (searchScope == SearchScope.LIBRARY) R.string.search_library_placeholder else R.string.books_search_placeholder),
+                    focusRequester = searchFocus,
+                    onSearch = { runSearch(query, searchScope) },
                 )
-                if (isSearching) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Glass.Cyan, trackColor = Color.Transparent)
-                } else {
-                    Spacer(Modifier.height(4.dp))
-                }
-                searchError?.let { error ->
+                SearchScopePills(searchScope, onScope = { openSearch(it, query) })
+            }
+            if (showSearch && searchScope == SearchScope.CATALOG) {
+                SearchFeedback(
+                    isSearching = isSearching,
                     // Never the technical cause: only what the user can do about it.
-                    Text(
-                        text = stringResource(
-                            when (error) {
+                    errorText = searchError?.let {
+                        stringResource(
+                            when (it) {
                                 SearchError.Network -> R.string.books_search_error_network
                                 SearchError.Server -> R.string.books_search_error_server
                                 SearchError.Unknown -> R.string.books_search_error_unknown
                             },
-                        ),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
+                        )
+                    },
+                )
                 if (!isSearching && searchError == null && query.isNotBlank() && crossState.isEmpty && results.isEmpty()) {
                     NoResults()
                 }
@@ -351,18 +397,23 @@ fun BooksScreen(
                     extra = { if (crossSearch != null && !isSearching) crossSearchItems(crossState, MediaType.BOOKS, crossSearch, onCrossAdded) },
                 )
             } else if (isEmpty) {
-                EmptyState(
+                LibraryEmptyState(
                     message = stringResource(R.string.books_empty),
                     actionLabel = stringResource(R.string.books_empty_cta),
-                    onAction = { showSearch = true },
+                    onAction = { openSearch(SearchScope.CATALOG) },
                 )
             } else {
                 BookGrid(
                     books = visible,
                     filter = filter,
+                    sort = sort,
+                    searchText = libraryQuery,
                     statusCounts = statusCounts,
                     onFilterChange = viewModel::setFilter,
-                    onStatusChange = viewModel::setStatus,
+                    onOpenSheet = { showSheet = true },
+                    onSearchCatalog = { openSearch(SearchScope.CATALOG, query) },
+                    onStatusChange = changeStatus,
+                    onLongClick = { quickActionsFor = it },
                     onClick = { onBookClick(it.bookKey) },
                 )
             }
@@ -371,14 +422,39 @@ fun BooksScreen(
 }
 
 @Composable
+private fun bookSheetSections(sort: BookSort, filter: BookFilter, subjects: List<String>, viewModel: BooksViewModel): List<SheetSection> {
+    val any = stringResource(R.string.filter_any)
+    return buildList {
+        add(SheetSection.Choices(stringResource(R.string.filter_sheet_sort), BookSort.entries.map { option ->
+            SheetChoice(stringResource(option.labelRes()), sort == option) { viewModel.setSort(option) }
+        }))
+        add(SheetSection.Choices(stringResource(R.string.filter_status), listOf<ReadStatus?>(null).plus(ReadStatus.entries).map { status ->
+            SheetChoice(status?.label() ?: any, filter.status == status) { viewModel.setFilter(filter.copy(status = status)) }
+        }))
+        if (subjects.isNotEmpty()) {
+            add(SheetSection.Choices(stringResource(R.string.filter_genre), listOf<String?>(null).plus(subjects).map { subject ->
+                SheetChoice(subject ?: any, filter.subject == subject) { viewModel.setFilter(filter.copy(subject = subject)) }
+            }))
+        }
+        add(SheetSection.Toggle(stringResource(R.string.filter_favorites), filter.favoritesOnly) { viewModel.setFilter(filter.copy(favoritesOnly = it)) })
+    }
+}
+
+@Composable
 private fun BookGrid(
     books: List<BookEntity>,
     filter: BookFilter,
+    sort: BookSort,
+    searchText: String,
     statusCounts: Map<ReadStatus, Int>,
     onFilterChange: (BookFilter) -> Unit,
+    onOpenSheet: () -> Unit,
+    onSearchCatalog: () -> Unit,
     onStatusChange: (BookEntity, ReadStatus) -> Unit,
+    onLongClick: (BookEntity) -> Unit,
     onClick: (BookEntity) -> Unit,
 ) {
+    val searching = searchText.isNotBlank()
     LazyVerticalGrid(
         // Three covers across on a phone; the grid simply gets wider on a tablet or unfolded screen.
         columns = GridCells.Adaptive(minSize = 100.dp),
@@ -387,54 +463,67 @@ private fun BookGrid(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf(ReadStatus.TO_READ, ReadStatus.READING, ReadStatus.READ).forEach { status ->
-                        StatCard(
-                            value = (statusCounts[status] ?: 0).toString(),
-                            label = stringResource(status.countLabelRes()),
-                            modifier = Modifier.weight(1f),
-                            accent = status.tint(),
+        if (!searching) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        listOf(ReadStatus.TO_READ, ReadStatus.READING, ReadStatus.READ).forEach { status ->
+                            StatCard(
+                                value = (statusCounts[status] ?: 0).toString(),
+                                label = stringResource(status.countLabelRes()),
+                                modifier = Modifier.weight(1f),
+                                accent = status.tint(),
+                                selected = filter.status == status,
+                                onClick = { onFilterChange(filter.copy(status = if (filter.status == status) null else status)) },
+                            )
+                        }
+                    }
+                    val abandoned = statusCounts[ReadStatus.ABANDONED] ?: 0
+                    if (abandoned > 0) {
+                        GlassPill(
+                            text = stringResource(R.string.books_abandoned_count, abandoned),
+                            selected = filter.status == ReadStatus.ABANDONED,
+                            onClick = {
+                                onFilterChange(filter.copy(status = if (filter.status == ReadStatus.ABANDONED) null else ReadStatus.ABANDONED))
+                            },
                         )
                     }
                 }
-                val abandoned = statusCounts[ReadStatus.ABANDONED] ?: 0
-                if (abandoned > 0) {
-                    Text(
-                        stringResource(R.string.books_abandoned_count, abandoned),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Glass.TextMuted,
-                    )
-                }
+            }
+            if (filter.isActive) {
+                item(span = { GridItemSpan(maxLineSpan) }) { ActiveFilterChips(filter, onFilterChange) }
             }
         }
-        if (filter.isActive) {
-            item(span = { GridItemSpan(maxLineSpan) }) { ActiveFilterChips(filter, onFilterChange) }
-        }
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
+            SectionHeader(
                 stringResource(R.string.section_my_books),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = Glass.Text,
-                modifier = Modifier.padding(top = 8.dp),
+                trailing = { SortLabel(stringResource(R.string.sort_active_label, stringResource(sort.labelRes())), onOpenSheet) },
             )
         }
         if (books.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                EmptyState(
-                    message = stringResource(R.string.books_filtered_empty),
-                    actionLabel = stringResource(R.string.filter_reset),
-                    onAction = { onFilterChange(BookFilter()) },
-                    fillScreen = false,
-                )
+                if (searching) {
+                    LibraryEmptyState(
+                        message = stringResource(R.string.search_library_none, searchText),
+                        actionLabel = stringResource(R.string.search_in_catalog),
+                        onAction = onSearchCatalog,
+                        fillScreen = false,
+                    )
+                } else {
+                    LibraryEmptyState(
+                        message = stringResource(R.string.books_filtered_empty),
+                        actionLabel = stringResource(R.string.filter_reset),
+                        onAction = { onFilterChange(BookFilter()) },
+                        fillScreen = false,
+                    )
+                }
             }
         }
         items(books, key = { it.bookKey }) { book ->
             BookCard(
                 book = book,
                 onClick = { onClick(book) },
+                onLongClick = { onLongClick(book) },
                 onStatusChange = { onStatusChange(book, it) },
             )
         }
@@ -442,14 +531,18 @@ private fun BookGrid(
 }
 
 /** Cover, title, author and a status badge that opens the status menu — changing it takes two taps, no detail screen. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun BookCard(book: BookEntity, onClick: () -> Unit, onStatusChange: (ReadStatus) -> Unit) {
-    var menuOpen by remember { mutableStateOf(false) }
+private fun BookCard(book: BookEntity, onClick: () -> Unit, onLongClick: () -> Unit, onStatusChange: (ReadStatus) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = stringResource(R.string.quick_actions_hint),
+            ),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box {
@@ -484,25 +577,13 @@ private fun BookCard(book: BookEntity, onClick: () -> Unit, onStatusChange: (Rea
         book.authorList.firstOrNull()?.let { author ->
             Text(author, style = MaterialTheme.typography.labelMedium, color = Glass.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Box {
-            GlassBadge(
-                book.readStatus.label(),
-                tint = book.readStatus.tint(),
-                modifier = Modifier.clickable { menuOpen = true },
-            )
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                ReadStatus.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label()) },
-                        leadingIcon = { RadioButton(selected = option == book.readStatus, onClick = null) },
-                        onClick = {
-                            menuOpen = false
-                            onStatusChange(option)
-                        },
-                    )
-                }
-            }
-        }
+        StatusBadgeMenu(
+            label = book.readStatus.label(),
+            tint = book.readStatus.tint(),
+            choices = ReadStatus.entries.map { option ->
+                StatusChoice(option.label(), option.tint(), selected = option == book.readStatus, onSelect = { onStatusChange(option) })
+            },
+        )
     }
 }
 
@@ -515,10 +596,10 @@ private fun SearchResults(
     onLoadMore: () -> Unit,
     onAdd: (BookHit) -> Unit,
     onClick: (BookHit) -> Unit,
-    extra: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {},
+    extra: LazyListScope.() -> Unit = {},
 ) {
     // A fresh list state per first hit: new rows can never leave the list anchored below the tab's own results.
-    val listState = androidx.compose.runtime.remember(results.firstOrNull()?.book?.key) { androidx.compose.foundation.lazy.LazyListState() }
+    val listState = remember(results.firstOrNull()?.book?.key) { androidx.compose.foundation.lazy.LazyListState() }
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
@@ -572,9 +653,7 @@ internal fun BookHitItem(hit: BookHit, onAdd: () -> Unit, onClick: () -> Unit) {
                     modifier = Modifier.padding(12.dp),
                 )
             } else {
-                IconButton(onClick = onAdd) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_to_books), tint = Glass.Cyan)
-                }
+                AddButton(contentDescription = stringResource(R.string.action_add_to_books), onAdd = onAdd)
             }
         },
     )
@@ -587,8 +666,18 @@ private fun NoResults() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(stringResource(R.string.books_search_none), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Text(stringResource(R.string.books_search_none_hint), style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted, textAlign = TextAlign.Center)
+        Text(
+            stringResource(R.string.books_search_none),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.books_search_none_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Glass.TextMuted,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 
@@ -601,129 +690,10 @@ private fun ActiveFilterChips(filter: BookFilter, onChange: (BookFilter) -> Unit
     }
 }
 
-@Composable
-private fun RemovableChip(label: String, onClear: () -> Unit) {
-    GlassPill(
-        text = label,
-        selected = true,
-        onClick = onClear,
-        trailing = {
-            Icon(
-                Icons.Filled.Close,
-                contentDescription = stringResource(R.string.action_clear),
-                modifier = Modifier.size(16.dp),
-                tint = Glass.Cyan,
-            )
-        },
-    )
-}
-
-@Composable
-private fun EmptyState(
-    message: String,
-    actionLabel: String,
-    onAction: () -> Unit,
-    fillScreen: Boolean = true,
-) {
-    Column(
-        modifier = (if (fillScreen) Modifier.fillMaxSize() else Modifier.fillMaxWidth()).padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Image(painter = painterResource(R.drawable.ic_logo_mark), contentDescription = null, modifier = Modifier.size(72.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
-        )
-        GradientButton(text = actionLabel, onClick = onAction)
-    }
-}
-
-@Composable
-private fun SortMenuButton(current: BookSort, onSelect: (BookSort) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { expanded = true }) {
-        Icon(Icons.Filled.Sort, contentDescription = stringResource(R.string.action_sort))
-    }
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        BookSort.entries.forEach { option ->
-            DropdownMenuItem(
-                text = { Text(stringResource(option.labelRes())) },
-                leadingIcon = { RadioButton(selected = option == current, onClick = null) },
-                onClick = {
-                    onSelect(option)
-                    expanded = false
-                },
-            )
-        }
-    }
-}
-
 private fun BookSort.labelRes(): Int = when (this) {
     BookSort.RECENTLY_ADDED -> R.string.sort_recently_added
     BookSort.TITLE -> R.string.sort_title
     BookSort.AUTHOR -> R.string.sort_author
     BookSort.PUBLISHED_YEAR -> R.string.sort_published_year
     BookSort.MY_RATING -> R.string.sort_my_rating
-}
-
-@Composable
-private fun FilterMenuButton(current: BookFilter, availableSubjects: List<String>, onChange: (BookFilter) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { expanded = true }) {
-        Icon(
-            Icons.Filled.FilterList,
-            contentDescription = stringResource(R.string.action_filter),
-            tint = if (current.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-        )
-    }
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.filter_favorites)) },
-            trailingIcon = { Switch(checked = current.favoritesOnly, onCheckedChange = { onChange(current.copy(favoritesOnly = it)) }) },
-            onClick = { onChange(current.copy(favoritesOnly = !current.favoritesOnly)) },
-        )
-        HorizontalDivider()
-        MenuTitle(stringResource(R.string.filter_status))
-        (listOf<ReadStatus?>(null) + ReadStatus.entries).forEach { option ->
-            DropdownMenuItem(
-                text = { Text(option?.label() ?: stringResource(R.string.filter_any)) },
-                leadingIcon = { RadioButton(selected = current.status == option, onClick = null) },
-                onClick = { onChange(current.copy(status = option)) },
-            )
-        }
-        if (availableSubjects.isNotEmpty()) {
-            HorizontalDivider()
-            MenuTitle(stringResource(R.string.filter_genre))
-            (listOf<String?>(null) + availableSubjects).forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option ?: stringResource(R.string.filter_any)) },
-                    leadingIcon = { RadioButton(selected = current.subject == option, onClick = null) },
-                    onClick = { onChange(current.copy(subject = option)) },
-                )
-            }
-        }
-        if (current.isActive) {
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.filter_reset)) },
-                onClick = {
-                    onChange(BookFilter())
-                    expanded = false
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun MenuTitle(text: String) {
-    Text(
-        text,
-        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
-    )
 }

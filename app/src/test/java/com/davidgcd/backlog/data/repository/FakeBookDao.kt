@@ -26,6 +26,10 @@ class FakeBookDao(initial: List<BookEntity> = emptyList()) : BookDao {
         state.value = state.value.map { if (it.bookKey == book.bookKey) book else it }
     }
 
+    override suspend fun setRank(bookKey: String, rank: Int?) {
+        state.value = state.value.map { if (it.bookKey == bookKey) it.copy(userRank = rank) else it }
+    }
+
     override suspend fun delete(book: BookEntity) {
         state.value = state.value.filterNot { it.bookKey == book.bookKey }
     }

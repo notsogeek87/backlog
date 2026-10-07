@@ -4,6 +4,7 @@ import com.davidgcd.backlog.data.local.GameDao
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.CompletionClock
 import com.davidgcd.backlog.model.Ranking
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
@@ -61,7 +62,17 @@ class BacklogRepository(
     }
 
     suspend fun setStatus(entity: GameEntity, status: GameStatus) {
-        gameDao.update(entity.copy(status = status.name))
+        gameDao.update(entity.copy(status = status.name, completedAt = CompletionClock.next(entity.completedAt, status == GameStatus.COMPLETED)))
+    }
+
+    /** 1–10, or null to clear. */
+    suspend fun setUserRating(entity: GameEntity, rating: Int?) {
+        gameDao.setUserRating(entity.igdbId, rating?.coerceIn(1, 10))
+    }
+
+    /** Puts back a row removed a moment ago (the « Annuler » of a deletion), exactly as it was. */
+    suspend fun restore(entity: GameEntity) {
+        gameDao.upsert(entity)
     }
 
     /** Applies a new personal order (first = most loved); only rows whose rank changes are written. */
@@ -121,6 +132,8 @@ class BacklogRepository(
             status = entity.status,
             addedAt = entity.addedAt,
             userRank = entity.userRank,
+            userRating = entity.userRating,
+            completedAt = entity.completedAt,
             steamAppId = fresh.steamAppId ?: entity.steamAppId,
         )
         if (updated != entity) gameDao.update(updated)

@@ -17,6 +17,8 @@ import com.davidgcd.backlog.data.share.toShareItem
 import com.davidgcd.backlog.util.AppLogger
 import com.davidgcd.backlog.model.Book
 import com.davidgcd.backlog.model.BookDuplicates
+import com.davidgcd.backlog.model.BookTop
+import com.davidgcd.backlog.util.LibraryQuery
 import com.davidgcd.backlog.model.ReadStatus
 import com.davidgcd.backlog.ui.backlog.SearchError
 import kotlinx.coroutines.CancellationException
@@ -84,8 +86,18 @@ class BooksViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val visible: StateFlow<List<BookEntity>> = combine(books, _sort, _filter) { list, sort, filter ->
+    private val _libraryQuery = MutableStateFlow("")
+
+    /** Texte tapé dans « Ma liste » : filtre instantané, accents et casse ignorés. */
+    val libraryQuery: StateFlow<String> = _libraryQuery
+
+    fun setLibraryQuery(query: String) {
+        _libraryQuery.value = query
+    }
+
+    val visible: StateFlow<List<BookEntity>> = combine(books, _sort, _filter, _libraryQuery) { list, sort, filter, query ->
         list
+            .filter { LibraryQuery.matches(query, it.title, it.subtitle, it.authors) }
             .filter { filter.status == null || it.readStatus == filter.status }
             .filter { !filter.favoritesOnly || it.isFavorite }
             .filter { filter.subject == null || it.subjectList.contains(filter.subject) }
@@ -102,6 +114,28 @@ class BooksViewModel(
 
     fun setStatus(book: BookEntity, status: ReadStatus) {
         viewModelScope.launch { repository.setStatus(book, status) }
+    }
+
+    fun setFavorite(book: BookEntity, favorite: Boolean) {
+        viewModelScope.launch { repository.setFavorite(book, favorite) }
+    }
+
+    fun remove(book: BookEntity) {
+        viewModelScope.launch { repository.remove(book) }
+    }
+
+    /** Remet en place un livre retiré à l'instant (« Annuler »). */
+    fun restore(book: BookEntity) {
+        viewModelScope.launch { repository.restore(book) }
+    }
+
+    /** Place le livre en tête du classement perso (action rapide d'un appui long). */
+    fun moveToTop(book: BookEntity) {
+        viewModelScope.launch {
+            val order = BookTop.order(repository.allBooks())
+            val index = order.indexOfFirst { it.bookKey == book.bookKey }
+            if (index > 0) repository.applyRanking(BookTop.moveTo(order, index, 0))
+        }
     }
 
     // --- sharing -----------------------------------------------------------------------------

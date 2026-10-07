@@ -91,5 +91,16 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+    /** Note perso des jeux, date de fin (bilan annuel) pour les trois médias, classement des livres. */
+    val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE games ADD COLUMN userRating INTEGER")
+            db.execSQL("ALTER TABLE games ADD COLUMN completedAt INTEGER")
+            db.execSQL("ALTER TABLE movies ADD COLUMN completedAt INTEGER")
+            db.execSQL("ALTER TABLE books ADD COLUMN userRank INTEGER")
+            db.execSQL("ALTER TABLE books ADD COLUMN completedAt INTEGER")
+        }
+    }
+
+    val ALL = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
 }

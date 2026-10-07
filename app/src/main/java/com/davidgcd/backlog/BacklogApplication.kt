@@ -97,6 +97,10 @@ class BacklogApplication : Application() {
     lateinit var bookRepository: BookRepository
         private set
 
+    /** Apparence (thème, couleurs dynamiques), aperçu des bandes-annonces, drapeaux « déjà demandé ». */
+    lateinit var uiPreferences: com.davidgcd.backlog.ui.prefs.UiPreferences
+        private set
+
     /** Mises à jour via les GitHub Releases de CE dépôt ; partagé entre la fenêtre de lancement et les Réglages. */
     val updateManager: UpdateManager by lazy {
         UpdateManager(this, UpdateConfig(githubOwner = "notsogeek87", githubRepository = "backlog"))
@@ -112,6 +116,7 @@ class BacklogApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         java.util.Locale.setDefault(java.util.Locale.FRENCH)
+        uiPreferences = com.davidgcd.backlog.ui.prefs.UiPreferences(this)
 
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 

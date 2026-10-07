@@ -27,6 +27,10 @@ data class GameEntity(
     val addedAt: Long = System.currentTimeMillis(),
     /** Personal ranking, 1 = most loved. Null = not ranked yet (listed after the ranked games). */
     val userRank: Int? = null,
+    /** The player's own note out of 10 (same scale as films & séries). Null = not rated. */
+    val userRating: Int? = null,
+    /** When the game was last marked finished (UTC epoch millis); null if it never was. Feeds « Mon année ». */
+    val completedAt: Long? = null,
 )
 
 val GameEntity.gameStatus: GameStatus get() = GameStatus.fromName(status)

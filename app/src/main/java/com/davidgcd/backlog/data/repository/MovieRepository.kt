@@ -6,6 +6,7 @@ import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.genreList
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.model.CastMember
+import com.davidgcd.backlog.model.CompletionClock
 import com.davidgcd.backlog.model.PersonFilmography
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieChart
@@ -89,7 +90,7 @@ class MovieRepository(
     suspend fun setArchived(entity: MovieEntity, archived: Boolean) = dao.update(entity.copy(isArchived = archived))
 
     suspend fun setStatus(entity: MovieEntity, status: WatchStatus) {
-        dao.update(entity.copy(status = status.name))
+        dao.update(entity.copy(status = status.name, completedAt = CompletionClock.next(entity.completedAt, status == WatchStatus.WATCHED)))
         // The TMDB watchlist mirrors "to watch": entering it adds the title, leaving it removes it.
         if (status == WatchStatus.TO_WATCH) bestEffort { tmdb.setWatchlist(entity.titleKey, true) }
         else if (entity.status == WatchStatus.TO_WATCH.name) bestEffort { tmdb.setWatchlist(entity.titleKey, false) }
@@ -108,6 +109,9 @@ class MovieRepository(
     }
 
     suspend fun remove(entity: MovieEntity) = dao.delete(entity)
+
+    /** Puts back a title removed a moment ago (the « Annuler » of a deletion), exactly as it was. */
+    suspend fun restore(entity: MovieEntity) = dao.upsert(entity)
 
     /** Pulls the latest rating / plot / poster of one saved title, keeping everything the user set. */
     suspend fun refresh(entity: MovieEntity) {

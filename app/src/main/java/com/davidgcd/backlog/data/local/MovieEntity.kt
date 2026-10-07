@@ -36,6 +36,8 @@ data class MovieEntity(
     val userRank: Int? = null,
     /** The user's own rating out of 10 (what they gave on TMDB, or set here). */
     val userRating: Int? = null,
+    /** When the title was last marked watched (UTC epoch millis); null if it never was. Feeds « Mon année ». */
+    val completedAt: Long? = null,
 )
 
 val MovieEntity.watchStatus: WatchStatus get() = WatchStatus.fromName(status)

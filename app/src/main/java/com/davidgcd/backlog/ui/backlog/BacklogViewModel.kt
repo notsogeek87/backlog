@@ -12,6 +12,8 @@ import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.model.Ranking
+import com.davidgcd.backlog.model.suggestedFor
+import com.davidgcd.backlog.util.LibraryQuery
 import com.davidgcd.backlog.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -82,8 +84,18 @@ class BacklogViewModel(
         .map { list -> list.flatMap { GameJsonCache.platformNames(it) }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val visibleBacklog: StateFlow<List<GameEntity>> = combine(backlog, _sort, _filter) { list, sort, filter ->
+    private val _libraryQuery = MutableStateFlow("")
+
+    /** Texte tapé dans « Ma liste » : filtre instantané, accents et casse ignorés. */
+    val libraryQuery: StateFlow<String> = _libraryQuery
+
+    fun setLibraryQuery(query: String) {
+        _libraryQuery.value = query
+    }
+
+    val visibleBacklog: StateFlow<List<GameEntity>> = combine(backlog, _sort, _filter, _libraryQuery) { list, sort, filter, query ->
         list
+            .filter { entity -> LibraryQuery.matches(query, entity.name) }
             .filter { entity -> filter.showArchived || !entity.isArchived }
             .filter { entity -> filter.scope.accepts(entity) }
             .filter { entity -> filter.status == null || entity.gameStatus == filter.status }
@@ -193,8 +205,27 @@ class BacklogViewModel(
         }
     }
 
-    fun addToBacklog(game: Game) {
-        viewModelScope.launch { repository.addToBacklog(game) }
+    /** Sans [status] : « Souhaité » pour un jeu pas encore sorti, « Backlog » sinon. */
+    fun addToBacklog(game: Game, status: GameStatus? = null) {
+        viewModelScope.launch { repository.addToBacklog(game, status ?: GameStatus.suggestedFor(game.firstReleaseDate)) }
+    }
+
+    fun setStatus(entity: GameEntity, status: GameStatus) {
+        viewModelScope.launch { repository.setStatus(entity, status) }
+    }
+
+    /** Remet en place une ligne retirée à l'instant (« Annuler »). */
+    fun restore(entity: GameEntity) {
+        viewModelScope.launch { repository.restore(entity) }
+    }
+
+    /** Place le jeu en tête du classement perso (action rapide d'un appui long). */
+    fun moveToTop(entity: GameEntity) {
+        viewModelScope.launch {
+            val order = Ranking.order(repository.allGames())
+            val index = order.indexOfFirst { it.igdbId == entity.igdbId }
+            if (index > 0) repository.applyRanking(Ranking.moveTo(order, index, 0))
+        }
     }
 
     fun setArchived(entity: GameEntity, archived: Boolean) {

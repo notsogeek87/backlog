@@ -68,7 +68,7 @@
     <string name="sort_my_ranking">Mon classement</string>
     <string name="action_my_ranking">Mon classement</string>
     <string name="ranking_title">Mon classement</string>
-    <string name="ranking_hint">Du jeu que tu as le plus aimé au moins aimé. Monte ou descends un jeu d\'une place avec les flèches simples, ou d\'un coup tout en haut / tout en bas avec les doubles ; les jeux non classés restent en bas, dans l\'ordre où tu les as ajoutés.</string>
+    <string name="ranking_hint">Du préféré au moins aimé. Tire une ligne par sa poignée, touche son numéro pour la placer à une position précise, ou envoie-la tout en haut / tout en bas avec les doubles flèches.</string>
     <string name="ranking_empty">Ajoute des jeux à ton backlog pour les classer.</string>
     <string name="ranking_move_up">Monter</string>
     <string name="ranking_move_down">Descendre</string>
@@ -486,4 +486,86 @@
     <string name="settings_update_version">Version installée : %1$s</string>
     <string name="settings_update_checking">Recherche en cours…</string>
     <string name="settings_update_up_to_date">Backlog est à jour (version %1$s).</string>
+
+    <!-- UX: recherche, filtres, gestes -->
+    <string name="search_scope_library">Ma liste</string>
+    <string name="search_scope_catalog">Catalogue</string>
+    <string name="search_library_placeholder">Dans ma liste…</string>
+    <string name="action_more">Plus d\'actions</string>
+    <string name="filter_sheet_title">Filtrer et trier</string>
+    <string name="filter_sheet_sort">Trier par</string>
+    <string name="filter_sheet_show_count">Voir %1$d résultats</string>
+    <string name="filter_sheet_show_one">Voir 1 résultat</string>
+    <string name="filter_sheet_show_none">Aucun résultat</string>
+    <string name="filter_scope_title">Affichage</string>
+    <string name="sort_active_label">Tri : %1$s</string>
+    <string name="swipe_next_status">Passer à « %1$s »</string>
+    <string name="swipe_archive">Archiver</string>
+    <string name="snackbar_status_changed">%1$s : %2$s</string>
+    <string name="quick_actions_status">Statut</string>
+    <string name="quick_action_top">Placer en tête du classement</string>
+    <string name="quick_action_share">Partager</string>
+    <string name="quick_action_favorite">Ajouter aux favoris</string>
+    <string name="quick_action_unfavorite">Retirer des favoris</string>
+    <string name="snackbar_removed">%1$s retiré</string>
+
+    <!-- UX: bibliothèque -->
+    <string name="library_title">Bibliothèque</string>
+    <string name="search_library_none">Rien dans ta liste pour « %1$s ».</string>
+    <string name="search_in_catalog">Chercher dans le catalogue</string>
+    <string name="snackbar_added_wishlist">%1$s ajouté à tes souhaits</string>
+    <string name="quick_actions_hint">Actions rapides</string>
+    <string name="add_as_title">Ajouter comme…</string>
+
+    <!-- Classement multi-médias -->
+    <string name="ranking_empty_movies">Ajoute des films ou des séries à ta liste pour les classer.</string>
+    <string name="ranking_empty_books">Ajoute des livres à ta bibliothèque pour les classer.</string>
+    <string name="ranking_drag_handle">Déplacer</string>
+    <string name="ranking_place_at">Placer à la position…</string>
+    <string name="ranking_place_at_hint">Position (1 à %1$d)</string>
+
+    <!-- Accueil « Aujourd'hui » -->
+    <string name="home_title">Aujourd\'hui</string>
+    <string name="home_empty">Ta bibliothèque est vide. Ajoute un jeu, un film ou un livre pour qu\'on te propose quoi faire ce soir.</string>
+    <string name="home_empty_cta">Ajouter quelque chose</string>
+    <string name="home_continue">À continuer</string>
+    <string name="home_upcoming">Sorties à venir</string>
+    <string name="home_today">Aujourd\'hui</string>
+    <string name="home_tomorrow">Demain</string>
+    <string name="home_in_days">Dans %1$d jours</string>
+    <string name="media_game_one">Jeu</string>
+    <string name="media_movie_one">Film / série</string>
+    <string name="media_book_one">Livre</string>
+    <string name="tonight_title">Ce soir, je fais quoi ?</string>
+    <string name="tonight_another">Autre idée</string>
+    <string name="tonight_short">Moins de 1 h 30</string>
+    <string name="tonight_evening">Une soirée</string>
+    <string name="tonight_long">Sans limite</string>
+    <string name="tonight_none">Rien dans ta liste ne correspond à ce choix. Essaie un autre média ou plus de temps.</string>
+    <string name="tonight_in_progress">En cours</string>
+    <string name="tonight_games_note">La durée des jeux n\'est pas connue : ils sont proposés quel que soit le temps choisi.</string>
+    <string name="notif_nudge_title">Être prévenu des sorties ?</string>
+    <string name="notif_nudge_message">Autorise les notifications pour recevoir un rappel le jour de la sortie des jeux et films de ta liste.</string>
+    <string name="notif_nudge_enable">Autoriser</string>
+    <string name="notif_nudge_later">Plus tard</string>
+    <string name="recap_card_title">Mon année</string>
+    <string name="recap_card_subtitle">Ce que tu as terminé, ajouté et le plus aimé.</string>
+
+    <!-- Mon année -->
+    <string name="recap_empty">Rien à raconter pour %1$d pour l\'instant : termine ou ajoute un jeu, un film ou un livre.</string>
+    <string name="recap_card_year">MON ANNÉE %1$d</string>
+    <string name="recap_finished_label">terminés cette année</string>
+    <string name="recap_games">Jeux</string>
+    <string name="recap_movies">Films &amp; séries</string>
+    <string name="recap_books">Livres</string>
+    <string name="recap_hours_watched">%1$d h devant l\'écran</string>
+    <string name="recap_pages_read">%1$d pages lues</string>
+    <string name="recap_added">%1$d ajouts</string>
+    <string name="recap_top_genres">Genres préférés</string>
+    <string name="recap_picks">Coups de cœur</string>
+    <string name="recap_share_image">Partager en image</string>
+    <string name="recap_share_text">Partager en texte</string>
+    <string name="recap_share_chooser">Partager mon année avec…</string>
+    <string name="recap_share_header">Mon année %1$d sur Backlog</string>
+    <string name="recap_share_line">%1$d jeux terminés, %2$d films &amp; séries vus, %3$d livres lus.</string>
 </resources>

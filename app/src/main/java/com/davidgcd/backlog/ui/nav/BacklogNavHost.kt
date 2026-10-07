@@ -4,16 +4,30 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
+import com.davidgcd.backlog.model.Medium
+import com.davidgcd.backlog.ui.components.AppSnackbar
+import com.davidgcd.backlog.ui.components.LocalAppSnackbar
+import com.davidgcd.backlog.ui.components.SearchRequest
+import com.davidgcd.backlog.ui.home.HomeScreen
+import com.davidgcd.backlog.ui.home.HomeViewModel
+import com.davidgcd.backlog.ui.home.HomeViewModelFactory
+import com.davidgcd.backlog.ui.prefs.UiPreferences
+import com.davidgcd.backlog.ui.recap.RecapScreen
+import com.davidgcd.backlog.ui.recap.RecapViewModel
+import com.davidgcd.backlog.ui.recap.RecapViewModelFactory
 import com.davidgcd.backlog.ui.components.glassRailItemColors
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material3.NavigationRailItem
@@ -37,7 +51,6 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
-import com.davidgcd.backlog.ui.components.GlassNavBarColor
 import com.davidgcd.backlog.ui.components.glassNavigationItemColors
 import com.davidgcd.backlog.ui.theme.Glass
 import androidx.compose.runtime.Composable
@@ -127,19 +140,20 @@ import com.davidgcd.backlog.ui.settings.SettingsViewModelFactory
 import com.davidgcd.backlog.util.DetailLink
 
 private object Routes {
-    const val BACKLOG = "backlog"
+    const val HOME = "home"
+    const val LIBRARY = "library"
     const val SETTINGS = "settings"
     const val DISCOVER = "discover"
-    const val RANKING = "ranking"
+    const val RANKING = "ranking/{media}"
+    fun ranking(media: MediaType) = "ranking/${media.name}"
+    const val RECAP = "recap"
     const val STEAM_LOGIN = "platforms/steam/login"
     const val LIBRARY_IMPORT = "platforms/{provider}/import"
     fun libraryImport(provider: String) = "platforms/$provider/import"
-    const val MOVIES = "movies"
     const val MOVIE_DETAIL = "movie/{titleKey}"
     fun movieDetail(titleKey: String) = "movie/$titleKey"
     const val PERSON = "person/{personId}?director={director}"
     fun person(personId: Long, director: Boolean) = "person/$personId?director=$director"
-    const val BOOKS = "books"
     const val BOOK_DETAIL = "book/{bookKey}"
     fun bookDetail(bookKey: String) = "book/$bookKey"
     const val TMDB_LOGIN = "platforms/tmdb/login"
@@ -154,9 +168,8 @@ private const val RAIL_MIN_WIDTH_DP = 600
 private data class TopLevelDestination(val route: String, val icon: ImageVector, val labelRes: Int)
 
 private val topLevelDestinations = listOf(
-    TopLevelDestination(Routes.BACKLOG, Icons.Filled.Bookmarks, R.string.tab_games),
-    TopLevelDestination(Routes.MOVIES, Icons.Filled.Movie, R.string.tab_movies),
-    TopLevelDestination(Routes.BOOKS, Icons.Filled.Book, R.string.tab_books),
+    TopLevelDestination(Routes.HOME, Icons.Filled.Home, R.string.home_title),
+    TopLevelDestination(Routes.LIBRARY, Icons.Filled.CollectionsBookmark, R.string.library_title),
     TopLevelDestination(Routes.DISCOVER, Icons.Filled.Explore, R.string.discover_title),
     TopLevelDestination(Routes.SETTINGS, Icons.Filled.Settings, R.string.settings_title),
 )
@@ -185,6 +198,9 @@ fun BacklogNavHost(
     tmdbSyncService: TmdbSyncService,
     bookRepository: BookRepository,
     updateViewModel: AppUpdateViewModel,
+    uiPreferences: UiPreferences,
+    appAction: AppAction? = null,
+    onAppActionHandled: () -> Unit = {},
     openGameId: Long? = null,
     onOpenGameHandled: () -> Unit = {},
     openLink: DetailLink? = null,
@@ -213,8 +229,10 @@ fun BacklogNavHost(
     val librarySharer = remember(repository, movieRepository, bookRepository, shareLinkService) {
         LibrarySharer(repository, movieRepository, bookRepository, shareLinkService)
     }
-    // Discover serves both worlds; which one is showing survives rotation and tab switches.
-    var discoverMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
+    // Library and Discover share the media being browsed (games / films & séries / books); it survives rotation and tab switches.
+    var libraryMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
+    // A search asked from outside a list (home, app shortcut, shared text); the list of that media consumes it once.
+    var searchRequest by remember { mutableStateOf<SearchRequest?>(null) }
     // One shared search for the other categories: typing on any tab also finds games, films & séries and books.
     val crossSearchViewModel: CrossSearchViewModel = viewModel(factory = CrossSearchViewModelFactory(repository, movieRepository, bookRepository))
     val crossSearch = CrossSearch(
@@ -237,13 +255,43 @@ fun BacklogNavHost(
         }
     }
 
+    // Opens the Library on [media] with its catalogue search ready (optionally pre-filled).
+    val requestSearch: (MediaType, String?) -> Unit = { media, query ->
+        libraryMedia = media
+        searchRequest = SearchRequest(media, query)
+        navigateTo(Routes.LIBRARY)
+    }
+    // Opens a detail page from a home-screen row, whatever its medium.
+    val openItem: (Medium, String) -> Unit = { medium, key ->
+        when (medium) {
+            Medium.GAME -> key.toLongOrNull()?.let { navController.navigate(Routes.gameDetail(it)) }
+            Medium.MOVIE -> navController.navigate(Routes.movieDetail(key))
+            Medium.BOOK -> navController.navigate(Routes.bookDetail(key))
+        }
+    }
+    // App shortcuts, the widget and shared text ask for a screen; handle once, then clear the request.
+    LaunchedEffect(appAction) {
+        when (val action = appAction) {
+            is AppAction.Search -> requestSearch(action.media, action.query)
+            AppAction.Recap -> navController.navigate(Routes.RECAP) { launchSingleTop = true }
+            AppAction.Tonight -> navigateTo(Routes.HOME)
+            null -> return@LaunchedEffect
+        }
+        onAppActionHandled()
+    }
+    // One Snackbar for the whole app: « retiré — Annuler » survives the detail screen that triggered it.
+    val appSnackbarState = remember { SnackbarHostState() }
+    val appScope = rememberCoroutineScope()
+    val appSnackbar = remember(appSnackbarState, appScope) { AppSnackbar(appSnackbarState, appScope) }
+
     // Wide windows (unfolded foldable, tablet, landscape) get a side rail; phones keep the bottom bar.
     // Measured from the real window width: LocalConfiguration goes stale since the activity handles its own configChanges.
+    CompositionLocalProvider(LocalAppSnackbar provides appSnackbar) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val useRail = maxWidth >= RAIL_MIN_WIDTH_DP.dp
     Row(modifier = Modifier.fillMaxSize()) {
     if (showBottomBar && useRail) {
-        NavigationRail(containerColor = GlassNavBarColor) {
+        NavigationRail(containerColor = Glass.NavBar) {
             Spacer(Modifier.weight(1f))
             topLevelDestinations.forEach { top ->
                 NavigationRailItem(
@@ -262,9 +310,10 @@ fun BacklogNavHost(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         contentColor = Glass.Text,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(appSnackbarState) },
         bottomBar = {
             if (showBottomBar && !useRail) {
-                NavigationBar(containerColor = GlassNavBarColor, tonalElevation = 0.dp) {
+                NavigationBar(containerColor = Glass.NavBar, tonalElevation = 0.dp) {
                     topLevelDestinations.forEach { top ->
                         val label = stringResource(top.labelRes)
                         NavigationBarItem(
@@ -281,36 +330,110 @@ fun BacklogNavHost(
     ) { outerPadding ->
     NavHost(
         navController = navController,
-        startDestination = Routes.BACKLOG,
+        startDestination = Routes.HOME,
         modifier = Modifier.padding(outerPadding).consumeWindowInsets(outerPadding),
     ) {
-        composable(Routes.BACKLOG) {
-            val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository, shareLinkService, librarySharer))
-            BacklogScreen(
+        composable(Routes.HOME) {
+            val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(repository, movieRepository, bookRepository))
+            HomeScreen(
                 viewModel = viewModel,
-                onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
-                onOpenRanking = { navController.navigate(Routes.RANKING) },
-                crossSearch = crossSearch,
+                onOpen = openItem,
+                onSearch = { requestSearch(libraryMedia, null) },
+                onOpenRecap = { navController.navigate(Routes.RECAP) },
             )
         }
-        composable(Routes.RANKING) {
-            val viewModel: RankingViewModel = viewModel(factory = RankingViewModelFactory(repository))
+        composable(Routes.LIBRARY) {
+            val mediaSwitch: @Composable () -> Unit = { MediaSwitch(selected = libraryMedia, onSelect = { libraryMedia = it }) }
+            when (libraryMedia) {
+                MediaType.GAMES -> {
+                    val viewModel: BacklogViewModel = viewModel(factory = BacklogViewModelFactory(repository, shareLinkService, librarySharer))
+                    BacklogScreen(
+                        viewModel = viewModel,
+                        onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
+                        onOpenRanking = { navController.navigate(Routes.ranking(MediaType.GAMES)) },
+                        crossSearch = crossSearch,
+                        mediaSwitch = mediaSwitch,
+                        searchRequest = searchRequest,
+                        onSearchRequestHandled = { searchRequest = null },
+                    )
+                }
+                MediaType.MOVIES -> {
+                    val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository, shareLinkService, librarySharer))
+                    MoviesScreen(
+                        viewModel = viewModel,
+                        onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
+                        onOpenTmdbImport = {
+                            navController.navigate(if (tmdbAccount != null) Routes.TMDB_IMPORT else Routes.TMDB_LOGIN)
+                        },
+                        onOpenRanking = { navController.navigate(Routes.ranking(MediaType.MOVIES)) },
+                        crossSearch = crossSearch,
+                        mediaSwitch = mediaSwitch,
+                        searchRequest = searchRequest,
+                        onSearchRequestHandled = { searchRequest = null },
+                    )
+                }
+                MediaType.BOOKS -> {
+                    val viewModel: BooksViewModel = viewModel(factory = BooksViewModelFactory(bookRepository, shareLinkService, librarySharer))
+                    BooksScreen(
+                        viewModel = viewModel,
+                        onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
+                        onOpenRanking = { navController.navigate(Routes.ranking(MediaType.BOOKS)) },
+                        crossSearch = crossSearch,
+                        mediaSwitch = mediaSwitch,
+                        searchRequest = searchRequest,
+                        onSearchRequestHandled = { searchRequest = null },
+                    )
+                }
+            }
+        }
+        composable(
+            route = Routes.RANKING,
+            arguments = listOf(navArgument("media") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val initial = backStackEntry.arguments?.getString("media")?.let { name -> MediaType.entries.firstOrNull { it.name == name } } ?: MediaType.GAMES
             RankingScreen(
+                initialMedia = initial,
+                viewModelFor = { media ->
+                    viewModel(
+                        factory = RankingViewModelFactory(media, repository, movieRepository, bookRepository),
+                        key = "ranking_${media.name}",
+                    )
+                },
+                onBack = { navController.popBackStack() },
+                onItemClick = { media, key ->
+                    when (media) {
+                        MediaType.GAMES -> key.toLongOrNull()?.let { navController.navigate(Routes.gameDetail(it)) }
+                        MediaType.MOVIES -> navController.navigate(Routes.movieDetail(key))
+                        MediaType.BOOKS -> navController.navigate(Routes.bookDetail(key))
+                    }
+                },
+                onAddItems = { media ->
+                    navController.popBackStack()
+                    requestSearch(media, null)
+                },
+            )
+        }
+        composable(Routes.RECAP) {
+            val viewModel: RecapViewModel = viewModel(factory = RecapViewModelFactory(repository, movieRepository, bookRepository))
+            RecapScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
-                onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
+                onAddItems = {
+                    navController.popBackStack()
+                    requestSearch(libraryMedia, null)
+                },
             )
         }
         composable(Routes.DISCOVER) {
-            val mediaSwitch: @Composable () -> Unit = { MediaSwitch(selected = discoverMedia, onSelect = { discoverMedia = it }) }
-            if (discoverMedia == MediaType.GAMES) {
+            val mediaSwitch: @Composable () -> Unit = { MediaSwitch(selected = libraryMedia, onSelect = { libraryMedia = it }) }
+            if (libraryMedia == MediaType.GAMES) {
                 val viewModel: DiscoverViewModel = viewModel(factory = DiscoverViewModelFactory(repository))
                 DiscoverScreen(
                     viewModel = viewModel,
                     onGameClick = { gameId -> navController.navigate(Routes.gameDetail(gameId)) },
                     mediaSwitch = mediaSwitch,
                 )
-            } else if (discoverMedia == MediaType.BOOKS) {
+            } else if (libraryMedia == MediaType.BOOKS) {
                 val viewModel: BookDiscoverViewModel = viewModel(factory = BookDiscoverViewModelFactory(bookRepository))
                 BookDiscoverScreen(
                     viewModel = viewModel,
@@ -325,17 +448,6 @@ fun BacklogNavHost(
                     mediaSwitch = mediaSwitch,
                 )
             }
-        }
-        composable(Routes.MOVIES) {
-            val viewModel: MoviesViewModel = viewModel(factory = MoviesViewModelFactory(movieRepository, shareLinkService, librarySharer))
-            MoviesScreen(
-                viewModel = viewModel,
-                onMovieClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
-                onOpenTmdbImport = {
-                    navController.navigate(if (tmdbAccount != null) Routes.TMDB_IMPORT else Routes.TMDB_LOGIN)
-                },
-                crossSearch = crossSearch,
-            )
         }
         composable(
             route = Routes.MOVIE_DETAIL,
@@ -369,14 +481,6 @@ fun BacklogNavHost(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onTitleClick = { titleKey -> navController.navigate(Routes.movieDetail(titleKey)) },
-            )
-        }
-        composable(Routes.BOOKS) {
-            val viewModel: BooksViewModel = viewModel(factory = BooksViewModelFactory(bookRepository, shareLinkService, librarySharer))
-            BooksScreen(
-                viewModel = viewModel,
-                onBookClick = { bookKey -> navController.navigate(Routes.bookDetail(bookKey)) },
-                crossSearch = crossSearch,
             )
         }
         composable(
@@ -493,6 +597,7 @@ fun BacklogNavHost(
             )
             LibraryImportScreen(viewModel = viewModel, providerId = provider, onBack = { navController.popBackStack() })
         }
+    }
     }
     }
     }

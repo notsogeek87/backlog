@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- « Mon année » : l'image partagée est écrite ici avant d'être confiée à l'app de partage. -->
+    <cache-path name="shared" path="shared/" />
+</paths>

@@ -28,6 +28,9 @@ interface BookDao {
     @Update
     suspend fun update(book: BookEntity)
 
+    @Query("UPDATE books SET userRank = :rank WHERE bookKey = :bookKey")
+    suspend fun setRank(bookKey: String, rank: Int?)
+
     @Delete
     suspend fun delete(book: BookEntity)
 }
