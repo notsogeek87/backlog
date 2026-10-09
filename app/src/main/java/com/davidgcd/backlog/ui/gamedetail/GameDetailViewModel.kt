@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 sealed interface GameDetailState {
     data object Loading : GameDetailState
@@ -148,9 +149,10 @@ class GameDetailViewModel(
                 }
             }
 
-            val steamDeferred = async { steamAppId?.let { steamService.reviewSummary(it) } }
-            launch { steamAppId?.let { _frenchSummary.value = steamService.frenchDescription(it) } }
-            val metacriticDeferred = async { metacriticService.scoreFor(name) }
+            // Bounded: a hanging service must end in "no card", never in an endless spinner.
+            val steamDeferred = async { steamAppId?.let { withTimeoutOrNull(RATINGS_TIMEOUT_MS) { steamService.reviewSummary(it) } } }
+            launch { steamAppId?.let { _frenchSummary.value = withTimeoutOrNull(RATINGS_TIMEOUT_MS) { steamService.frenchDescription(it) } } }
+            val metacriticDeferred = async { withTimeoutOrNull(RATINGS_TIMEOUT_MS) { metacriticService.scoreFor(name) } }
 
             _ratings.value = RatingsState(
                 isLoading = false,
@@ -202,3 +204,5 @@ class GameDetailViewModelFactory(
         return GameDetailViewModel(gameId, repository, steamService, metacriticService) as T
     }
 }
+
+private const val RATINGS_TIMEOUT_MS = 12_000L

@@ -151,7 +151,7 @@ class BacklogApplication : Application() {
 
         val steamApi = Retrofit.Builder()
             .baseUrl("https://store.steampowered.com/")
-            .client(OkHttpClient.Builder().addInterceptor(loggingInterceptor).build())
+            .client(OkHttpClient.Builder().addInterceptor(loggingInterceptor).callTimeout(15, TimeUnit.SECONDS).build())
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(SteamApi::class.java)
@@ -159,6 +159,7 @@ class BacklogApplication : Application() {
         val metacriticHttpClient = OkHttpClient.Builder()
             .addInterceptor(RapidApiHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
+            .callTimeout(15, TimeUnit.SECONDS)
             .build()
 
         val metacriticApi = Retrofit.Builder()

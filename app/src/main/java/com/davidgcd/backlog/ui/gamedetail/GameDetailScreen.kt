@@ -464,7 +464,7 @@ private fun RatingsCard(igdbRating: Double?, ratings: RatingsState) {
             )
             igdbRating?.let { ScoreRow(stringResource(R.string.ratings_igdb), "${it.toInt()}", it / 100.0) }
             if (ratings.isLoading) {
-                CircularProgressIndicator(color = Glass.Cyan, modifier = Modifier.padding(top = 4.dp).height(20.dp))
+                CircularProgressIndicator(color = Glass.Cyan, strokeWidth = 2.dp, modifier = Modifier.padding(top = 4.dp).size(20.dp))
             } else {
                 ratings.metacritic?.let { MetacriticRow(it) }
                 ratings.steam?.let { SteamRow(it) }
