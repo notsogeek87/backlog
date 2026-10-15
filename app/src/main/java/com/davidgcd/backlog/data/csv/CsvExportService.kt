@@ -5,19 +5,28 @@ import android.net.Uri
 import com.davidgcd.backlog.data.local.BookEntity
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
-import java.io.OutputStreamWriter
 
 class CsvExportService(private val context: Context) {
 
     /** One file for the whole library: a `type` column (GAME / BOOK) tells the rows apart, see [BookCsv]. */
     fun export(uri: Uri, games: List<GameEntity>, books: List<BookEntity> = emptyList()) {
-        context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
-            OutputStreamWriter(output).use { writer ->
-                writer.appendLine(CsvFormat.writeRow(BookCsv.HEADER))
-                games.forEach { game -> writer.appendLine(CsvFormat.writeRow(gameRow(game))) }
-                books.forEach { book -> writer.appendLine(CsvFormat.writeRow(BookCsv.row(book))) }
-            }
-        }
+        write(uri, render(games, books))
+    }
+
+    /** Le CSV complet en mémoire : une erreur de génération survient avant que le fichier cible ne soit touché. */
+    fun render(games: List<GameEntity>, books: List<BookEntity> = emptyList()): ByteArray {
+        val csv = StringBuilder()
+        csv.appendLine(CsvFormat.writeRow(BookCsv.HEADER))
+        games.forEach { game -> csv.appendLine(CsvFormat.writeRow(gameRow(game))) }
+        books.forEach { book -> csv.appendLine(CsvFormat.writeRow(BookCsv.row(book))) }
+        return csv.toString().toByteArray(Charsets.UTF_8)
+    }
+
+    /** Écrit [content] dans [uri] en mode « wt » (tronque puis écrit) ; échoue si le fournisseur n'ouvre pas le flux. */
+    fun write(uri: Uri, content: ByteArray) {
+        val output = context.contentResolver.openOutputStream(uri, "wt")
+            ?: throw java.io.IOException("Impossible d'ouvrir $uri en écriture")
+        output.use { it.write(content) }
     }
 
     /** The games' columns exactly as before, behind the `type` column and followed by the books' (empty) ones. */

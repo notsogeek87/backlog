@@ -32,8 +32,12 @@ class AutoExportWorker(
                 false
             } else {
                 withContext(Dispatchers.IO) {
-                    val target = AutoExportFolder.exportFileUri(applicationContext, folder)
-                    app.csvExportService.export(target, app.repository.allGames(), app.bookRepository.allBooks())
+                    // CSV généré en mémoire d'abord : s'il échoue, le fichier précédent reste intact.
+                    val csv = app.csvExportService.render(app.repository.allGames(), app.bookRepository.allBooks())
+                    val plan = AutoExportFolder.plan(AutoExportFolder.listExports(applicationContext, folder))
+                    app.csvExportService.write(AutoExportFolder.targetUri(applicationContext, folder, plan), csv)
+                    // Doublons supprimés seulement après une écriture réussie.
+                    AutoExportFolder.deleteDuplicates(applicationContext, folder, plan.duplicates)
                 }
                 true
             }

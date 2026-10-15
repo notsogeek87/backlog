@@ -47,27 +47,73 @@ object AutoExportFolder {
         null
     }
 
+    /** Fichier d'export déjà présent dans le dossier : son nom exact, ou une copie « backlog (N).csv ». */
+    data class Entry(val documentId: String, val name: String, val lastModified: Long)
+
+    /** Où écrire, et quels doublons supprimer une fois l'écriture réussie. */
+    data class Plan(val target: Entry?, val duplicates: List<Entry>)
+
+    // Motif strict : « backlog.csv » ou « backlog (N).csv » (copie créée par le système ou Drive), rien d'autre.
+    private val EXPORT_NAME = Regex("""backlog( \(\d+\))?\.csv""")
+
+    fun isExportName(name: String?): Boolean = name != null && EXPORT_NAME.matches(name)
+
     /**
-     * The export file in the folder, reused when it already exists so each run overwrites
-     * the same "backlog.csv" (SAF would otherwise create "backlog (1).csv" every time).
+     * Choisit la cible parmi les entrées du dossier : le « backlog.csv » au nom exact le plus récent,
+     * sinon la copie « backlog (N).csv » la plus récente (le fournisseur a renommé l'export, on ne
+     * crée pas un fichier de plus). Tous les autres fichiers au motif sont des doublons.
+     * Les fichiers qui ne suivent pas le motif sont ignorés, donc jamais supprimés.
      */
-    fun exportFileUri(context: Context, treeUri: Uri): Uri {
-        val resolver = context.contentResolver
+    fun plan(entries: List<Entry>): Plan {
+        val exports = entries.filter { isExportName(it.name) }
+        val target = exports.filter { it.name == FILE_NAME }.maxByOrNull { it.lastModified }
+            ?: exports.maxByOrNull { it.lastModified }
+        return Plan(target, exports.filter { it != target })
+    }
+
+    /** Liste les fichiers du dossier dont le nom suit le motif d'export. */
+    fun listExports(context: Context, treeUri: Uri): List<Entry> {
         val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
         val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeDocId)
-        resolver.query(
+        val entries = mutableListOf<Entry>()
+        context.contentResolver.query(
             childrenUri,
-            arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            ),
             null, null, null,
         )?.use { cursor ->
             while (cursor.moveToNext()) {
-                if (cursor.getString(1) == FILE_NAME) {
-                    return DocumentsContract.buildDocumentUriUsingTree(treeUri, cursor.getString(0))
+                val name = cursor.getString(1)
+                if (isExportName(name)) {
+                    entries += Entry(cursor.getString(0), name, if (cursor.isNull(2)) 0L else cursor.getLong(2))
                 }
             }
         }
-        val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId)
-        return DocumentsContract.createDocument(resolver, parent, MIME, FILE_NAME)
-            ?: throw java.io.IOException("Could not create $FILE_NAME in $treeUri")
+        return entries
+    }
+
+    /** Cible de l'écriture : le fichier existant réutilisé, ou un nouveau « backlog.csv » s'il n'y en a aucun. */
+    fun targetUri(context: Context, treeUri: Uri, plan: Plan): Uri {
+        plan.target?.let { return DocumentsContract.buildDocumentUriUsingTree(treeUri, it.documentId) }
+        val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
+        return DocumentsContract.createDocument(context.contentResolver, parent, MIME, FILE_NAME)
+            ?: throw java.io.IOException("Impossible de créer $FILE_NAME dans $treeUri")
+    }
+
+    /** Supprime les doublons ; à n'appeler qu'après une écriture réussie. Un échec isolé n'interrompt pas les autres. */
+    fun deleteDuplicates(context: Context, treeUri: Uri, duplicates: List<Entry>) {
+        duplicates.forEach {
+            try {
+                DocumentsContract.deleteDocument(
+                    context.contentResolver,
+                    DocumentsContract.buildDocumentUriUsingTree(treeUri, it.documentId),
+                )
+            } catch (_: Exception) {
+                // Le prochain passage réessaiera.
+            }
+        }
     }
 }

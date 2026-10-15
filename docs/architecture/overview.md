@@ -51,6 +51,8 @@
   dossier via le sélecteur système (`OpenDocumentTree`, permission lecture+écriture
   persistée) et une fréquence (`AutoExportFrequency` : jour/semaine/mois) ;
   `AutoExportWorker` (WorkManager périodique) réécrit `backlog.csv` dans ce dossier
+  (fichier existant réutilisé et tronqué ; le CSV est généré en mémoire avant toute écriture ; après une écriture réussie,
+  les doublons « backlog (N).csv » sont supprimés, motif strict, `AutoExportFolder.plan`)
   et `AutoExportPreferences` mémorise le résultat du dernier passage (affiché dans
   Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
 - Classement personnel (`GameEntity.userRank`, migration 4→5, 1 = le plus aimé) : écran
