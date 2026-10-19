@@ -543,6 +543,9 @@
     <string name="notif_nudge_later">Plus tard</string>
     <string name="recap_card_title">Mon année</string>
     <string name="recap_card_subtitle">Ce que tu as terminé, ajouté et le plus aimé.</string>
+    <string name="home_summary_in_progress">En cours</string>
+    <string name="home_summary_upcoming">À venir cette semaine</string>
+    <string name="home_summary_recent">Ajoutés récemment</string>
 
     <!-- Mon année -->
     <string name="recap_empty">Rien à raconter pour %1$d pour l\'instant : termine ou ajoute un jeu, un film ou un livre.</string>

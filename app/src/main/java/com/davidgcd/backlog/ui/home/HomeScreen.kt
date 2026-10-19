@@ -22,6 +22,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +35,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,6 +69,10 @@ import com.davidgcd.backlog.ui.prefs.LocalUiPreferences
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -120,6 +131,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (state.upcoming.isNotEmpty() && nudge.visible) item(key = "notif") { NotificationNudgeCard(nudge) }
+            item(key = "summary") { SummaryCards(state) }
             if (state.inProgress.isNotEmpty()) {
                 item(key = "continue") {
                     Column {
@@ -141,6 +153,61 @@ fun HomeScreen(
                 }
             }
             item(key = "recap") { RecapCard(onOpenRecap) }
+        }
+    }
+}
+
+@Composable
+private fun SummaryCards(state: HomeState) {
+    val inProgressCount = state.inProgress.size
+    val nowSeconds = System.currentTimeMillis() / 1000
+    val upcomingCount = state.upcoming.count { it.epochSeconds <= nowSeconds + 7 * 86_400 }
+    val recentCount = state.recent.size
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SummaryCard(
+            title = stringResource(R.string.home_summary_in_progress),
+            value = inProgressCount.toString(),
+            icon = Icons.Filled.PlayArrow,
+            color = Glass.Cyan
+        )
+        SummaryCard(
+            title = stringResource(R.string.home_summary_upcoming),
+            value = upcomingCount.toString(),
+            icon = Icons.Filled.CalendarToday,
+            color = Glass.Orange
+        )
+        SummaryCard(
+            title = stringResource(R.string.home_summary_recent),
+            value = recentCount.toString(),
+            icon = Icons.Filled.NewReleases,
+            color = Glass.Green
+        )
+    }
+}
+
+@Composable
+private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
+    Column(
+        modifier = Modifier.weight(1f),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = color.copy(alpha = 0.15f)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(title, style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
+            }
         }
     }
 }
@@ -177,7 +244,24 @@ private fun Carousel(items: List<HomeItem>, onOpen: (Medium, String) -> Unit) {
             Column(
                 modifier = Modifier.width(104.dp).clickable { onOpen(item.medium, item.key) },
                 verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(
+                    painter = painterResource(
+                        when (item.medium) {
+                            Medium.GAME -> R.drawable.ic_game
+                            Medium.MOVIE -> R.drawable.ic_movie
+                            Medium.BOOK -> R.drawable.ic_book
+                        }
+                    ),
+                    contentDescription = null,
+                    tint = when (item.medium) {
+                        Medium.GAME -> Glass.Cyan
+                        Medium.MOVIE -> Glass.Purple
+                        Medium.BOOK -> Glass.Green
+                    },
+                    modifier = Modifier.size(16.dp)
+                )
                 ItemCover(item.medium, item.coverImageId, item.coverUrl, item.title, width = 104.dp)
                 Text(item.title, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, color = Glass.Text)
             }
@@ -187,27 +271,46 @@ private fun Carousel(items: List<HomeItem>, onOpen: (Medium, String) -> Unit) {
 
 @Composable
 private fun UpcomingRow(up: UpcomingItem, onOpen: (Medium, String) -> Unit) {
-    val daysAway = (up.epochSeconds / 86_400L) - (System.currentTimeMillis() / 1000 / 86_400L)
-    val relative = when {
-        daysAway <= 0L -> stringResource(R.string.home_today)
-        daysAway == 1L -> stringResource(R.string.home_tomorrow)
-        else -> stringResource(R.string.home_in_days, daysAway.toInt())
+    val nowSeconds = System.currentTimeMillis() / 1000
+    val daysAway = (up.epochSeconds - nowSeconds) / 86_400
+    val (label, color) = when {
+        daysAway <= 0 -> Pair(stringResource(R.string.home_today), Glass.Red)
+        daysAway == 1 -> Pair(stringResource(R.string.home_tomorrow), Glass.Orange)
+        daysAway <= 7 -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Yellow)
+        else -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Green)
     }
-    GlassCard(modifier = Modifier.fillMaxWidth(), onClick = { onOpen(up.item.medium, up.item.key) }) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { onOpen(up.item.medium, up.item.key) },
+        border = BorderStroke(1.dp, color)
+    ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            Icon(
+                painter = painterResource(
+                    when (up.item.medium) {
+                        Medium.GAME -> R.drawable.ic_game
+                        Medium.MOVIE -> R.drawable.ic_movie
+                        Medium.BOOK -> R.drawable.ic_book
+                    }
+                ),
+                contentDescription = null,
+                tint = when (up.item.medium) {
+                    Medium.GAME -> Glass.Cyan
+                    Medium.MOVIE -> Glass.Purple
+                    Medium.BOOK -> Glass.Green
+                },
+                modifier = Modifier.size(20.dp)
+            )
             ItemCover(up.item.medium, up.item.coverImageId, up.item.coverUrl, up.item.title, width = 48.dp)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(up.item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(ReleaseDateFormatting.format(up.epochSeconds).orEmpty(), style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted)
             }
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                GlassBadge(relative, tint = Glass.Cyan)
-                GlassBadge(mediumLabel(up.item.medium))
-            }
+            GlassBadge(label, tint = color)
         }
     }
 }
