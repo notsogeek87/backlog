@@ -6,7 +6,10 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.NewReleases
@@ -35,10 +39,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -69,10 +69,6 @@ import com.davidgcd.backlog.ui.prefs.LocalUiPreferences
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -158,6 +154,28 @@ fun HomeScreen(
 }
 
 @Composable
+private fun todayLabel(): String =
+    LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)).replaceFirstChar { it.uppercase() }
+
+@Composable
+private fun mediumLabel(medium: Medium): String = stringResource(
+    when (medium) {
+        Medium.GAME -> R.string.media_game_one
+        Medium.MOVIE -> R.string.media_movie_one
+        Medium.BOOK -> R.string.media_book_one
+    },
+)
+
+@Composable
+private fun ItemCover(medium: Medium, imageId: String?, url: String?, title: String, width: Dp, description: String? = null) {
+    when (medium) {
+        Medium.GAME -> GameCover(imageId, width = width, contentDescription = description)
+        Medium.MOVIE -> GameCover(null, width = width, imageUrl = url, contentDescription = description)
+        Medium.BOOK -> BookCover(url = BookImage.sized(url, 'M'), title = title, modifier = Modifier.width(width))
+    }
+}
+
+@Composable
 private fun SummaryCards(state: HomeState) {
     val inProgressCount = state.inProgress.size
     val nowSeconds = System.currentTimeMillis() / 1000
@@ -209,28 +227,6 @@ private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.
                 Text(title, style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
             }
         }
-    }
-}
-
-@Composable
-private fun todayLabel(): String =
-    LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)).replaceFirstChar { it.uppercase() }
-
-@Composable
-private fun mediumLabel(medium: Medium): String = stringResource(
-    when (medium) {
-        Medium.GAME -> R.string.media_game_one
-        Medium.MOVIE -> R.string.media_movie_one
-        Medium.BOOK -> R.string.media_book_one
-    },
-)
-
-@Composable
-private fun ItemCover(medium: Medium, imageId: String?, url: String?, title: String, width: Dp, description: String? = null) {
-    when (medium) {
-        Medium.GAME -> GameCover(imageId, width = width, contentDescription = description)
-        Medium.MOVIE -> GameCover(null, width = width, imageUrl = url, contentDescription = description)
-        Medium.BOOK -> BookCover(url = BookImage.sized(url, 'M'), title = title, modifier = Modifier.width(width))
     }
 }
 
