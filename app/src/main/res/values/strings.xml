@@ -527,7 +527,7 @@
 
     <!-- Accueil « Aujourd'hui » -->
     <string name="home_title">Aujourd\'hui</string>
-    <string name="home_empty">Ta bibliothèque est vide. Ajoute un jeu, un film ou un livre pour qu\'on te propose quoi faire ce soir.</string>
+    <string name="home_empty">Ta bibliothèque est vide. Ajoute un jeu, un film ou un livre pour commencer.</string>
     <string name="home_empty_cta">Ajouter quelque chose</string>
     <string name="home_continue">À continuer</string>
     <string name="home_upcoming">Sorties à venir</string>
@@ -537,14 +537,6 @@
     <string name="media_game_one">Jeu</string>
     <string name="media_movie_one">Film / série</string>
     <string name="media_book_one">Livre</string>
-    <string name="tonight_title">Ce soir, je fais quoi ?</string>
-    <string name="tonight_another">Autre idée</string>
-    <string name="tonight_short">Moins de 1 h 30</string>
-    <string name="tonight_evening">Une soirée</string>
-    <string name="tonight_long">Sans limite</string>
-    <string name="tonight_none">Rien dans ta liste ne correspond à ce choix. Essaie un autre média ou plus de temps.</string>
-    <string name="tonight_in_progress">En cours</string>
-    <string name="tonight_games_note">La durée des jeux n\'est pas connue : ils sont proposés quel que soit le temps choisi.</string>
     <string name="notif_nudge_title">Être prévenu des sorties ?</string>
     <string name="notif_nudge_message">Autorise les notifications pour recevoir un rappel le jour de la sortie des jeux et films de ta liste.</string>
     <string name="notif_nudge_enable">Autoriser</string>

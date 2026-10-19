@@ -25,6 +25,7 @@ object Changelog {
         ChangelogEntry(13, "Thèmes et couleurs", "Nouveau thème clair, mode AMOLED et couleurs dynamiques (Android 12+) dans Réglages > Apparence. Le fond des fiches reprend la couleur de la jaquette."),
         ChangelogEntry(14, "Alertes promo et épisodes", "Sois prévenu quand un jeu de ta liste de souhaits est en promotion sur Steam ou qu'une série de ta liste diffuse un nouvel épisode."),
         ChangelogEntry(15, "Widget et raccourcis", "Un widget « en cours / prochaine sortie », des raccourcis sur l'icône de l'app et « Partager vers Backlog » depuis un lien Steam, TMDB ou un titre."),
+        ChangelogEntry(16, "Un accueil plus simple", "La carte « Ce soir, je fais quoi ? » disparaît de l'accueil, qui garde à continuer, les sorties à venir, les ajouts récents et Mon année."),
     )
 
     /** Dernière entrée connue des versions d'avant ce journal : une mise à jour depuis celles-ci présente la suite. */

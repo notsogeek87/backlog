@@ -22,7 +22,7 @@ class HomeAggregationTest {
     fun `an empty library is flagged empty and shows nothing`() {
         val state = HomeViewModel.build(emptyList(), emptyList(), emptyList(), now)
         assertTrue(state.isEmpty)
-        assertTrue(state.inProgress.isEmpty() && state.upcoming.isEmpty() && state.recent.isEmpty() && state.tonightPool.isEmpty())
+        assertTrue(state.inProgress.isEmpty() && state.upcoming.isEmpty() && state.recent.isEmpty())
     }
 
     @Test
@@ -53,20 +53,5 @@ class HomeAggregationTest {
         val upcoming = HomeViewModel.build(games, movies, emptyList(), now).upcoming
         assertEquals(listOf("Aujourd'hui", "Film bientôt", "Dans 10 jours"), upcoming.map { it.item.title })
         assertEquals(Medium.MOVIE, upcoming[1].item.medium)
-    }
-
-    @Test
-    fun `the tonight pool holds what can still be started, with a quality from the user note first`() {
-        val games = listOf(
-            GameEntity(1, "À faire", status = GameStatus.BACKLOG.name, totalRating = 80.0),
-            GameEntity(2, "Fini", status = GameStatus.COMPLETED.name),
-            GameEntity(3, "Souhaité", status = GameStatus.WISHLIST.name),
-        )
-        val movies = listOf(MovieEntity("movie:9", "Film", runtimeMinutes = 100, userRating = 9, tmdbRating = 5.0))
-        val pool = HomeViewModel.build(games, movies, emptyList(), now).tonightPool
-        assertEquals(setOf("À faire", "Film"), pool.map { it.title }.toSet())
-        assertEquals(0.8, pool.first { it.title == "À faire" }.quality!!, 0.0001)
-        assertEquals(0.9, pool.first { it.title == "Film" }.quality!!, 0.0001)
-        assertEquals(100, pool.first { it.title == "Film" }.durationMinutes)
     }
 }

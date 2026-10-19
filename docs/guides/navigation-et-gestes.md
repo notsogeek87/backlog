@@ -5,7 +5,7 @@
 ## Les quatre onglets
 | Onglet | Contenu |
 |--------|---------|
-| **Accueil** | « Ce soir, je fais quoi ? », à continuer (jeux joués, films/séries en cours, livres en cours), sorties des 30 prochains jours, ajouts récents, « Mon année » |
+| **Accueil** | À continuer (jeux joués, films/séries en cours, livres en cours), sorties des 30 prochains jours, ajouts récents, « Mon année » |
 | **Bibliothèque** | Jeux · Films & séries · Livres (un sélecteur sous la barre du haut ; le choix est partagé avec Découvrir) |
 | **Découvrir** | Listes IGDB / TMDB / Open Library, gardées 10 minutes en mémoire (affichées tout de suite, rafraîchies en arrière-plan) |
 | **Réglages** | Plateformes, apparence, notifications, données, mises à jour, à propos |
@@ -42,9 +42,6 @@ Chaque changement affiche un Snackbar « Annuler ». Les livres (grille de jaque
 
 ## Classement (jeux)
 Le classement type backlog ne concerne que les **jeux** ; films, séries et livres se jugent à leurs notes (1–10, 1–5 étoiles). Jeux : Bibliothèque > menu « ⋮ » > Mon classement. Tirer une ligne par la poignée (l'écran défile seul près des bords) ; **doubles flèches** = tout en haut / tout en bas ; **toucher le numéro** = « placer à la position N » (utile avec des centaines d'entrées). Un classement est écrit dans Room une seule fois, au dépôt.
-
-## Ce soir, je fais quoi ?
-Carte de l'accueil : média (Tout / Jeux / Films & séries / Livres) × temps (moins de 1 h 30 / une soirée / sans limite) → trois idées (`model/Tonight`). Ordre : déjà commencé, puis ce qui traîne depuis longtemps, bien noté et qui tient dans le temps. « Autre idée » change le tirage. Films : durée TMDB ; livres : pages ÷ 40 par heure ; **jeux : durée inconnue, toujours proposés**.
 
 ## Mon année
 Accueil → « Mon année » : terminés, ajouts, heures et pages, genres préférés, coups de cœur (parmi ce qui est noté). Partageable en **image** (la carte, via `FileProvider`) ou en texte. La date de fin est retenue depuis cette version (`completedAt`, aussi dans le CSV) ; avant, un élément terminé est daté de son ajout.

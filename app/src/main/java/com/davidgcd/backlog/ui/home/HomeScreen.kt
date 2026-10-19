@@ -10,8 +10,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,8 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,7 +37,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,14 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.model.Medium
-import com.davidgcd.backlog.model.TimeBudget
-import com.davidgcd.backlog.model.Tonight
-import com.davidgcd.backlog.model.TonightCandidate
 import com.davidgcd.backlog.ui.components.BookCover
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassCard
-import com.davidgcd.backlog.ui.components.GlassPill
 import com.davidgcd.backlog.ui.components.LibraryEmptyState
 import com.davidgcd.backlog.ui.components.SectionHeader
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
@@ -76,7 +67,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * « Aujourd'hui » : ce qui compte maintenant, tous médias confondus — une idée pour ce soir, ce qui est en cours,
+ * « Aujourd'hui » : ce qui compte maintenant, tous médias confondus — ce qui est en cours,
  * les sorties de la quinzaine, les derniers ajouts, et le bilan de l'année. Les trois médias vivent ensuite dans la Bibliothèque.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,7 +119,6 @@ fun HomeScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item(key = "tonight") { TonightCard(state.tonightPool, onOpen) }
             if (state.upcoming.isNotEmpty() && nudge.visible) item(key = "notif") { NotificationNudgeCard(nudge) }
             if (state.inProgress.isNotEmpty()) {
                 item(key = "continue") {
@@ -220,87 +210,6 @@ private fun UpcomingRow(up: UpcomingItem, onOpen: (Medium, String) -> Unit) {
             }
         }
     }
-}
-
-/** « Ce soir, je fais quoi ? » : trois idées tirées de la bibliothèque selon le média et le temps disponibles. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TonightCard(pool: List<TonightCandidate>, onOpen: (Medium, String) -> Unit) {
-    var medium by rememberSaveable { mutableStateOf<Medium?>(null) }
-    var budget by rememberSaveable { mutableStateOf(TimeBudget.EVENING) }
-    var seed by rememberSaveable { mutableStateOf(0L) }
-    val picks = remember(pool, medium, budget, seed) { Tonight.suggest(pool, medium, budget, System.currentTimeMillis(), seed) }
-
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Glass.Cyan)
-                Text(
-                    stringResource(R.string.tonight_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = { seed += 1 }, enabled = picks.isNotEmpty()) {
-                    Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(R.string.tonight_another), modifier = Modifier.padding(start = 4.dp))
-                }
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GlassPill(stringResource(R.string.filter_any), selected = medium == null, onClick = { medium = null })
-                GlassPill(stringResource(R.string.media_games), selected = medium == Medium.GAME, onClick = { medium = Medium.GAME })
-                GlassPill(stringResource(R.string.media_movies), selected = medium == Medium.MOVIE, onClick = { medium = Medium.MOVIE })
-                GlassPill(stringResource(R.string.media_books), selected = medium == Medium.BOOK, onClick = { medium = Medium.BOOK })
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TimeBudget.entries.forEach { option ->
-                    GlassPill(stringResource(option.labelRes()), selected = budget == option, onClick = { budget = option })
-                }
-            }
-            if (picks.isEmpty()) {
-                Text(stringResource(R.string.tonight_none), style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted)
-            } else {
-                picks.forEach { pick -> TonightRow(pick, onOpen) }
-                if (budget != TimeBudget.LONG && medium != Medium.MOVIE && medium != Medium.BOOK) {
-                    Text(stringResource(R.string.tonight_games_note), style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
-                }
-            }
-        }
-    }
-}
-
-private fun TimeBudget.labelRes(): Int = when (this) {
-    TimeBudget.SHORT -> R.string.tonight_short
-    TimeBudget.EVENING -> R.string.tonight_evening
-    TimeBudget.LONG -> R.string.tonight_long
-}
-
-@Composable
-private fun TonightRow(pick: TonightCandidate, onOpen: (Medium, String) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onOpen(pick.medium, pick.key) }
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        ItemCover(pick.medium, pick.coverImageId, pick.coverUrl, pick.title, width = 48.dp)
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(pick.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                GlassBadge(mediumLabel(pick.medium))
-                pick.durationMinutes?.let { GlassBadge(formatDuration(it)) }
-                if (pick.inProgress) GlassBadge(stringResource(R.string.tonight_in_progress), tint = Glass.Amber)
-            }
-        }
-    }
-}
-
-private fun formatDuration(minutes: Int): String = when {
-    minutes < 60 -> "$minutes min"
-    minutes % 60 == 0 -> "${minutes / 60} h"
-    else -> "${minutes / 60} h ${"%02d".format(minutes % 60)}"
 }
 
 /** État de la carte « Être prévenu des sorties ? » : visible tant que l'autorisation manque et n'a pas déjà été demandée. */

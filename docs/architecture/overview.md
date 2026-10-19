@@ -23,7 +23,7 @@
   message d'erreur), `MetacriticService` (même règle "pas d'erreur
   visible", mais **scaffold non branché** : voir "Ce qui manque encore").
 - `ui/nav/` — `BacklogNavHost`, le seul `NavHost` de l'app : quatre onglets (Accueil, Bibliothèque, Découvrir, Réglages), détails, classement, « Mon année ». `AppAction` porte ce qu'un raccourci, le widget ou un texte partagé demande à l'ouverture. Voir [navigation et gestes](../guides/navigation-et-gestes.md).
-- `ui/home/`, `ui/recap/` — accueil « Aujourd'hui » (`HomeViewModel` agrège les trois médias) et « Mon année » ; logique pure dans `model/Tonight`, `model/YearRecap`, `model/StatusFlow`.
+- `ui/home/`, `ui/recap/` — accueil « Aujourd'hui » (`HomeViewModel` agrège les trois médias) et « Mon année » ; logique pure dans `model/YearRecap`, `model/StatusFlow`.
 - `ui/prefs/` — `UiPreferences` (SharedPreferences, lues avant la première frame) : thème, couleurs dynamiques, aperçu des bandes-annonces, drapeaux « déjà demandé ».
 - `widget/` — widget Glance « en cours / prochaine sortie ».
 - `ui/` — écrans Compose + ViewModels, un package par écran : `ui/backlog/`

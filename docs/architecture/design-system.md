@@ -39,7 +39,7 @@ L'app ne stocke ni temps de jeu, ni progression, ni listes personnalisées, ni p
 Utilisés à la place : nombre de jeux actifs/archivés (tuiles), ajouts récents (carrousel), note IGDB / Metacritic / Steam (barres dégradées), plateformes, genres, date de sortie.
 
 ## Écrans
-- **Accueil « Aujourd'hui »** : « Ce soir, je fais quoi ? », à continuer, sorties à venir, ajouts récents, « Mon année ».
+- **Accueil « Aujourd'hui »** : à continuer, sorties à venir, ajouts récents, « Mon année ».
 - **Bibliothèque** : sélecteur Jeux / Films & séries / Livres ; tuiles stats cliquables, carrousel « Ajouts récents », grille adaptative, recherche « Ma liste / Catalogue », feuille de filtres, balayage et appui long.
 - **Fiche jeu** : artwork flouté en fond (blur API 31+), grande jaquette, badges, carte de notes, résumé, actions.
 - **Découvrir / Réglages** : mêmes surfaces verre.

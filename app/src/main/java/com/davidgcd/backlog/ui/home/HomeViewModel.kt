@@ -15,9 +15,6 @@ import com.davidgcd.backlog.data.repository.BookRepository
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.model.Medium
-import com.davidgcd.backlog.model.ReadStatus
-import com.davidgcd.backlog.model.Tonight
-import com.davidgcd.backlog.model.TonightCandidate
 import com.davidgcd.backlog.model.WatchStatus
 import com.davidgcd.backlog.model.isInProgress
 import com.davidgcd.backlog.util.TmdbImage
@@ -46,7 +43,6 @@ data class HomeState(
     val inProgress: List<HomeItem> = emptyList(),
     val upcoming: List<UpcomingItem> = emptyList(),
     val recent: List<HomeItem> = emptyList(),
-    val tonightPool: List<TonightCandidate> = emptyList(),
 )
 
 /** Ce que l'accueil agrège : le meilleur de la bibliothèque (jeux, films & séries, livres) du moment. */
@@ -92,16 +88,11 @@ class HomeViewModel(
             val recent = (activeGames.map { it.toItem() } + activeMovies.map { it.toItem() } + activeBooks.map { it.toItem() })
                 .sortedByDescending { it.addedAt }.take(MAX_ROWS)
 
-            val pool = activeGames.filter { it.gameStatus == GameStatus.BACKLOG || it.gameStatus.isInProgress }.map { it.toCandidate() } +
-                activeMovies.filter { it.watchStatus != WatchStatus.WATCHED }.map { it.toCandidate() } +
-                activeBooks.filter { it.readStatus == ReadStatus.TO_READ || it.readStatus.isInProgress }.map { it.toCandidate() }
-
             return HomeState(
                 isEmpty = games.isEmpty() && movies.isEmpty() && books.isEmpty(),
                 inProgress = inProgress,
                 upcoming = upcoming,
                 recent = recent,
-                tonightPool = pool,
             )
         }
 
@@ -116,33 +107,6 @@ class HomeViewModel(
 
         private fun BookEntity.toItem() = HomeItem(Medium.BOOK, bookKey, title, coverUrl = coverUrl, subtitle = authorList.firstOrNull(), addedAt = addedAt)
 
-        private fun GameEntity.toCandidate() = TonightCandidate(
-            Medium.GAME, igdbId.toString(), name,
-            coverImageId = coverImageId,
-            inProgress = gameStatus.isInProgress,
-            addedAt = addedAt,
-            quality = userRating?.let { it / 10.0 } ?: totalRating?.let { it / 100.0 },
-        )
-
-        private fun MovieEntity.toCandidate() = TonightCandidate(
-            Medium.MOVIE, titleKey, title,
-            coverUrl = TmdbImage.poster(posterUrl, width = 342),
-            inProgress = watchStatus.isInProgress,
-            addedAt = addedAt,
-            quality = userRating?.let { it / 10.0 } ?: tmdbRating?.let { it / 10.0 },
-            durationMinutes = runtimeMinutes,
-            subtitle = year?.toString(),
-        )
-
-        private fun BookEntity.toCandidate() = TonightCandidate(
-            Medium.BOOK, bookKey, title,
-            coverUrl = coverUrl,
-            inProgress = readStatus.isInProgress,
-            addedAt = addedAt,
-            quality = userRating?.let { it / 5.0 },
-            durationMinutes = Tonight.readingMinutes(pageCount),
-            subtitle = authorList.firstOrNull(),
-        )
     }
 }
 
