@@ -79,6 +79,7 @@
     <string name="action_back">Retour</string>
     <string name="game_not_found">Jeu introuvable</string>
     <string name="ratings_title">Notes</string>
+    <string name="stores_title">Où l\u2019acheter</string>
     <string name="ratings_metacritic">Metacritic</string>
     <string name="ratings_steam">Steam</string>
     <string name="ratings_steam_review_count">%1$d avis</string>

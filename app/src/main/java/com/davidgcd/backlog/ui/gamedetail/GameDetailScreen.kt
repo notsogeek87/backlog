@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.layout.size
 import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.material3.AlertDialog
@@ -74,6 +75,7 @@ import com.davidgcd.backlog.data.repository.MetacriticScore
 import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.util.FrenchLabels
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.StoreLink
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassButton
@@ -92,6 +94,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val ratings by viewModel.ratings.collectAsState()
     val trailer by viewModel.trailer.collectAsState()
+    val storeLinks by viewModel.storeLinks.collectAsState()
     val frenchSummary by viewModel.frenchSummary.collectAsState()
     val appSnackbar = LocalAppSnackbar.current
     val trailerPreview by (LocalUiPreferences.current?.trailerPreview ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }).collectAsState()
@@ -182,6 +185,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         display = current.entity.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
                         trailer = trailer,
+                        storeLinks = storeLinks,
                         inBacklog = true,
                         isArchived = current.entity.isArchived,
                         status = current.entity.gameStatus,
@@ -206,6 +210,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                         display = current.game.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
                         trailer = trailer,
+                        storeLinks = storeLinks,
                         inBacklog = false,
                         isArchived = false,
                         status = GameStatus.BACKLOG,
@@ -237,6 +242,7 @@ private fun GameDetailContent(
     display: GameDisplay,
     ratings: RatingsState,
     trailer: Trailer?,
+    storeLinks: List<StoreLink>,
     inBacklog: Boolean,
     isArchived: Boolean,
     status: GameStatus,
@@ -279,7 +285,7 @@ private fun GameDetailContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     trailer?.let { TrailerHero(it, trailerPreview) }
-                    DetailBody(display, ratings, inBacklog, status, userRating, changeStatus, onRate)
+                    DetailBody(display, ratings, storeLinks, inBacklog, status, userRating, changeStatus, onRate)
                 }
             }
         } else {
@@ -294,7 +300,7 @@ private fun GameDetailContent(
                 trailer?.let { TrailerHero(it, trailerPreview) }
                 DetailHero(display, isArchived, coverWidth = 132.dp, stacked = false)
                 DetailTags(display)
-                DetailBody(display, ratings, inBacklog, status, userRating, changeStatus, onRate)
+                DetailBody(display, ratings, storeLinks, inBacklog, status, userRating, changeStatus, onRate)
                 DetailActions(inBacklog, isArchived, onArchiveToggle, onRemove)
             }
         }
@@ -380,6 +386,7 @@ private fun DetailTags(display: GameDisplay) {
 private fun DetailBody(
     display: GameDisplay,
     ratings: RatingsState,
+    storeLinks: List<StoreLink>,
     inBacklog: Boolean,
     status: GameStatus,
     userRating: Int?,
@@ -424,6 +431,30 @@ private fun DetailBody(
                 color = Glass.Text.copy(alpha = 0.86f),
                 modifier = Modifier.padding(16.dp),
             )
+        }
+    }
+
+    if (storeLinks.isNotEmpty()) StoreLinksCard(storeLinks)
+}
+
+/** One button per store page, Steam first (the list arrives already ordered). */
+@Composable
+private fun StoreLinksCard(links: List<StoreLink>) {
+    val uriHandler = LocalUriHandler.current
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                stringResource(R.string.stores_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            links.forEach { link ->
+                GlassButton(
+                    text = link.store.label,
+                    onClick = { runCatching { uriHandler.openUri(link.url) } },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }

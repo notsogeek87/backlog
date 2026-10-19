@@ -11,6 +11,7 @@ import com.davidgcd.backlog.data.repository.SteamReviewSummary
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.StoreLink
 import com.davidgcd.backlog.model.suggestedFor
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.util.DebugLog
@@ -70,7 +71,28 @@ class GameDetailViewModel(
     private val _trailer = MutableStateFlow<Trailer?>(null)
     val trailer: StateFlow<Trailer?> = _trailer
 
+    /** Store pages, Steam first; empty while loading or when IGDB lists none (the section is then hidden). */
+    private val _storeLinks = MutableStateFlow<List<StoreLink>>(emptyList())
+    val storeLinks: StateFlow<List<StoreLink>> = _storeLinks
+
     init {
+        viewModelScope.launch {
+            val game = (state.value as? GameDetailState.Remote)?.game ?: try {
+                repository.fetchRemoteGame(gameId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                DebugLog.log("GameDetailViewModel: storeLinks($gameId) failed: ${t::class.simpleName}: ${t.message}")
+                null
+            }
+            val links = game?.storeLinks.orEmpty()
+            val steamId = game?.steamAppId ?: (state.value as? GameDetailState.InBacklog)?.entity?.steamAppId
+            _storeLinks.value = if (steamId != null && links.none { it.store == StoreLink.Store.STEAM }) {
+                listOf(StoreLink.steam(steamId)) + links
+            } else {
+                links
+            }
+        }
         viewModelScope.launch {
             _trailer.value = try {
                 repository.trailer(gameId)

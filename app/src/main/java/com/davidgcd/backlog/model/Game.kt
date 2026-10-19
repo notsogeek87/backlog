@@ -34,9 +34,37 @@ data class Game(
             ?.url
             ?.let { STEAM_APP_URL_REGEX.find(it)?.groupValues?.get(1)?.toLongOrNull() }
 
+    /** Store pages found in the IGDB `websites`, Steam first, then the other stores in a fixed order. */
+    val storeLinks: List<StoreLink>
+        get() = websites.orEmpty()
+            .mapNotNull { site -> StoreLink.Store.forCategory(site.category)?.let { StoreLink(it, site.url) } }
+            .filter { it.url.startsWith("http") }
+            .distinctBy { it.store }
+            .sortedBy { it.store.ordinal }
+
     private companion object {
         const val STEAM_WEBSITE_CATEGORY = 13
         val STEAM_APP_URL_REGEX = Regex("""/app/(\d+)""")
+    }
+}
+
+/** A store page of a game; [Store] declares the display order, Steam first. */
+data class StoreLink(val store: Store, val url: String) {
+    enum class Store(val label: String, val igdbCategories: Set<Int>) {
+        STEAM("Steam", setOf(13)),
+        EPIC("Epic Games Store", setOf(16)),
+        GOG("GOG", setOf(17)),
+        ITCH("itch.io", setOf(15)),
+        APP_STORE("App Store", setOf(10, 11)),
+        GOOGLE_PLAY("Google Play", setOf(12));
+
+        companion object {
+            fun forCategory(category: Int?): Store? = entries.firstOrNull { category in it.igdbCategories }
+        }
+    }
+
+    companion object {
+        fun steam(appId: Long) = StoreLink(Store.STEAM, "https://store.steampowered.com/app/$appId")
     }
 }
 
