@@ -27,6 +27,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Games
+import androidx.compose.material.icons.filled.LocalMovies
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -242,14 +245,13 @@ private fun Carousel(items: List<HomeItem>, onOpen: (Medium, String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                val mediumIcon = when (item.medium) {
+                    Medium.GAME -> Icons.Filled.Games
+                    Medium.MOVIE -> Icons.Filled.LocalMovies
+                    Medium.BOOK -> Icons.Filled.MenuBook
+                }
                 Icon(
-                    painter = painterResource(
-                        when (item.medium) {
-                            Medium.GAME -> R.drawable.ic_game
-                            Medium.MOVIE -> R.drawable.ic_movie
-                            Medium.BOOK -> R.drawable.ic_book
-                        }
-                    ),
+                    mediumIcon,
                     contentDescription = null,
                     tint = when (item.medium) {
                         Medium.GAME -> Glass.Cyan
@@ -285,14 +287,13 @@ private fun UpcomingRow(up: UpcomingItem, onOpen: (Medium, String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            val mediumIcon = when (up.item.medium) {
+                Medium.GAME -> Icons.Filled.Games
+                Medium.MOVIE -> Icons.Filled.LocalMovies
+                Medium.BOOK -> Icons.Filled.MenuBook
+            }
             Icon(
-                painter = painterResource(
-                    when (up.item.medium) {
-                        Medium.GAME -> R.drawable.ic_game
-                        Medium.MOVIE -> R.drawable.ic_movie
-                        Medium.BOOK -> R.drawable.ic_book
-                    }
-                ),
+                mediumIcon,
                 contentDescription = null,
                 tint = when (up.item.medium) {
                     Medium.GAME -> Glass.Cyan
