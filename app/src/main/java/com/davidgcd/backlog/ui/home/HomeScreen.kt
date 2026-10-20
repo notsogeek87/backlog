@@ -47,7 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.weight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -191,27 +190,30 @@ private fun SummaryCards(state: HomeState) {
             title = stringResource(R.string.home_summary_in_progress),
             value = inProgressCount.toString(),
             icon = Icons.Filled.PlayArrow,
-            color = Glass.Cyan
+            color = Glass.Cyan,
+            modifier = Modifier.weight(1f)
         )
         SummaryCard(
             title = stringResource(R.string.home_summary_upcoming),
             value = upcomingCount.toString(),
             icon = Icons.Filled.CalendarToday,
-            color = Glass.Amber
+            color = Glass.Amber,
+            modifier = Modifier.weight(1f)
         )
         SummaryCard(
             title = stringResource(R.string.home_summary_recent),
             value = recentCount.toString(),
             icon = Icons.Filled.NewReleases,
-            color = Glass.Green
+            color = Glass.Green,
+            modifier = Modifier.weight(1f)
         )
     }
 }
 
 @Composable
-private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
+private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxWidth().weight(1f),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         GlassCard(
