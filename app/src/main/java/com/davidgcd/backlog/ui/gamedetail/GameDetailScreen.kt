@@ -1,5 +1,6 @@
 package com.davidgcd.backlog.ui.gamedetail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -463,6 +464,7 @@ private fun StoreLinksCard(links: List<StoreLink>) {
 }
 
 /** A store button with icon and label for better visual identification. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StoreButton(link: StoreLink, onClick: () -> Unit) {
     Row(
