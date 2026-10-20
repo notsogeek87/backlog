@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json.schemastore.org/vibe-config.json",
+  "name": "Backlog",
+  "description": "Configuration Vibe Code pour le projet Backlog - Gestion de bibliothèque multimédia Android",
+  
+  "restrictions": {
+    "allowed_directories": [
+      "app/",
+      "server/",
+      "docs/",
+      "tools/",
+      ".github/",
+      ".vibe/",
+      "scripts/"
+    ],
+    "denied_directories": [
+      "node_modules/",
+      ".git/",
+      "build/",
+      "app/build/",
+      "**/build/",
+      "**/node_modules/"
+    ],
+    "allowed_extensions": [
+      ".kt",
+      ".java",
+      ".js",
+      ".ts",
+      ".json",
+      ".md",
+      ".yml",
+      ".yaml",
+      ".gradle",
+      ".kts",
+      ".properties",
+      ".xml",
+      ".sql",
+      ".sh",
+      ".py"
+    ],
+    "denied_extensions": [
+      ".exe",
+      ".dll",
+      ".so",
+      ".class",
+      ".jar",
+      ".apk",
+      ".aab",
+      ".zip",
+      ".rar",
+      ".7z"
+    ],
+    "max_file_size_bytes": 10485760,
+    "max_line_length": 120,
+    "forbidden_patterns": [
+      "password\\s*=\\s*['\"]",
+      "api[_-]?key\\s*=\\s*['\"]",
+      "secret\\s*=\\s*['\"]",
+      "token\\s*=\\s*['\"]",
+      "private\\s+val\\s+.*\\s*=\\s*['\"]",
+      "const\\s+val\\s+.*\\s*=\\s*['\"]"
+    ]
+  },
+  
+  "conventions": {
+    "kotlin": {
+      "naming": {
+        "class": "PascalCase",
+        "interface": "PascalCase",
+        "object": "PascalCase",
+        "function": "camelCase",
+        "variable": "camelCase",
+        "constant": "UPPER_SNAKE_CASE",
+        "package": "lowercase.with.dots"
+      },
+      "formatting": {
+        "indent": 4,
+        "brace_style": "kotlin-standard",
+        "line_wrapping": "google-style"
+      },
+      "style": {
+        "use_val_over_var": true,
+        "prefer_const_for_compile_time_constants": true,
+        "use_data_class_for_dto": true,
+        "use_sealed_class_for_state": true
+      }
+    },
+    "javascript": {
+      "naming": {
+        "function": "camelCase",
+        "variable": "camelCase",
+        "constant": "UPPER_SNAKE_CASE",
+        "class": "PascalCase"
+      },
+      "formatting": {
+        "indent": 2,
+        "quotes": "double",
+        "semicolons": true,
+        "trailing_commas": "es5"
+      },
+      "module": {
+        "type": "module",
+        "use_esm_imports": true
+      }
+    },
+    "markdown": {
+      "required_sections": [
+        "title",
+        "pour qui / pourquoi"
+      ],
+      "line_length": 100,
+      "prefer_relative_links": true
+    },
+    "gradle": {
+      "version_catalog": true,
+      "use_kotlin_dsl": true,
+      "property_order": [
+        "plugins",
+        "android",
+        "dependencies"
+      ]
+    },
+    "git": {
+      "commit_message": {
+        "language": "fr",
+        "format": "conventional-commits",
+        "types": [
+          "feat",
+          "fix",
+          "docs",
+          "refactor",
+          "chore",
+          "test",
+          "build",
+          "ci"
+        ]
+      },
+      "branch_naming": {
+        "format": "{type}/{description}",
+        "types": [
+          "feat",
+          "fix",
+          "docs",
+          "refactor",
+          "chore"
+        ]
+      }
+    }
+  },
+  
+  "architecture": {
+    "android": {
+      "pattern": "MVVM",
+      "layers": {
+        "ui": {
+          "directory": "app/src/main/java/com/davidgcd/backlog/ui/",
+          "responsibilities": [
+            "Jetpack Compose components",
+            "Screens",
+            "Navigation"
+          ],
+          "forbidden": [
+            "direct API calls",
+            "business logic",
+            "Room database access"
+          ]
+        },
+        "viewmodel": {
+          "directory": "app/src/main/java/com/davidgcd/backlog/ui/",
+          "responsibilities": [
+            "State management",
+            "UI logic",
+            "Expose data to UI"
+          ],
+          "forbidden": [
+            "direct Room access",
+            "direct API calls"
+          ]
+        },
+        "repository": {
+          "directory": "app/src/main/java/com/davidgcd/backlog/data/",
+          "single_source_of_truth": "BacklogRepository",
+          "responsibilities": [
+            "Mediate between data sources",
+            "Cache management",
+            "Data transformation"
+          ]
+        },
+        "data_sources": {
+          "local": {
+            "directory": "app/src/main/java/com/davidgcd/backlog/data/local/",
+            "technology": "Room",
+            "responsibilities": [
+              "Database access",
+              "DAO interfaces",
+              "Entity definitions"
+            ]
+          },
+          "remote": {
+            "directory": "app/src/main/java/com/davidgcd/backlog/data/remote/",
+            "responsibilities": [
+              "API clients",
+              "Network requests",
+              "Response parsing"
+            ]
+          }
+        },
+        "model": {
+          "directory": "app/src/main/java/com/davidgcd/backlog/model/",
+          "responsibilities": [
+            "Data classes",
+            "DTOs",
+            "Domain models"
+          ]
+        }
+      },
+      "rules": [
+        "BacklogRepository must be the only class that accesses both Room and remote APIs",
+        "ViewModels must only access repositories, never data sources directly",
+        "UI must only access ViewModels, never repositories or data sources directly",
+        "All database access must go through DAO interfaces",
+        "All network calls must use Retrofit services"
+      ]
+    },
+    "server": {
+      "pattern": "Layered",
+      "layers": {
+        "api": {
+          "directory": "server/api/",
+          "responsibilities": [
+            "HTTP endpoints",
+            "Request validation",
+            "Response formatting"
+          ]
+        },
+        "lib": {
+          "directory": "server/lib/",
+          "responsibilities": [
+            "Business logic",
+            "Database access",
+            "Utilities"
+          ]
+        }
+      },
+      "rules": [
+        "All database access must use parameterized queries to prevent SQL injection",
+        "All endpoints must validate input",
+        "Error responses must not expose secrets or stack traces"
+      ]
+    }
+  },
+  
+  "quality_gates": {
+    "android": {
+      "test_coverage": {
+        "minimum": 80,
+        "target": 90,
+        "critical_paths": 100
+      },
+      "lint": {
+        "enabled": true,
+        "severity": "error"
+      },
+      "build": {
+        "warn_on_deprecation": true,
+        "fail_on_warning": false
+      }
+    },
+    "server": {
+      "test_coverage": {
+        "minimum": 80,
+        "target": 90
+      },
+      "eslint": {
+        "enabled": false,
+        "config": "recommended"
+      }
+    },
+    "documentation": {
+      "required": true,
+      "check_links": true,
+      "spell_check": false
+    }
+  },
+  
+  "workflows": {
+    "pre_commit": [
+      "npm run vibe:check",
+      "./gradlew lintDebug",
+      "./gradlew testDebugUnitTest",
+      "cd server && npm test",
+      "python3 tools/check_docs_links.py"
+    ],
+    "pre_push": [
+      "npm run vibe:analyze"
+    ],
+    "ci": [
+      "android-build.yml",
+      "docs-links.yml"
+    ]
+  },
+  
+  "environment": {
+    "android": {
+      "min_sdk": 26,
+      "target_sdk": 35,
+      "compile_sdk": 35,
+      "java_version": "17",
+      "kotlin_version": "2.0.20",
+      "compose_version": "2024.09.03",
+      "gradle_version": "8.9"
+    },
+    "node": {
+      "version": ">=20",
+      "package_manager": "npm"
+    },
+    "python": {
+      "version": ">=3.8"
+    }
+  },
+  
+  "dependencies": {
+    "android": {
+      "core": [
+        "androidx.compose:compose-bom:2024.09.03",
+        "androidx.room:room-runtime:2.6.1",
+        "com.squareup.retrofit2:retrofit:2.11.0",
+        "io.coil-kt:coil-compose:2.7.0"
+      ]
+    },
+    "server": {
+      "core": [
+        "@neondatabase/serverless:^1.0.0"
+      ]
+    }
+  },
+  
+  "features": {
+    "auto_import": true,
+    "auto_format": true,
+    "auto_lint": true,
+    "suggest_tests": true,
+    "suggest_docs": true
+  },
+  
+  "metadata": {
+    "created": "2026-10-20",
+    "version": "1.0.0",
+    "maintainer": "Vibe Code",
+    "repository": "https://github.com/notsogeek87/backlog"
+  }
+}
