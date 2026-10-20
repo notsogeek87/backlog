@@ -43,14 +43,14 @@ data class Game(
             .mapNotNull { site ->
                 // Try URL pattern matching first (more reliable for PSN/Nintendo)
                 when {
-                    site.url.contains("store.steampowered.com") -> StoreLink(Store.STEAM, site.url)
-                    site.url.contains("store.playstation.com") -> StoreLink(Store.PLAYSTATION, site.url)
-                    site.url.contains("store.nintendo.com") || site.url.contains("ec.nintendo.com") -> StoreLink(Store.NINTENDO, site.url)
-                    site.url.contains("store.epicgames.com") -> StoreLink(Store.EPIC, site.url)
-                    site.url.contains("gog.com") -> StoreLink(Store.GOG, site.url)
-                    site.url.contains("itch.io") -> StoreLink(Store.ITCH, site.url)
-                    site.url.contains("apps.apple.com") -> StoreLink(Store.APP_STORE, site.url)
-                    site.url.contains("play.google.com") -> StoreLink(Store.GOOGLE_PLAY, site.url)
+                    site.url.contains("store.steampowered.com") -> StoreLink(StoreLink.Store.STEAM, site.url)
+                    site.url.contains("store.playstation.com") -> StoreLink(StoreLink.Store.PLAYSTATION, site.url)
+                    site.url.contains("store.nintendo.com") || site.url.contains("ec.nintendo.com") -> StoreLink(StoreLink.Store.NINTENDO, site.url)
+                    site.url.contains("store.epicgames.com") -> StoreLink(StoreLink.Store.EPIC, site.url)
+                    site.url.contains("gog.com") -> StoreLink(StoreLink.Store.GOG, site.url)
+                    site.url.contains("itch.io") -> StoreLink(StoreLink.Store.ITCH, site.url)
+                    site.url.contains("apps.apple.com") -> StoreLink(StoreLink.Store.APP_STORE, site.url)
+                    site.url.contains("play.google.com") -> StoreLink(StoreLink.Store.GOOGLE_PLAY, site.url)
                     // Fallback to category matching for stores we haven't matched by URL
                     else -> StoreLink.Store.forCategory(site.category)?.let { StoreLink(it, site.url) }
                 }
