@@ -8,8 +8,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Games
@@ -56,7 +53,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.davidgcd.backlog.R
@@ -199,7 +195,7 @@ private fun SummaryCards(state: HomeState) {
             title = stringResource(R.string.home_summary_upcoming),
             value = upcomingCount.toString(),
             icon = Icons.Filled.CalendarToday,
-            color = Glass.Orange
+            color = Glass.Amber
         )
         SummaryCard(
             title = stringResource(R.string.home_summary_recent),
@@ -272,10 +268,10 @@ private fun UpcomingRow(up: UpcomingItem, onOpen: (Medium, String) -> Unit) {
     val nowSeconds = System.currentTimeMillis() / 1000
     val daysAway = (up.epochSeconds - nowSeconds) / 86_400
     val (label, color) = when {
-        daysAway <= 0 -> Pair(stringResource(R.string.home_today), Glass.Red)
-        daysAway == 1 -> Pair(stringResource(R.string.home_tomorrow), Glass.Orange)
-        daysAway <= 7 -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Yellow)
-        else -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Green)
+        daysAway <= 0 -> Pair(stringResource(R.string.home_today), Glass.Pink)
+        daysAway == 1 -> Pair(stringResource(R.string.home_tomorrow), Glass.Amber)
+        daysAway <= 7 -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Green)
+        else -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Cyan)
     }
     GlassCard(
         modifier = Modifier.fillMaxWidth(),

@@ -109,9 +109,6 @@ object Glass {
     val Green = Color(0xFF22C55E)
     val Amber = Color(0xFFF59E0B)
     val Teal = Color(0xFF14B8A6)
-    val Red = Color(0xFFFF5252)
-    val Orange = Color(0xFFFF9800)
-    val Yellow = Color(0xFFFFC107)
 
     val Bg: Color @Composable @ReadOnlyComposable get() = LocalGlassPalette.current.bg
     val Bg2: Color @Composable @ReadOnlyComposable get() = LocalGlassPalette.current.bg2
