@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.davidgcd.backlog.R
@@ -60,7 +61,7 @@ import com.davidgcd.backlog.model.Medium
 import com.davidgcd.backlog.ui.components.BookCover
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
-import com.davidgcd.backlog.ui.components.GlassCard
+import com.davidgcd.backlog.ui.components.GlassShape
 import com.davidgcd.backlog.ui.components.LibraryEmptyState
 import com.davidgcd.backlog.ui.components.SectionHeader
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
@@ -209,19 +210,21 @@ private fun SummaryCards(state: HomeState) {
 @Composable
 private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
     Column(
-        modifier = Modifier.weight(1f),
+        modifier = Modifier.fillMaxWidth().weight(1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = color.copy(alpha = 0.15f)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .glass(GlassShape, strong = false)
+                .background(color.copy(alpha = 0.15f))
         ) {
             Column(
                 modifier = Modifier.padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.size(4.dp))
                 Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(title, style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
             }
@@ -268,15 +271,17 @@ private fun UpcomingRow(up: UpcomingItem, onOpen: (Medium, String) -> Unit) {
     val nowSeconds = System.currentTimeMillis() / 1000
     val daysAway = (up.epochSeconds - nowSeconds) / 86_400
     val (label, color) = when {
-        daysAway <= 0 -> Pair(stringResource(R.string.home_today), Glass.Pink)
-        daysAway == 1 -> Pair(stringResource(R.string.home_tomorrow), Glass.Amber)
-        daysAway <= 7 -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Green)
+        daysAway <= 0L -> Pair(stringResource(R.string.home_today), Glass.Pink)
+        daysAway == 1L -> Pair(stringResource(R.string.home_tomorrow), Glass.Amber)
+        daysAway <= 7L -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Green)
         else -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Cyan)
     }
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { onOpen(up.item.medium, up.item.key) },
-        border = BorderStroke(1.dp, color)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glass(GlassShape, strong = false)
+            .border(BorderStroke(1.dp, color))
+            .clickable { onOpen(up.item.medium, up.item.key) },
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
