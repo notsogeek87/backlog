@@ -14,48 +14,48 @@
  */
 
 import { readFile, readdir, stat } from 'node:fs/promises';
-import { join, resolve, relative, extname, basename, dirname } from 'node:path';
+import { join, resolve, relative, extname, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import { spawn } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-// Charger chalk si disponible
-let chalk;
-try {
-  const require = createRequire(import.meta.url);
-  chalk = require('chalk');
-} catch {
-  // Fallback sans couleurs
-  chalk = {
-    green: (t) => t,
-    yellow: (t) => t,
-    red: (t) => t,
-    blue: (t) => t,
-    cyan: (t) => t,
-    bold: { cyan: (t) => t, white: (t) => t },
-    dim: (t) => t
-  };
+// Couleurs ANSI (fallback si chalk non disponible)
+const ANSI = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m'
+};
+
+function color(text, colorCode) {
+  if (process.env.NODE_DISABLE_COLORS || process.env.NO_COLOR) {
+    return text;
+  }
+  return `${colorCode}${text}${ANSI.reset}`;
 }
 
 // Couleurs
 const c = {
-  success: chalk.green,
-  warning: chalk.yellow,
-  error: chalk.red,
-  info: chalk.blue,
-  title: chalk.bold.cyan,
-  subtitle: chalk.bold.white,
-  dim: chalk.dim,
-  bold: chalk.bold
+  success: (t) => color(t, ANSI.green),
+  warning: (t) => color(t, ANSI.yellow),
+  error: (t) => color(t, ANSI.red),
+  info: (t) => color(t, ANSI.blue),
+  title: (t) => color(t, ANSI.bold + ANSI.cyan),
+  subtitle: (t) => color(t, ANSI.bold),
+  dim: (t) => color(t, ANSI.dim),
+  bold: (t) => color(t, ANSI.bold)
 };
 
 /**
  * Exécute une commande shell
  */
-async function exec(command, options = {}) {
-  const { spawn } = await import('node:child_process');
+function exec(command, options = {}) {
   const { cwd = ROOT, reject = true } = options;
   
   return new Promise((resolve, rejectFn) => {
@@ -288,23 +288,23 @@ class BacklogAnalyzer {
 
       this.results.structure = structure;
 
-      console.log(c.bold('Racine:'));
+      console.log('Racine:');
       console.log('  Dossiers:', structure.root.dirs.length > 0 ? structure.root.dirs.join(', ') : 'Aucun');
       console.log('  Fichiers:', structure.root.files.length > 0 ? structure.root.files.join(', ') : 'Aucun');
       console.log();
       
-      console.log(c.bold('Application Android (app/):'));
+      console.log('Application Android (app/):');
       console.log('  Dossiers:', structure.app.dirs.length);
       console.log('  Fichiers:', structure.app.files.length);
       console.log('  Packages:', structure.app.packages.length > 0 ? structure.app.packages.join(', ') : 'Aucun');
       console.log();
       
-      console.log(c.bold('Serveur (server/):'));
+      console.log('Serveur (server/):');
       console.log('  Dossiers:', structure.server.dirs.length);
       console.log('  Fichiers:', structure.server.files.length);
       console.log();
       
-      console.log(c.bold('Documentation (docs/):'));
+      console.log('Documentation (docs/):');
       console.log('  Dossiers:', structure.docs.dirs.length);
       console.log('  Fichiers:', structure.docs.files.length);
       console.log();
@@ -425,7 +425,7 @@ class BacklogAnalyzer {
 
       this.results.stack = stack;
 
-      console.log(c.bold('Android:'));
+      console.log('Android:');
       console.log('  Langage:', stack.android.language);
       console.log('  Architecture:', stack.android.architecture.join(', '));
       console.log('  UI:', stack.android.ui.join(', '));
@@ -435,13 +435,13 @@ class BacklogAnalyzer {
       console.log('  Tests:', stack.android.testing.join(', '));
       console.log();
       
-      console.log(c.bold('Serveur:'));
+      console.log('Serveur:');
       console.log('  Runtime:', stack.server.runtime);
       console.log('  Type:', stack.server.type);
       console.log('  Base de données:', stack.server.database.join(', '));
       console.log();
       
-      console.log(c.bold('CI/CD:'));
+      console.log('CI/CD:');
       console.log('  Plateforme:', stack.ci_cd.platform);
       console.log('  Workflows:', stack.ci_cd.workflows.length > 0 ? stack.ci_cd.workflows.join(', ') : 'Aucun');
       console.log();
@@ -534,14 +534,14 @@ class BacklogAnalyzer {
 
       this.results.dependencies = dependencies;
 
-      console.log(c.bold('Android:'));
+      console.log('Android:');
       console.log('  Total:', dependencies.android.total);
       Object.entries(dependencies.android.byCategory).forEach(([category, count]) => {
         console.log(`    ${category}: ${count}`);
       });
       console.log();
       
-      console.log(c.bold('Serveur:'));
+      console.log('Serveur:');
       console.log('  Total:', dependencies.server.total);
       Object.entries(dependencies.server.byCategory).forEach(([dep, version]) => {
         console.log(`    ${dep}: ${version}`);
@@ -609,7 +609,7 @@ class BacklogAnalyzer {
 
       this.results.tests = tests;
 
-      console.log(c.bold('Android:'));
+      console.log('Android:');
       console.log('  Tests unitaires:', tests.android.unit.count);
       if (tests.android.unit.files.length > 0) {
         console.log('    Fichiers:', tests.android.unit.files.slice(0, 5).join(', ') + (tests.android.unit.files.length > 5 ? '...' : ''));
@@ -617,7 +617,7 @@ class BacklogAnalyzer {
       console.log('  Tests instrumentés:', tests.android.instrumentation.count);
       console.log();
       
-      console.log(c.bold('Serveur:'));
+      console.log('Serveur:');
       console.log('  Tests:', tests.server.count);
       if (tests.server.files.length > 0) {
         console.log('    Fichiers:', tests.server.files.join(', '));
@@ -705,14 +705,14 @@ class BacklogAnalyzer {
 
       this.results.documentation = docs;
 
-      console.log(c.bold('Documentation:'));
+      console.log('Documentation:');
       console.log('  Fichiers totaux:', docs.totalFiles);
       Object.entries(docs.byCategory).forEach(([category, count]) => {
         console.log(`    ${category}: ${count}`);
       });
       console.log();
       
-      console.log(c.bold('Liens:'));
+      console.log('Liens:');
       console.log('  Total:', docs.links.total);
       console.log('  Internes:', docs.links.internal);
       console.log('  Externes:', docs.links.external);
@@ -784,19 +784,19 @@ class BacklogAnalyzer {
 
       this.results.workflows = workflows;
 
-      console.log(c.bold('Workflows:'));
+      console.log('Workflows:');
       console.log('  Total:', workflows.total);
       console.log('  Liste:', workflows.list.join(', '));
       console.log();
       
       Object.entries(workflows.triggers).forEach(([file, triggers]) => {
-        console.log(`  ${c.subtitle(file)}:`);
+        console.log(`  ${file}:`);
         console.log('    Déclencheurs:', triggers.join(', '));
       });
       console.log();
       
       Object.entries(workflows.jobs).forEach(([file, jobs]) => {
-        console.log(`  ${c.subtitle(file)}:`);
+        console.log(`  ${file}:`);
         console.log('    Jobs:', jobs.join(', '));
       });
       console.log();
@@ -904,7 +904,7 @@ class BacklogAnalyzer {
           console.log(`  ${c.warning('⚠')} [${warning.priority}] ${warning.message} dans ${warning.file}`);
         });
         if (quality.warnings.length > 10) {
-          console.log(`  ${c.dim(`... et ${quality.warnings.length - 10} autres`)}`);
+          console.log(c.dim(`  ... et ${quality.warnings.length - 10} autres`));
         }
         console.log();
       }
@@ -965,7 +965,7 @@ class BacklogAnalyzer {
   printSummary() {
     console.log(c.title('\n📊 Résumé de l\'Analyse\n'));
     
-    console.log(c.bold('Statistiques:'));
+    console.log('Statistiques:');
     console.log('  Fichiers totaux:', this.results.stats.totalFiles);
     Object.entries(this.results.stats.byLanguage).forEach(([lang, count]) => {
       if (count > 0) {
@@ -974,18 +974,18 @@ class BacklogAnalyzer {
     });
     console.log();
 
-    console.log(c.bold('Tests:'));
+    console.log('Tests:');
     console.log('  Android unitaires:', this.results.tests.android.unit.count);
     console.log('  Android instrumentés:', this.results.tests.android.instrumentation.count);
     console.log('  Serveur:', this.results.tests.server.count);
     console.log();
 
-    console.log(c.bold('Documentation:'));
+    console.log('Documentation:');
     console.log('  Fichiers:', this.results.documentation.totalFiles);
     console.log('  Liens brisés:', this.results.documentation.links.broken);
     console.log();
 
-    console.log(c.bold('Problèmes:'));
+    console.log('Problèmes:');
     console.log('  Erreurs:', c[this.results.issues.length > 0 ? 'error' : 'success'](`${this.results.issues.length}`));
     console.log('  Avertissements:', c[this.results.warnings.length > 0 ? 'warning' : 'success'](`${this.results.warnings.length}`));
     
@@ -1156,22 +1156,22 @@ class BacklogAnalyzer {
  */
 function showHelp() {
   console.log(`
-${c.title('vibe-analyze.js - Analyse du Repository Backlog')}
+vibe-analyze.js - Analyse du Repository Backlog
 
-${c.subtitle('Usage:')}
+Usage:
   node scripts/vibe-analyze.js [options]
 
-${c.subtitle('Options:')}
+Options:
   --json     Output en JSON
   --quiet    Mode silencieux (erreurs seulement)
   --help     Affiche cette aide
 
-${c.subtitle('Exemples:')}
+Exemples:
   node scripts/vibe-analyze.js
   node scripts/vibe-analyze.js --json
   node scripts/vibe-analyze.js --quiet
 
-${c.subtitle('Description:')}
+Description:
   Analyse complète du repository Backlog incluant:
   - Structure du projet
   - Stack technique
