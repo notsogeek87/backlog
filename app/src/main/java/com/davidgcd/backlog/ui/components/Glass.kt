@@ -517,3 +517,43 @@ fun glassRailItemColors() = NavigationRailItemDefaults.colors(
 
 /** Hides a decorative box from TalkBack. */
 fun Modifier.decorative(): Modifier = clearAndSetSemantics { }
+
+/**
+ * Icon for store platforms. Uses simple visual representations for each store.
+ */
+@Composable
+fun StoreIcon(store: StoreLink.Store, modifier: Modifier = Modifier) {
+    val iconTint = when (store) {
+        StoreLink.Store.STEAM -> Glass.Cyan
+        StoreLink.Store.PLAYSTATION -> Color(0xFF003087) // PlayStation blue
+        StoreLink.Store.NINTENDO -> Color(0xFFE60012) // Nintendo red
+        StoreLink.Store.EPIC -> Color(0xFF000000) // Epic black
+        StoreLink.Store.GOG -> Color(0xFF8A00FF) // GOG purple
+        StoreLink.Store.ITCH -> Color(0xFFFF5555) // itch.io red
+        StoreLink.Store.APP_STORE -> Color(0xFF007AFF) // App Store blue
+        StoreLink.Store.GOOGLE_PLAY -> Color(0xFF4285F4) // Google Play blue
+    }
+    
+    Box(
+        modifier = modifier.size(24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Simple icon representation using colored boxes with store initials
+        val initial = when (store) {
+            StoreLink.Store.STEAM -> "S"
+            StoreLink.Store.PLAYSTATION -> "PS"
+            StoreLink.Store.NINTENDO -> "N"
+            StoreLink.Store.EPIC -> "E"
+            StoreLink.Store.GOG -> "G"
+            StoreLink.Store.ITCH -> "i"
+            StoreLink.Store.APP_STORE -> "A"
+            StoreLink.Store.GOOGLE_PLAY -> "G"
+        }
+        Text(
+            text = initial,
+            color = iconTint,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+        )
+    }
+}

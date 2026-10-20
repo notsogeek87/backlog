@@ -52,6 +52,8 @@ data class Game(
 data class StoreLink(val store: Store, val url: String) {
     enum class Store(val label: String, val igdbCategories: Set<Int>) {
         STEAM("Steam", setOf(13)),
+        PLAYSTATION("PlayStation Store", setOf(14)),
+        NINTENDO("Nintendo eShop", setOf(18, 19)),
         EPIC("Epic Games Store", setOf(16)),
         GOG("GOG", setOf(17)),
         ITCH("itch.io", setOf(15)),

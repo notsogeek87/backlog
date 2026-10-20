@@ -48,9 +48,12 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -80,6 +83,8 @@ import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassCard
+import com.davidgcd.backlog.ui.components.GlassShapeSmall
+import com.davidgcd.backlog.ui.components.StoreIcon
 import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.components.GradientProgressBar
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
@@ -437,25 +442,46 @@ private fun DetailBody(
     if (storeLinks.isNotEmpty()) StoreLinksCard(storeLinks)
 }
 
-/** One button per store page, Steam first (the list arrives already ordered). */
+/** Store links displayed with icons for better visual identification. */
 @Composable
 private fun StoreLinksCard(links: List<StoreLink>) {
     val uriHandler = LocalUriHandler.current
     GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 stringResource(R.string.stores_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
             links.forEach { link ->
-                GlassButton(
-                    text = link.store.label,
-                    onClick = { runCatching { uriHandler.openUri(link.url) } },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                StoreButton(link = link, onClick = { runCatching { uriHandler.openUri(link.url) } })
             }
         }
+    }
+}
+
+/** A store button with icon and label for better visual identification. */
+@Composable
+private fun StoreButton(link: StoreLink, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .glass(GlassShapeSmall, strong = true)
+            .semantics { role = Role.Button }
+            .combinedClickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        StoreIcon(store = link.store, modifier = Modifier.padding(start = 16.dp).size(24.dp))
+        Text(
+            text = link.store.label,
+            color = Glass.Text,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f),
+        )
+        Box(modifier = Modifier.size(24.dp)) // Spacer for visual balance
     }
 }
 
