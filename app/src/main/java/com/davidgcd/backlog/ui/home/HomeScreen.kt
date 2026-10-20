@@ -210,7 +210,7 @@ private fun SummaryCards(state: HomeState) {
 @Composable
 private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
     Column(
-        modifier = Modifier.fillMaxWidth().weight(1f),
+        modifier = Modifier.weight(1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         GlassCard(
