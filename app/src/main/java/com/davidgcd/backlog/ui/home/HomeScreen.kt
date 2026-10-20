@@ -45,6 +45,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -60,7 +62,6 @@ import com.davidgcd.backlog.ui.components.BookCover
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
 import com.davidgcd.backlog.ui.components.GlassCard
-
 import com.davidgcd.backlog.ui.components.LibraryEmptyState
 import com.davidgcd.backlog.ui.components.SectionHeader
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
