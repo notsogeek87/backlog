@@ -94,6 +94,7 @@ class IgdbService(private val api: IgdbApi) : GameCatalog {
         val recentWindow = 60L * 60 * 24 * 548 // ~18 months
         val newWindow = 60L * 60 * 24 * 90 // ~3 months
         val (conditions, sort) = when (category) {
+            DiscoverCategory.PERSONALIZED -> "total_rating_count > 10" to "total_rating_count desc"
             DiscoverCategory.POPULAR -> "total_rating_count > 10" to "total_rating_count desc"
             DiscoverCategory.TOP_RATED -> "total_rating_count > 50 & total_rating != null & version_parent = null" to "total_rating desc"
             DiscoverCategory.TRENDING ->

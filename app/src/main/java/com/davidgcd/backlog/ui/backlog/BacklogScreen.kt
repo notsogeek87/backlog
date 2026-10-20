@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,8 +20,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
@@ -49,6 +53,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +69,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import kotlinx.coroutines.launch
 import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
@@ -323,6 +335,11 @@ fun BacklogScreen(
         )
     }
 
+    val listState = rememberLazyGridState()
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 5 }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         contentColor = Glass.Text,
@@ -370,6 +387,22 @@ fun BacklogScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (showScrollToTop) {
+                IconButton(
+                    onClick = { scope.launch { listState.scrollToItem(0) } },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.VerticalAlignTop,
+                        contentDescription = stringResource(R.string.action_scroll_to_top),
+                        tint = Glass.Cyan,
+                    )
+                }
+            }
+        },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             mediaSwitch()
@@ -430,11 +463,35 @@ fun BacklogScreen(
                     onFilterChange = viewModel::setFilter,
                     onOpenSheet = { showSheet = true },
                     onSearchCatalog = { openSearch(SearchScope.CATALOG, query) },
-                    onArchiveToggle = toggleArchive,
-                    onNextStatus = { game -> game.gameStatus.next()?.let { changeStatus(game, it) } },
-                    onStatusChange = changeStatus,
+                    onArchiveToggle = { game ->
+                        val archive = !game.isArchived
+                        viewModel.setArchived(game, archive)
+                        snackWithUndo(context.getString(if (archive) R.string.snackbar_archived else R.string.snackbar_unarchived, game.name)) {
+                            viewModel.setArchived(game, !archive)
+                        }
+                    },
+                    onNextStatus = { game ->
+                        val nextStatus = game.gameStatus.next()
+                        if (nextStatus != null) {
+                            val previous = game.gameStatus
+                            viewModel.setStatus(game, nextStatus)
+                            snackWithUndo(context.getString(R.string.snackbar_status_changed, game.name, context.getString(nextStatus.labelRes()))) {
+                                viewModel.setStatus(game, previous)
+                            }
+                        }
+                    },
+                    onStatusChange = { game, status ->
+                        val previous = game.gameStatus
+                        if (previous != status) {
+                            viewModel.setStatus(game, status)
+                            snackWithUndo(context.getString(R.string.snackbar_status_changed, game.name, context.getString(status.labelRes()))) {
+                                viewModel.setStatus(game, previous)
+                            }
+                        }
+                    },
                     onLongClick = { quickActionsFor = it },
                     onClick = { onGameClick(it.igdbId) },
+                    listState = listState,
                 )
             }
         }
@@ -497,6 +554,7 @@ private fun BacklogGrid(
     onStatusChange: (GameEntity, GameStatus) -> Unit,
     onLongClick: (GameEntity) -> Unit,
     onClick: (GameEntity) -> Unit,
+    listState: LazyGridState,
 ) {
     val searching = searchText.isNotBlank()
     LazyVerticalGrid(
@@ -505,6 +563,7 @@ private fun BacklogGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
+        state = listState,
     ) {
         if (!searching) {
             // The status tiles are the status filter: tap one to narrow the list, tap it again to clear.

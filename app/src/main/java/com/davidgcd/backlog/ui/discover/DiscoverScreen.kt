@@ -108,6 +108,16 @@ fun DiscoverScreen(
                     GlassPill(text = option.label(), selected = option == category, onClick = { viewModel.select(option) })
                 }
             }
+            
+            // Afficher un sous-titre pour la catégorie "Pour vous"
+            if (category == DiscoverCategory.PERSONALIZED) {
+                Text(
+                    text = stringResource(R.string.discover_personalized_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Glass.TextMuted,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
             when (val current = state) {
                 is DiscoverState.Loading -> SkeletonList()
 
@@ -172,6 +182,7 @@ fun DiscoverScreen(
 @Composable
 private fun DiscoverCategory.label(): String = stringResource(
     when (this) {
+        DiscoverCategory.PERSONALIZED -> R.string.discover_personalized
         DiscoverCategory.POPULAR -> R.string.discover_popular
         DiscoverCategory.TOP_RATED -> R.string.discover_top_rated
         DiscoverCategory.TRENDING -> R.string.discover_trending
