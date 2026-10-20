@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +52,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.davidgcd.backlog.R
@@ -61,7 +59,8 @@ import com.davidgcd.backlog.model.Medium
 import com.davidgcd.backlog.ui.components.BookCover
 import com.davidgcd.backlog.ui.components.GameCover
 import com.davidgcd.backlog.ui.components.GlassBadge
-import com.davidgcd.backlog.ui.components.GlassShape
+import com.davidgcd.backlog.ui.components.GlassCard
+
 import com.davidgcd.backlog.ui.components.LibraryEmptyState
 import com.davidgcd.backlog.ui.components.SectionHeader
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
@@ -167,7 +166,7 @@ private fun mediumLabel(medium: Medium): String = stringResource(
 )
 
 @Composable
-private fun ItemCover(medium: Medium, imageId: String?, url: String?, title: String, width: Dp, description: String? = null) {
+private fun ItemCover(medium: Medium, imageId: String?, url: String?, title: String, width: androidx.compose.ui.unit.Dp, description: String? = null) {
     when (medium) {
         Medium.GAME -> GameCover(imageId, width = width, contentDescription = description)
         Medium.MOVIE -> GameCover(null, width = width, imageUrl = url, contentDescription = description)
@@ -213,20 +212,23 @@ private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.
         modifier = Modifier.fillMaxWidth().weight(1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .glass(GlassShape, strong = false)
-                .background(color.copy(alpha = 0.15f))
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color.copy(alpha = 0.15f))
             ) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.size(4.dp))
-                Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(title, style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.size(4.dp))
+                    Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(title, style = MaterialTheme.typography.labelSmall, color = Glass.TextMuted)
+                }
             }
         }
     }
@@ -276,12 +278,9 @@ private fun UpcomingRow(up: UpcomingItem, onOpen: (Medium, String) -> Unit) {
         daysAway <= 7L -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Green)
         else -> Pair(stringResource(R.string.home_in_days, daysAway.toInt()), Glass.Cyan)
     }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .glass(GlassShape, strong = false)
-            .border(BorderStroke(1.dp, color))
-            .clickable { onOpen(up.item.medium, up.item.key) },
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { onOpen(up.item.medium, up.item.key) },
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
