@@ -53,8 +53,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
+
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -471,7 +470,6 @@ private fun StoreButton(link: StoreLink, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .glass(shape = GlassShapeSmall, strong = true)
-            .semantics { role = Role.Button }
             .combinedClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
