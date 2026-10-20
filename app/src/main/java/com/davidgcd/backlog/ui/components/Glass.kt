@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.davidgcd.backlog.model.StoreLink
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.IgdbImage
 
