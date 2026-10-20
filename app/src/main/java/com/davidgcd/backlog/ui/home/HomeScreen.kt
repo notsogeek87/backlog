@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -210,7 +211,7 @@ private fun SummaryCards(state: HomeState) {
 @Composable
 private fun SummaryCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
     Column(
-        modifier = Modifier.weight(1f),
+        modifier = fillMaxWidth().weight(1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         GlassCard(
