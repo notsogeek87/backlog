@@ -34,11 +34,27 @@ data class Game(
             ?.url
             ?.let { STEAM_APP_URL_REGEX.find(it)?.groupValues?.get(1)?.toLongOrNull() }
 
-    /** Store pages found in the IGDB `websites`, Steam first, then the other stores in a fixed order. */
+    /** Store pages found in the IGDB `websites`, Steam first, then the other stores in a fixed order.
+     * Uses both category matching and URL pattern matching to detect PlayStation and Nintendo stores
+     * (IGDB doesn't have official categories for these stores). */
     val storeLinks: List<StoreLink>
         get() = websites.orEmpty()
-            .mapNotNull { site -> StoreLink.Store.forCategory(site.category)?.let { StoreLink(it, site.url) } }
             .filter { it.url.startsWith("http") }
+            .mapNotNull { site ->
+                // Try URL pattern matching first (more reliable for PSN/Nintendo)
+                when {
+                    site.url.contains("store.steampowered.com") -> StoreLink(StoreLink.Store.STEAM, site.url)
+                    site.url.contains("store.playstation.com") -> StoreLink(StoreLink.Store.PLAYSTATION, site.url)
+                    site.url.contains("store.nintendo.com") || site.url.contains("ec.nintendo.com") -> StoreLink(StoreLink.Store.NINTENDO, site.url)
+                    site.url.contains("store.epicgames.com") -> StoreLink(StoreLink.Store.EPIC, site.url)
+                    site.url.contains("gog.com") -> StoreLink(StoreLink.Store.GOG, site.url)
+                    site.url.contains("itch.io") -> StoreLink(StoreLink.Store.ITCH, site.url)
+                    site.url.contains("apps.apple.com") -> StoreLink(StoreLink.Store.APP_STORE, site.url)
+                    site.url.contains("play.google.com") -> StoreLink(StoreLink.Store.GOOGLE_PLAY, site.url)
+                    // Fallback to category matching for stores we haven't matched by URL
+                    else -> StoreLink.Store.forCategory(site.category)?.let { StoreLink(it, site.url) }
+                }
+            }
             .distinctBy { it.store }
             .sortedBy { it.store.ordinal }
 
