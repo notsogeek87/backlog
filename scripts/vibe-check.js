@@ -18,40 +18,72 @@
  *   --help     Affiche l'aide
  */
 
-import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
-import { join, resolve, relative, extname, basename, dirname } from 'node:path';
+import { readFile, readdir, stat } from 'node:fs/promises';
+import { join, resolve, relative, extname, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execa } from 'execa';
+import { spawn } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-// Couleurs (fallback si chalk non disponible)
-let c = {
-  success: (t) => t,
-  warning: (t) => t,
-  error: (t) => t,
-  info: (t) => t,
-  title: (t) => t,
-  subtitle: (t) => t,
-  dim: (t) => t,
-  bold: (t) => t
+// Couleurs ANSI (fallback si chalk non disponible)
+const ANSI = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m'
 };
 
-try {
-  const chalk = await import('chalk');
-  c = {
-    success: chalk.default.green,
-    warning: chalk.default.yellow,
-    error: chalk.default.red,
-    info: chalk.default.blue,
-    title: chalk.default.bold.cyan,
-    subtitle: chalk.default.bold.white,
-    dim: chalk.default.dim,
-    bold: chalk.default.bold
-  };
-} catch {
-  // Utiliser les fallbacks
+function color(text, colorCode) {
+  if (process.env.NODE_DISABLE_COLORS || process.env.NO_COLOR) {
+    return text;
+  }
+  return `${colorCode}${text}${ANSI.reset}`;
+}
+
+// Couleurs
+const c = {
+  success: (t) => color(t, ANSI.green),
+  warning: (t) => color(t, ANSI.yellow),
+  error: (t) => color(t, ANSI.red),
+  info: (t) => color(t, ANSI.blue),
+  title: (t) => color(t, ANSI.bold + ANSI.cyan),
+  subtitle: (t) => color(t, ANSI.bold),
+  dim: (t) => color(t, ANSI.dim),
+  bold: (t) => color(t, ANSI.bold)
+};
+
+/**
+ * Exécute une commande shell
+ */
+function exec(command, options = {}) {
+  const { cwd = ROOT, reject = true } = options;
+  
+  return new Promise((resolve, rejectFn) => {
+    const child = spawn(command, { shell: true, cwd, stdio: 'pipe' });
+    let stdout = '';
+    let stderr = '';
+    
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+    
+    child.on('close', (code) => {
+      if (code !== 0 && reject) {
+        const error = new Error(`Command failed with exit code ${code}: ${command}`);
+        error.stdout = stdout;
+        error.stderr = stderr;
+        rejectFn(error);
+      } else {
+        resolve({ stdout, stderr, code });
+      }
+    });
+    
+    child.on('error', rejectFn);
+  });
 }
 
 /**
@@ -91,7 +123,9 @@ class PreCommitChecker {
    * Lance toutes les vérifications
    */
   async check() {
-    console.log(c.title('\n🔍 Vérification Pré-Commit\n'));
+    if (!this.quietMode) {
+      console.log(c.title('\n🔍 Vérification Pré-Commit\n'));
+    }
     
     try {
       await this.checkSecrets();
@@ -255,8 +289,6 @@ class PreCommitChecker {
       ['.kt', '.kts']
     );
 
-    // Pour l'instant, on vérifie juste que les fichiers sont valides UTF-8
-    // Une vérification Kotlin complète nécessiterait kotlinc
     for (const file of kotlinFiles) {
       try {
         await this.safeReadFile(file);
@@ -306,7 +338,6 @@ class PreCommitChecker {
       ['.yml', '.yaml']
     );
 
-    // Vérification basique YAML (pas de parseur natif, on vérifie juste l'indentation)
     for (const file of yamlFiles) {
       try {
         const content = await this.safeReadFile(file);
@@ -352,16 +383,10 @@ class PreCommitChecker {
 
     try {
       // Vérifier qu'on est dans un repo Git
-      await execa('git', ['rev-parse', '--is-inside-work-tree'], {
-        cwd: this.root,
-        reject: false
-      });
+      await exec('git rev-parse --is-inside-work-tree', { cwd: this.root, reject: false });
 
       // Vérifier les fichiers modifiés non committés
-      const status = await execa('git', ['status', '--porcelain'], {
-        cwd: this.root,
-        reject: false
-      });
+      const status = await exec('git status --porcelain', { cwd: this.root, reject: false });
 
       if (status.stdout) {
         const modifiedFiles = status.stdout.trim().split('\n').filter(l => l.trim());
@@ -382,10 +407,7 @@ class PreCommitChecker {
       }
 
       // Vérifier les fichiers non suivis
-      const untracked = await execa('git', ['ls-files', '--others', '--exclude-standard'], {
-        cwd: this.root,
-        reject: false
-      });
+      const untracked = await exec('git ls-files --others --exclude-standard', { cwd: this.root, reject: false });
 
       if (untracked.stdout) {
         const untrackedFiles = untracked.stdout.trim().split('\n').filter(l => l.trim());
@@ -536,26 +558,17 @@ class PreCommitChecker {
       ['.kt']
     );
 
-    const namingConventions = {
-      'class': /^[A-Z][a-zA-Z0-9]*\.kt$/,
-      'test_class': /^[A-Z][a-zA-Z0-9]*Test\.kt$/,
-      'package': /^([a-z]+\.)+[a-z]+\.kt$/,
-      'variable': /^[a-z][a-zA-Z0-9]*$/,
-      'constant': /^[A-Z][A-Z0-9_]*$/,
-      'function': /^[a-z][a-zA-Z0-9]*$/
-    };
-
     // Vérifier les noms de classes
     for (const file of kotlinFiles) {
-      const basename = basename(file, '.kt');
+      const fileBasename = basename(file, '.kt');
       
       // Les classes doivent être en PascalCase
-      if (basename !== basename.toLowerCase() && !/[A-Z]/.test(basename)) {
+      if (fileBasename !== fileBasename.toLowerCase() && !/[A-Z]/.test(fileBasename)) {
         this.results.warnings.push({
           type: 'convention',
           file: relative(this.root, file),
           severity: 'warning',
-          message: `Nom de fichier suspect: ${basename}.kt (devrait être PascalCase pour les classes)`
+          message: `Nom de fichier suspect: ${fileBasename}.kt (devrait être PascalCase pour les classes)`
         });
       }
     }
@@ -567,25 +580,22 @@ class PreCommitChecker {
     );
 
     for (const file of testFiles) {
-      const basename = basename(file, '.kt');
+      const fileBasename = basename(file, '.kt');
       
       // Les fichiers de test doivent se terminer par Test
-      if (!basename.endsWith('Test')) {
+      if (!fileBasename.endsWith('Test')) {
         this.results.warnings.push({
           type: 'convention',
           file: relative(this.root, file),
           severity: 'warning',
-          message: `Nom de fichier de test suspect: ${basename}.kt (devrait se terminer par Test)`
+          message: `Nom de fichier de test suspect: ${fileBasename}.kt (devrait se terminer par Test)`
         });
       }
     }
 
     // Vérifier les messages de commit
     try {
-      const log = await execa('git', ['log', '--oneline', '-10'], {
-        cwd: this.root,
-        reject: false
-      });
+      const log = await exec('git log --oneline -10', { cwd: this.root, reject: false });
 
       if (log.stdout) {
         const commits = log.stdout.trim().split('\n');
@@ -699,12 +709,12 @@ class PreCommitChecker {
     const failed = this.results.failed.length;
     const warnings = this.results.warnings.length;
 
-    console.log(c.bold('Statistiques:'));
+    console.log('Statistiques:');
     console.log('  Fichiers vérifiés:', this.results.stats.filesChecked);
     console.log('  Secrets trouvés:', c[this.results.stats.secretsFound > 0 ? 'error' : 'success'](`${this.results.stats.secretsFound}`));
     console.log();
 
-    console.log(c.bold('Résultats:'));
+    console.log('Résultats:');
     console.log('  Total:', totalChecks);
     console.log('  ' + c.success('✓ Réussis:'), passed);
     console.log('  ' + c.error('✗ Échecs:'), failed);
@@ -864,23 +874,23 @@ class PreCommitChecker {
  */
 function showHelp() {
   console.log(`
-${c.title('vibe-check.js - Vérification Pré-Commit')}
+vibe-check.js - Vérification Pré-Commit
 
-${c.subtitle('Usage:')}
+Usage:
   node scripts/vibe-check.js [options]
 
-${c.subtitle('Options:')}
+Options:
   --fix      Tente de corriger les problèmes automatiquement
   --strict   Mode strict (toutes les vérifications doivent passer)
   --quiet    Mode silencieux (erreurs seulement)
   --help     Affiche cette aide
 
-${c.subtitle('Exemples:')}
+Exemples:
   node scripts/vibe-check.js
   node scripts/vibe-check.js --strict
   node scripts/vibe-check.js --quiet
 
-${c.subtitle('Description:')}
+Description:
   Effectue une série de vérifications avant commit:
   - Vérification des secrets dans les fichiers
   - Vérification de la syntaxe (JSON, YAML)

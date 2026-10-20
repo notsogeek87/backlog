@@ -13,14 +13,31 @@
  *   --help     Affiche l'aide
  */
 
-import { readFile, readdir, stat, access } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, resolve, relative, extname, basename, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execa } from 'execa';
-import chalk from 'chalk';
+import { createRequire } from 'node:module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
+
+// Charger chalk si disponible
+let chalk;
+try {
+  const require = createRequire(import.meta.url);
+  chalk = require('chalk');
+} catch {
+  // Fallback sans couleurs
+  chalk = {
+    green: (t) => t,
+    yellow: (t) => t,
+    red: (t) => t,
+    blue: (t) => t,
+    cyan: (t) => t,
+    bold: { cyan: (t) => t, white: (t) => t },
+    dim: (t) => t
+  };
+}
 
 // Couleurs
 const c = {
@@ -33,6 +50,36 @@ const c = {
   dim: chalk.dim,
   bold: chalk.bold
 };
+
+/**
+ * Exécute une commande shell
+ */
+async function exec(command, options = {}) {
+  const { spawn } = await import('node:child_process');
+  const { cwd = ROOT, reject = true } = options;
+  
+  return new Promise((resolve, rejectFn) => {
+    const child = spawn(command, { shell: true, cwd, stdio: 'pipe' });
+    let stdout = '';
+    let stderr = '';
+    
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+    
+    child.on('close', (code) => {
+      if (code !== 0 && reject) {
+        const error = new Error(`Command failed with exit code ${code}: ${command}`);
+        error.stdout = stdout;
+        error.stderr = stderr;
+        rejectFn(error);
+      } else {
+        resolve({ stdout, stderr, code });
+      }
+    });
+    
+    child.on('error', rejectFn);
+  });
+}
 
 /**
  * Analyseur du repository Backlog
@@ -642,7 +689,7 @@ class BacklogAnalyzer {
               // Vérifier si le fichier existe
               const targetPath = join(docsPath, link);
               try {
-                await access(targetPath);
+                await stat(targetPath);
               } catch {
                 docs.links.broken++;
                 docs.issues.push({
@@ -966,7 +1013,7 @@ class BacklogAnalyzer {
    */
   async exists(path) {
     try {
-      await access(path);
+      await stat(path);
       return true;
     } catch {
       return false;
@@ -1149,24 +1196,6 @@ async function main() {
 
   const jsonOutput = args.includes('--json');
   const quietMode = args.includes('--quiet');
-
-  // Importer chalk conditionnellement
-  try {
-    // chalk peut ne pas être installé
-    await import('chalk');
-  } catch {
-    // Utiliser des fonctions de couleur basiques
-    global.chalk = {
-      green: (t) => t,
-      yellow: (t) => t,
-      red: (t) => t,
-      blue: (t) => t,
-      cyan: (t) => t,
-      bold: (t) => t,
-      dim: (t) => t,
-      white: (t) => t
-    };
-  }
 
   const analyzer = new BacklogAnalyzer(ROOT);
   
