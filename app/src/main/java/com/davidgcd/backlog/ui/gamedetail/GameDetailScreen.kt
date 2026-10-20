@@ -91,6 +91,7 @@ import com.davidgcd.backlog.ui.components.GradientButton
 import com.davidgcd.backlog.ui.components.GradientProgressBar
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.theme.Glass
+import com.davidgcd.backlog.ui.components.glass
 import com.davidgcd.backlog.util.DetailLink
 import com.davidgcd.backlog.util.IgdbImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
@@ -469,7 +470,7 @@ private fun StoreButton(link: StoreLink, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .glass(GlassShapeSmall, strong = true)
+            .glass(shape = GlassShapeSmall, strong = true)
             .semantics { role = Role.Button }
             .combinedClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
