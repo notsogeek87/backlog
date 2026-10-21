@@ -1,5 +1,15 @@
 # Guide pour les Agents IA - Backlog
 
+## ⚠️ RÈGLE FONDAMENTALE POUR TOUS LES AGENTS IA
+**L'agent code SEUL, de A à Z.**
+- Il **ne demande JAMAIS** à l'utilisateur de coder.
+- Il **vérifie systématiquement** que :
+  - Le code compile (`./gradlew assembleDebug`, `npm test`, etc.).
+  - **TOUS les tests passent** avant tout push.
+- Si un choix d'architecture bloque, il pose **une seule question courte** pour trancher.
+
+---
+
 ## Introduction
 
 Ce document est un guide pour **tous les agents IA** (Vibe Code, GitHub Copilot, etc.) qui travaillent sur ce repository. Il définit les conventions, restrictions et bonnes pratiques à suivre.
