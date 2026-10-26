@@ -545,10 +545,10 @@
     <string name="notif_nudge_enable">Autoriser</string>
     <string name="notif_nudge_later">Plus tard</string>
     <string name="review_card_title">Réviser mes notes</string>
-    <string name="review_card_subtitle">Repasse ta bibliothèque, de la plus ancienne note à la plus récente.</string>
+    <string name="review_card_subtitle">Repasse ce que tu as déjà vu, de la plus ancienne note à la plus récente.</string>
     <string name="review_title">Réviser mes notes</string>
     <string name="review_progress">%1$d sur %2$d</string>
-    <string name="review_empty">Rien à réviser pour l\'instant : ajoute d\'abord un jeu, un film ou un livre.</string>
+    <string name="review_empty">Rien à réviser pour l\'instant : aucun jeu de ta bibliothèque, film vu ou livre lu.</string>
     <string name="review_never_rated">Pas encore noté</string>
     <string name="review_rated_unknown_date">Note actuelle : %1$d/%2$d · date inconnue</string>
     <string name="review_rated_on">Note actuelle : %1$d/%2$d · mise le %3$s</string>

@@ -1,6 +1,6 @@
 # Guide — Réviser mes notes
 
-**Pour qui / pourquoi** : utilisateurs et développeurs qui veulent repasser toute leur bibliothèque (jeux, films & séries, livres) pour remettre leurs notes à jour.
+**Pour qui / pourquoi** : utilisateurs et développeurs qui veulent repasser ce qu'ils ont déjà vu (jeux de la bibliothèque, films & séries vus, livres lus) pour remettre leurs notes à jour.
 
 ## Utilisation
 Accueil → carte **Réviser mes notes**. L'écran présente une fiche à la fois :
@@ -10,10 +10,16 @@ Accueil → carte **Réviser mes notes**. L'écran présente une fiche à la foi
 - **Garder X/10** confirme la note telle quelle : elle prend la date du jour ;
 - **Passer** laisse la fiche intacte.
 
-À la fin, **Recommencer** reconstruit la file. Les jeux et films archivés sont ignorés.
+À la fin, **Recommencer** reconstruit la file.
+
+## Ce qui est proposé
+- **Jeux** : ceux de la bibliothèque, quel que soit leur statut sauf « Liste de souhaits » (non possédés) ;
+- **Films & séries** : ceux au statut « Vu » ;
+- **Livres** : ceux au statut « Lu » ;
+- les jeux et films archivés sont ignorés.
 
 ## Ordre de passage
-Des notes les plus **anciennes** aux plus **récentes**. Ce qui n'a jamais été daté (notes d'avant la fonction, éléments pas encore notés) passe d'abord, **au hasard** ; l'aléatoire sert aussi à départager deux dates égales. La file est figée au lancement : re-noter une fiche ne réordonne rien.
+Des notes les plus **anciennes** aux plus **récentes**. Ce qui n'a jamais été daté (notes d'avant la fonction, éléments vus mais pas encore notés) passe d'abord, **au hasard** ; l'aléatoire sert aussi à départager deux dates égales. La file est figée au lancement : re-noter une fiche ne réordonne rien.
 
 ## Côté code
 - `ratedAt` (UTC, ms) sur `GameEntity`, `MovieEntity` et `BookEntity`, ajouté par la migration 10 → 11. Il est écrit par les `setUserRating` des trois dépôts (et par la synchro TMDB quand la note TMDB change) ; effacer une note l'efface.

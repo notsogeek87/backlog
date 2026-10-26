@@ -4,6 +4,9 @@ import com.davidgcd.backlog.data.local.BookEntity
 import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.authorList
+import com.davidgcd.backlog.data.local.gameStatus
+import com.davidgcd.backlog.data.local.readStatus
+import com.davidgcd.backlog.data.local.watchStatus
 import com.davidgcd.backlog.util.TmdbImage
 import kotlin.random.Random
 
@@ -31,7 +34,8 @@ data class ReviewItem(
 }
 
 /**
- * « Réviser mes notes » : repasse toute la bibliothèque (hors archives) pour remettre les notes à jour.
+ * « Réviser mes notes » : repasse ce qui a déjà été vu pour remettre les notes à jour (hors archives) :
+ * les jeux de la bibliothèque (tout sauf la liste de souhaits), les films & séries vus et les livres lus.
  * On commence par les notes les plus anciennes ; ce qui n'a jamais été noté ni daté passe d'abord, dans un
  * ordre aléatoire (c'est aussi le départage de deux dates égales), puis on avance vers les plus récentes.
  */
@@ -42,9 +46,9 @@ object RatingReview {
         books: List<BookEntity>,
         random: Random = Random.Default,
     ): List<ReviewItem> {
-        val items = games.filter { !it.isArchived }.map { it.toReviewItem() } +
-            movies.filter { !it.isArchived }.map { it.toReviewItem() } +
-            books.map { it.toReviewItem() }
+        val items = games.filter { !it.isArchived && it.gameStatus != GameStatus.WISHLIST }.map { it.toReviewItem() } +
+            movies.filter { !it.isArchived && it.watchStatus == WatchStatus.WATCHED }.map { it.toReviewItem() } +
+            books.filter { it.readStatus == ReadStatus.READ }.map { it.toReviewItem() }
         // Mélange d'abord, puis tri stable : l'aléatoire ne joue que parmi les dates identiques (ou absentes).
         return items.shuffled(random).sortedBy { it.ratedAt ?: Long.MIN_VALUE }
     }
