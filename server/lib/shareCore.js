@@ -28,13 +28,13 @@ export const MOVIE_STATUS_LABELS = { TO_WATCH: 'À voir', WATCHING: 'En cours', 
 export const BOOK_STATUSES = ['TO_READ', 'READING', 'READ', 'ABANDONED'];
 export const BOOK_STATUS_LABELS = { TO_READ: 'À lire', READING: 'En cours', READ: 'Lu', ABANDONED: 'Abandonné' };
 // Covers come from Open Library (or Google Books when it was the fallback); pages are Open Library / Google Books ones.
-const BOOK_COVER = /^https:\/\/covers\.openlibrary\.org\/b\/(?:id|olid)\/[A-Za-z0-9]+-[SML]\.jpg(?:\?default=false)?$|^https:\/\/books\.google\.com\/books\/content\?[A-Za-z0-9=&_%.\-]+$/;
-const BOOK_URL = /^https:\/\/openlibrary\.org\/(?:works|books)\/OL\d+[WM]$|^https:\/\/openlibrary\.org\/isbn\/(?:\d{13}|\d{9}[\dX])$|^https:\/\/books\.google\.com\/books\?id=[A-Za-z0-9_-]+$/;
+export const BOOK_COVER = /^https:\/\/covers\.openlibrary\.org\/b\/(?:id|olid)\/[A-Za-z0-9]+-[SML]\.jpg(?:\?default=false)?$|^https:\/\/books\.google\.com\/books\/content\?[A-Za-z0-9=&_%.\-]+$/;
+export const BOOK_URL = /^https:\/\/openlibrary\.org\/(?:works|books)\/OL\d+[WM]$|^https:\/\/openlibrary\.org\/isbn\/(?:\d{13}|\d{9}[\dX])$|^https:\/\/books\.google\.com\/books\?id=[A-Za-z0-9_-]+$/;
 const TMDB_URL = /^https:\/\/www\.themoviedb\.org\/(movie|tv)\/\d+$/;
-const TMDB_POSTER = /^https:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)(\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png))$/;
+export const TMDB_POSTER = /^https:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)(\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png))$/;
 
-const IGDB_URL = /^https:\/\/www\.igdb\.com\/games\/[a-z0-9\-_.]+$/i;
-const IMAGE_ID = /^[a-z0-9]{1,40}$/i;
+export const IGDB_URL = /^https:\/\/www\.igdb\.com\/games\/[a-z0-9\-_.]+$/i;
+export const IMAGE_ID = /^[a-z0-9]{1,40}$/i;
 
 function validateMovieItems(rawItems) {
   return rawItems.map((raw) => {

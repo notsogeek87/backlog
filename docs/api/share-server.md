@@ -11,7 +11,7 @@ Fonctions serverless Node ≥ 20 (`server/api/`), base Postgres Neon (Francfort,
 | `PUT /api/share?id=<id>` | `api/share.js` | Met à jour le contenu, même lien. En-tête `x-share-token`. **N'étend pas** l'expiration. |
 | `DELETE /api/share?id=<id>` | `api/share.js` | Supprime le lien (`204`). |
 | `GET /b/:id` | `api/view.js` | Page publique HTML (CSP stricte, `Referrer-Policy: no-referrer`). `404` si inconnu ou expiré. |
-| `GET /open/<game\|movie\|book>/:id` | `api/open.js` | Page d'arrivée d'une fiche partagée ; ouvre l'app si installée (App Links), sinon propose `backlog://`. Ne stocke rien. |
+| `GET /open/<game\|movie\|book>/:id` | `api/open.js` | Page d'arrivée d'une fiche partagée ; ouvre l'app si installée (App Links), sinon propose `backlog://` (bouton « Ouvrir dans l'app ») et affiche les détails de la fiche (affiche, année, genres, synopsis, note, liens TMDB / IMDb / IGDB / catalogue du livre) lus dans la query string du lien (`t`, `y`, `c`, `g`, `s`, `r`, `m`, `u`, construite par `DetailPreview` côté app, nettoyée par `lib/openPage.js`). Ne stocke rien. |
 | `GET /.well-known/assetlinks.json` | `api/assetlinks.js` | Vérification des App Links Android. |
 | `GET /api/purge` | `api/purge.js` | Cron quotidien (`17 3 * * *`, voir `vercel.json`). Protégé par `CRON_SECRET` s'il est défini. |
 

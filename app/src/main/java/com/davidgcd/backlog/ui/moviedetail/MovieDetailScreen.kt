@@ -89,6 +89,7 @@ import com.davidgcd.backlog.ui.components.tint
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.TmdbImage
 import com.davidgcd.backlog.util.DetailLink
+import com.davidgcd.backlog.util.DetailPreview
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,16 +105,16 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val context = LocalContext.current
     /** Shares the title: the app link that opens this very page for the contact first, then its themoviedb.org page. */
     val shareTitle: () -> Unit = share@{
-        val (name, key) = when (val s = state) {
-            is MovieDetailState.Saved -> s.movie.title to s.movie.titleKey
-            is MovieDetailState.Remote -> s.title.title to s.title.id
+        val (name, key, preview) = when (val s = state) {
+            is MovieDetailState.Saved -> Triple(s.movie.title, s.movie.titleKey, DetailPreview.of(s.movie))
+            is MovieDetailState.Remote -> Triple(s.title.title, s.title.id, DetailPreview.of(s.title))
             else -> return@share
         }
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, listOf(
                 name,
-                "\n" + context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Movie(key)),
+                "\n" + context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Movie(key), preview),
                 "\n" + context.getString(R.string.share_see_movie) + "\n" + TitleKey.url(key),
             ).joinToString("\n"))
         }

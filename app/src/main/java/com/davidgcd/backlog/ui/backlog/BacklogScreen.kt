@@ -123,6 +123,7 @@ import com.davidgcd.backlog.ui.search.crossSearchItems
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BacklogShareText
 import com.davidgcd.backlog.util.DetailLink
+import com.davidgcd.backlog.util.DetailPreview
 import com.davidgcd.backlog.util.FrenchLabels
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -316,7 +317,7 @@ fun BacklogScreen(
                     QuickAction(
                         stringResource(R.string.quick_action_share),
                         Icons.Filled.Share,
-                        { shareDetailLink(context, current.name, DetailLink.url(DetailLink.Game(current.igdbId)), context.getString(R.string.share_game_chooser)) },
+                        { shareDetailLink(context, current.name, DetailLink.url(DetailLink.Game(current.igdbId), DetailPreview.of(current)), context.getString(R.string.share_game_chooser)) },
                     ),
                 )
                 add(

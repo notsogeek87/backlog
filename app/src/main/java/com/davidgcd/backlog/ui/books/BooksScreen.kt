@@ -119,6 +119,7 @@ import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.BookShareText
 import com.davidgcd.backlog.util.DetailLink
+import com.davidgcd.backlog.util.DetailPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -288,7 +289,7 @@ fun BooksScreen(
                 QuickAction(
                     stringResource(R.string.quick_action_share),
                     Icons.Filled.Share,
-                    { shareDetailLink(context, current.title, DetailLink.url(DetailLink.Book(current.bookKey)), context.getString(R.string.share_book_chooser)) },
+                    { shareDetailLink(context, current.title, DetailLink.url(DetailLink.Book(current.bookKey), DetailPreview.of(current)), context.getString(R.string.share_book_chooser)) },
                 ),
                 QuickAction(
                     stringResource(R.string.action_remove),

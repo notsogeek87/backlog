@@ -112,6 +112,7 @@ import com.davidgcd.backlog.ui.search.CrossSearchState
 import com.davidgcd.backlog.ui.search.crossSearchItems
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.util.DetailLink
+import com.davidgcd.backlog.util.DetailPreview
 import com.davidgcd.backlog.util.MovieShareText
 import com.davidgcd.backlog.util.TmdbImage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -293,7 +294,7 @@ fun MoviesScreen(
                     QuickAction(
                         stringResource(R.string.quick_action_share),
                         Icons.Filled.Share,
-                        { shareDetailLink(context, current.title, DetailLink.url(DetailLink.Movie(current.titleKey)), context.getString(R.string.share_movie_chooser)) },
+                        { shareDetailLink(context, current.title, DetailLink.url(DetailLink.Movie(current.titleKey), DetailPreview.of(current)), context.getString(R.string.share_movie_chooser)) },
                     ),
                 )
                 add(

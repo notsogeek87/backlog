@@ -89,6 +89,7 @@ import com.davidgcd.backlog.util.BookImage
 import com.davidgcd.backlog.util.BookLanguages
 import com.davidgcd.backlog.util.BookShareText
 import com.davidgcd.backlog.util.DetailLink
+import com.davidgcd.backlog.util.DetailPreview
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -149,7 +150,7 @@ fun BookDetailScreen(
             sharing = true
             try {
                 val link = viewModel.publishBookLink(book, saved)
-                val appLink = context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Book(saved?.bookKey ?: book.key))
+                val appLink = context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Book(saved?.bookKey ?: book.key), DetailPreview.of(book))
                 val text = when {
                     link != null -> "${book.title}\n\n$appLink\n\n${context.getString(R.string.share_see_book)}\n$link"
                     saved != null -> "${BookShareText.line(saved)}\n\n$appLink"

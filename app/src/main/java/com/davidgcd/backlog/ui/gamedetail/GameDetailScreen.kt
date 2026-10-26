@@ -93,6 +93,7 @@ import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.theme.Glass
 import com.davidgcd.backlog.ui.components.glass
 import com.davidgcd.backlog.util.DetailLink
+import com.davidgcd.backlog.util.DetailPreview
 import com.davidgcd.backlog.util.IgdbImage
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
@@ -112,9 +113,9 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     var sharing by remember { mutableStateOf(false) }
     /** Shares the game: the app link that opens this very page for the contact first, then the igdb.com page when IGDB has one. */
     val shareGame: () -> Unit = share@{
-        val (name, igdbId) = when (val s = state) {
-            is GameDetailState.InBacklog -> s.entity.name to s.entity.igdbId
-            is GameDetailState.Remote -> s.game.name to s.game.id
+        val (name, igdbId, preview) = when (val s = state) {
+            is GameDetailState.InBacklog -> Triple(s.entity.name, s.entity.igdbId, DetailPreview.of(s.entity))
+            is GameDetailState.Remote -> Triple(s.game.name, s.game.id, DetailPreview.of(s.game))
             else -> return@share
         }
         scope.launch {
@@ -125,7 +126,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, listOfNotNull(
                         name,
-                        "\n" + context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Game(igdbId)),
+                        "\n" + context.getString(R.string.share_open_in_app) + "\n" + DetailLink.url(DetailLink.Game(igdbId), preview.copy(url = link ?: preview.url)),
                         link?.let { "\n" + context.getString(R.string.share_see_game) + "\n" + it },
                     ).joinToString("\n"))
                 }

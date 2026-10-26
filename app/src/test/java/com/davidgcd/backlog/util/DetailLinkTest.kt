@@ -22,3 +22,21 @@ class DetailLinkTest {
         assertNull(DetailLink.parse("settings", "1"))
     }
 }
+
+class DetailPreviewTest {
+    @Test fun buildsAShortEncodedQueryAndSkipsEmptyFields() {
+        val q = DetailPreview(title = "Amélie & co", year = 2001, image = "/abc.jpg", genres = "", rating = 7.96).query()
+        assertEquals("?t=Am%C3%A9lie%20%26%20co&y=2001&c=%2Fabc.jpg&r=8.0", q)
+    }
+
+    @Test fun cutsAndCleansTheSynopsis() {
+        val q = DetailPreview(title = "X", summary = "a\n\nb ".repeat(300)).query()
+        assertEquals(true, q.length < 1100)
+        assertEquals(true, q.contains("%E2%80%A6"))
+    }
+
+    @Test fun keepsOnlyThePosterPathOfATmdbUrl() {
+        assertEquals("/abc.jpg", DetailPreview.posterPath("https://image.tmdb.org/t/p/w500/abc.jpg"))
+        assertNull(DetailPreview.posterPath(null))
+    }
+}
