@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -73,6 +74,23 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@Composable
+private fun ReviewCard(onOpenReview: () -> Unit) {
+    GlassCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenReview) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(Icons.Filled.Star, contentDescription = null, tint = Glass.Amber, modifier = Modifier.size(32.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.review_card_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.review_card_subtitle), style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted)
+            }
+        }
+    }
+}
+
 /**
  * « Aujourd'hui » : ce qui compte maintenant, tous médias confondus — ce qui est en cours,
  * les sorties de la quinzaine, les derniers ajouts, et le bilan de l'année. Les trois médias vivent ensuite dans la Bibliothèque.
@@ -84,6 +102,7 @@ fun HomeScreen(
     onOpen: (Medium, String) -> Unit,
     onSearch: () -> Unit,
     onOpenRecap: () -> Unit,
+    onOpenReview: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val nudge = rememberNudgeState()
@@ -149,6 +168,7 @@ fun HomeScreen(
                 }
             }
             item(key = "recap") { RecapCard(onOpenRecap) }
+            item(key = "review") { ReviewCard(onOpenReview) }
         }
     }
 }

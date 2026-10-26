@@ -26,6 +26,7 @@ object Changelog {
         ChangelogEntry(14, "Alertes promo et épisodes", "Sois prévenu quand un jeu de ta liste de souhaits est en promotion sur Steam ou qu'une série de ta liste diffuse un nouvel épisode."),
         ChangelogEntry(15, "Widget et raccourcis", "Un widget « en cours / prochaine sortie », des raccourcis sur l'icône de l'app et « Partager vers Backlog » depuis un lien Steam, TMDB ou un titre."),
         ChangelogEntry(16, "Un accueil plus simple", "La carte « Ce soir, je fais quoi ? » disparaît de l'accueil, qui garde à continuer, les sorties à venir, les ajouts récents et Mon année."),
+        ChangelogEntry(17, "Réviser mes notes", "Repasse tes jeux, films, séries et livres un par un pour remettre tes notes à jour, de la plus ancienne à la plus récente (carte « Réviser mes notes » sur l'accueil)."),
     )
 
     /** Dernière entrée connue des versions d'avant ce journal : une mise à jour depuis celles-ci présente la suite. */

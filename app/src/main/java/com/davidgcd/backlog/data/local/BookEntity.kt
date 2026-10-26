@@ -38,6 +38,8 @@ data class BookEntity(
     val isFavorite: Boolean = false,
     /** The reader's own rating, 1–5 stars. */
     val userRating: Int? = null,
+    /** When the rating was last set or confirmed (UTC epoch millis); null = never dated. Drives « Réviser mes notes ». */
+    val ratedAt: Long? = null,
     val addedAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     /** Personal ranking, 1 = most loved. Null = not ranked yet (listed after the ranked books). */

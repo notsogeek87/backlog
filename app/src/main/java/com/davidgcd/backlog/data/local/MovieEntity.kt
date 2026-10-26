@@ -36,6 +36,8 @@ data class MovieEntity(
     val userRank: Int? = null,
     /** The user's own rating out of 10 (what they gave on TMDB, or set here). */
     val userRating: Int? = null,
+    /** When the rating was last set or confirmed (UTC epoch millis); null = never dated. Drives « Réviser mes notes ». */
+    val ratedAt: Long? = null,
     /** When the title was last marked watched (UTC epoch millis); null if it never was. Feeds « Mon année ». */
     val completedAt: Long? = null,
 )

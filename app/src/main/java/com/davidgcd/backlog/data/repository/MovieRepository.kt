@@ -102,7 +102,7 @@ class MovieRepository(
     /** 1–10, or null to clear. */
     suspend fun setUserRating(entity: MovieEntity, rating: Int?) {
         val value = rating?.coerceIn(1, 10)
-        dao.update(entity.copy(userRating = value))
+        dao.update(entity.copy(userRating = value, ratedAt = value?.let { System.currentTimeMillis() }))
         // Mirrors the rating to the user's TMDB account when one is linked; offline / signed out just keeps it local.
         bestEffort { tmdb.rate(entity.titleKey, value) }
     }
@@ -165,6 +165,7 @@ fun MediaTitle.toEntity(status: WatchStatus = WatchStatus.TO_WATCH, userRating: 
     cast = cast,
     status = status.name,
     userRating = userRating,
+    ratedAt = userRating?.let { System.currentTimeMillis() },
 )
 
 fun MovieEntity.toMediaTitle() = MediaTitle(

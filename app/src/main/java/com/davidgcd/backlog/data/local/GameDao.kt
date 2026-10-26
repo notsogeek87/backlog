@@ -34,8 +34,8 @@ interface GameDao {
     @Update
     suspend fun update(game: GameEntity)
 
-    @Query("UPDATE games SET userRating = :rating WHERE igdbId = :igdbId")
-    suspend fun setUserRating(igdbId: Long, rating: Int?)
+    @Query("UPDATE games SET userRating = :rating, ratedAt = :ratedAt WHERE igdbId = :igdbId")
+    suspend fun setUserRating(igdbId: Long, rating: Int?, ratedAt: Long?)
 
     @Query("UPDATE games SET userRank = :rank WHERE igdbId = :igdbId")
     suspend fun setRank(igdbId: Long, rank: Int?)

@@ -220,8 +220,10 @@ class BookRepository(
         dao.update(entity.copy(isFavorite = favorite, updatedAt = now()))
 
     /** 1–5, or null to clear. */
-    suspend fun setUserRating(entity: BookEntity, rating: Int?) =
-        dao.update(entity.copy(userRating = rating?.coerceIn(1, 5), updatedAt = now()))
+    suspend fun setUserRating(entity: BookEntity, rating: Int?) {
+        val value = rating?.coerceIn(1, 5)
+        dao.update(entity.copy(userRating = value, ratedAt = value?.let { now() }, updatedAt = now()))
+    }
 
     suspend fun remove(entity: BookEntity) = dao.delete(entity)
 

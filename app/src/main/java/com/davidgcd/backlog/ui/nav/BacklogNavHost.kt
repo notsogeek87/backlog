@@ -29,6 +29,9 @@ import com.davidgcd.backlog.ui.prefs.UiPreferences
 import com.davidgcd.backlog.ui.recap.RecapScreen
 import com.davidgcd.backlog.ui.recap.RecapViewModel
 import com.davidgcd.backlog.ui.recap.RecapViewModelFactory
+import com.davidgcd.backlog.ui.review.RatingReviewScreen
+import com.davidgcd.backlog.ui.review.RatingReviewViewModel
+import com.davidgcd.backlog.ui.review.RatingReviewViewModelFactory
 import com.davidgcd.backlog.ui.components.glassRailItemColors
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material3.NavigationRailItem
@@ -148,6 +151,7 @@ private object Routes {
     const val RANKING = "ranking/{media}"
     fun ranking(media: MediaType) = "ranking/${media.name}"
     const val RECAP = "recap"
+    const val REVIEW = "review"
     const val STEAM_LOGIN = "platforms/steam/login"
     const val LIBRARY_IMPORT = "platforms/{provider}/import"
     fun libraryImport(provider: String) = "platforms/$provider/import"
@@ -342,6 +346,7 @@ fun BacklogNavHost(
                 onOpen = openItem,
                 onSearch = { requestSearch(libraryMedia, null) },
                 onOpenRecap = { navController.navigate(Routes.RECAP) },
+                onOpenReview = { navController.navigate(Routes.REVIEW) },
             )
         }
         composable(Routes.LIBRARY) {
@@ -426,6 +431,10 @@ fun BacklogNavHost(
                     requestSearch(libraryMedia, null)
                 },
             )
+        }
+        composable(Routes.REVIEW) {
+            val viewModel: RatingReviewViewModel = viewModel(factory = RatingReviewViewModelFactory(repository, movieRepository, bookRepository))
+            RatingReviewScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
         composable(Routes.DISCOVER) {
             val mediaSwitch: @Composable () -> Unit = { MediaSwitch(selected = libraryMedia, onSelect = { libraryMedia = it }) }

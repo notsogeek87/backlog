@@ -58,7 +58,7 @@ class TmdbSyncService(
                 return
             }
             var next = existing
-            if (userRating != null && existing.userRating != userRating) next = next.copy(userRating = userRating)
+            if (userRating != null && existing.userRating != userRating) next = next.copy(userRating = userRating, ratedAt = now)
             // Rating something on TMDB means it was seen; never demote, and never override a status set here.
             if (status == WatchStatus.WATCHED && existing.watchStatus == WatchStatus.TO_WATCH) next = next.copy(status = WatchStatus.WATCHED.name)
             if (next != existing) {

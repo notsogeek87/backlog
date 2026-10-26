@@ -29,6 +29,8 @@ data class GameEntity(
     val userRank: Int? = null,
     /** The player's own note out of 10 (same scale as films & séries). Null = not rated. */
     val userRating: Int? = null,
+    /** When the note was last set or confirmed (UTC epoch millis); null = never dated. Drives « Réviser mes notes ». */
+    val ratedAt: Long? = null,
     /** When the game was last marked finished (UTC epoch millis); null if it never was. Feeds « Mon année ». */
     val completedAt: Long? = null,
 )

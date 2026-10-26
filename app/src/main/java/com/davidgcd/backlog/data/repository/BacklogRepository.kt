@@ -67,7 +67,8 @@ class BacklogRepository(
 
     /** 1–10, or null to clear. */
     suspend fun setUserRating(entity: GameEntity, rating: Int?) {
-        gameDao.setUserRating(entity.igdbId, rating?.coerceIn(1, 10))
+        val value = rating?.coerceIn(1, 10)
+        gameDao.setUserRating(entity.igdbId, value, value?.let { System.currentTimeMillis() })
     }
 
     /** The date a finished game was finished (restored from a CSV file); only meaningful while it is completed. */
