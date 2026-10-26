@@ -116,8 +116,8 @@ python3 tools/check_docs_links.py
 *Lier les issues, discussions ou documents pertinents:*
 - Closes #
 - Related to #
-- Documentation: [docs/...](docs/...)
-- ADR: [docs/architecture/...](docs/architecture/...)
+- Documentation: `docs/...`
+- ADR: `docs/architecture/...`
 
 ---
 
@@ -127,7 +127,7 @@ python3 tools/check_docs_links.py
 
 | Avant | Après |
 |-------|-------|
-| ![avant](url) | ![après](url) |
+| (capture avant) | (capture après) |
 
 ---
 
