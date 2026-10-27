@@ -432,6 +432,10 @@
     <string name="tmdb_error_unknown">Une erreur inattendue est survenue avec TMDB.</string>
     <string name="tmdb_attribution">Ce produit utilise l\'API TMDB mais n\'est ni approuvé ni certifié par TMDB.</string>
     <string name="tmdb_reconnect">Me reconnecter</string>
+    <string name="welcome_platforms_title">Connecte tes services</string>
+    <string name="welcome_platforms_intro">Retrouve tes jeux Steam, les jeux installés sur ce téléphone, et tes films et séries notés ou en watchlist sur TMDB.</string>
+    <string name="welcome_platforms_done">C\'est parti</string>
+    <string name="welcome_platforms_later">Tu pourras le faire plus tard dans Réglages → Mes plateformes.</string>
     <string name="tmdb_import_title">Import depuis TMDB</string>
     <string name="tmdb_import_running">Lecture de ta watchlist et de tes notes…</string>
     <string name="tmdb_import_up_to_date">Tout est déjà à jour.</string>

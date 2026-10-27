@@ -35,6 +35,7 @@
 - [Bandes-annonces](guides/trailers.md)
 - [Fenêtre « Nouveautés »](guides/whats-new.md)
 - [Réviser mes notes](guides/reviser-notes.md)
+- [Premier lancement : connecter ses services](guides/premier-lancement.md)
 
 ## Écrire de la doc
 Chaque page commence par un titre et une ligne **Pour qui / pourquoi**, avec des exemples de code quand c'est utile. Un choix structurant donne un ADR dans `architecture/`, une route ou fonction une page dans `api/`, une procédure une page dans `guides/`. Toute nouvelle page est ajoutée au sommaire ci-dessus.

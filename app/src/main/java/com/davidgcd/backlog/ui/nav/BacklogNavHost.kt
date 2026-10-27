@@ -127,6 +127,8 @@ import com.davidgcd.backlog.ui.platforms.LibraryImportScreen
 import com.davidgcd.backlog.ui.platforms.LibraryImportViewModel
 import com.davidgcd.backlog.ui.platforms.LibraryImportViewModelFactory
 import com.davidgcd.backlog.ui.platforms.PlatformsSection
+import com.davidgcd.backlog.ui.welcome.WelcomePlatformsScreen
+import com.davidgcd.backlog.ui.welcome.WelcomeStore
 import com.davidgcd.backlog.ui.platforms.PlatformsViewModel
 import com.davidgcd.backlog.ui.platforms.PlatformsViewModelFactory
 import com.davidgcd.backlog.ui.platforms.SteamLoginScreen
@@ -163,6 +165,7 @@ private object Routes {
     fun bookDetail(bookKey: String) = "book/$bookKey"
     const val TMDB_LOGIN = "platforms/tmdb/login"
     const val TMDB_IMPORT = "platforms/tmdb/import"
+    const val WELCOME = "welcome/platforms"
     const val GAME_DETAIL = "game/{gameId}"
     fun gameDetail(gameId: Long) = "game/$gameId"
 }
@@ -204,6 +207,7 @@ fun BacklogNavHost(
     bookRepository: BookRepository,
     updateViewModel: AppUpdateViewModel,
     uiPreferences: UiPreferences,
+    welcomeStore: WelcomeStore? = null,
     appAction: AppAction? = null,
     onAppActionHandled: () -> Unit = {},
     openGameId: Long? = null,
@@ -212,6 +216,20 @@ fun BacklogNavHost(
     onOpenLinkHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
+    // "Mes plateformes", shared by Settings and the first-launch screen; its view model lives with the current screen.
+    val platformsContent: @Composable () -> Unit = {
+        val platformsViewModel: PlatformsViewModel = viewModel(
+            factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao, tmdbSyncService, wishlistSyncService),
+        )
+        PlatformsSection(
+            viewModel = platformsViewModel,
+            onConnectSteam = { navController.navigate(Routes.STEAM_LOGIN) },
+            onSyncSteam = { navController.navigate(Routes.libraryImport(LibraryProviders.STEAM)) },
+            onSyncAndroid = { navController.navigate(Routes.libraryImport(LibraryProviders.ANDROID)) },
+            onConnectTmdb = { navController.navigate(Routes.TMDB_LOGIN) },
+            onSyncTmdb = { navController.navigate(Routes.TMDB_IMPORT) },
+        )
+    }
     // A notification tap asks for a game's detail screen; open it once, then clear the request.
     LaunchedEffect(openGameId) {
         if (openGameId != null) {
@@ -340,6 +358,10 @@ fun BacklogNavHost(
         modifier = Modifier.padding(outerPadding).consumeWindowInsets(outerPadding),
     ) {
         composable(Routes.HOME) {
+            // First launch of a fresh install: invite to connect Steam / Android / TMDB once (back returns to Home).
+            LaunchedEffect(welcomeStore) {
+                if (welcomeStore?.takeFirstLaunch() == true) navController.navigate(Routes.WELCOME) { launchSingleTop = true }
+            }
             val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(repository, movieRepository, bookRepository))
             HomeScreen(
                 viewModel = viewModel,
@@ -565,23 +587,14 @@ fun BacklogNavHost(
                     bookRepository,
                 ),
             )
-            val platformsViewModel: PlatformsViewModel = viewModel(
-                factory = PlatformsViewModelFactory(libraryAccountStore, gameSourceDao, tmdbSyncService, wishlistSyncService),
-            )
             SettingsScreen(
                 viewModel = viewModel,
                 updatesContent = { UpdateSettingsSection(updateViewModel) },
-                platformsContent = {
-                    PlatformsSection(
-                        viewModel = platformsViewModel,
-                        onConnectSteam = { navController.navigate(Routes.STEAM_LOGIN) },
-                        onSyncSteam = { navController.navigate(Routes.libraryImport(LibraryProviders.STEAM)) },
-                        onSyncAndroid = { navController.navigate(Routes.libraryImport(LibraryProviders.ANDROID)) },
-                        onConnectTmdb = { navController.navigate(Routes.TMDB_LOGIN) },
-                        onSyncTmdb = { navController.navigate(Routes.TMDB_IMPORT) },
-                    )
-                },
+                platformsContent = platformsContent,
             )
+        }
+        composable(Routes.WELCOME) {
+            WelcomePlatformsScreen(onDone = { navController.popBackStack() }, platformsContent = platformsContent)
         }
         composable(Routes.STEAM_LOGIN) {
             val viewModel: SteamLoginViewModel = viewModel(

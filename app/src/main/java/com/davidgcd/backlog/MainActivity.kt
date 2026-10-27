@@ -38,6 +38,7 @@ import com.davidgcd.backlog.ui.update.AppUpdateViewModelFactory
 import com.davidgcd.backlog.ui.update.UpdatePrompt
 import com.davidgcd.backlog.ui.whatsnew.WhatsNewPrompt
 import com.davidgcd.backlog.ui.whatsnew.WhatsNewStore
+import com.davidgcd.backlog.ui.welcome.WelcomeStore
 import com.davidgcd.backlog.util.DetailLink
 import java.util.Locale
 
@@ -114,6 +115,7 @@ class MainActivity : ComponentActivity() {
         val repository = app.repository
         val notificationPreferences = NotificationPreferences(applicationContext)
         val whatsNewStore = WhatsNewStore(applicationContext)
+        val welcomeStore = WelcomeStore(applicationContext)
         val uiPreferences = app.uiPreferences
 
         setContent {
@@ -164,6 +166,7 @@ class MainActivity : ComponentActivity() {
                         wishlistSyncService = app.wishlistSyncService,
                         updateViewModel = updateViewModel,
                         uiPreferences = uiPreferences,
+                        welcomeStore = welcomeStore,
                         appAction = pendingAction,
                         onAppActionHandled = { pendingAction = null },
                         openGameId = pendingGameId,
