@@ -23,6 +23,8 @@ data class LibraryAccount(
     val ownedCount: Int? = null,
     val alreadyInBacklogCount: Int? = null,
     val newCount: Int? = null,
+    /** When what was already in the app was sent to this account (TMDB only); null = not yet. */
+    val localUploadedAt: Long? = null,
 )
 
 interface LibraryAccountStore {
@@ -31,6 +33,7 @@ interface LibraryAccountStore {
     suspend fun connect(providerId: String, accountId: String, displayName: String?, now: Long = System.currentTimeMillis())
     suspend fun disconnect(providerId: String)
     suspend fun recordSync(providerId: String, syncedAt: Long, ownedCount: Int, alreadyInBacklogCount: Int, newCount: Int)
+    suspend fun recordLocalUpload(providerId: String, uploadedAt: Long)
 }
 
 private val Context.libraryDataStore by preferencesDataStore(name = "library_accounts")
@@ -51,6 +54,7 @@ class DataStoreLibraryAccountStore(private val context: Context) : LibraryAccoun
             ownedCount = prefs[int(providerId, "owned")],
             alreadyInBacklogCount = prefs[int(providerId, "already")],
             newCount = prefs[int(providerId, "new")],
+            localUploadedAt = prefs[lng(providerId, "local_uploaded_at")],
         )
     }
 
@@ -77,9 +81,13 @@ class DataStoreLibraryAccountStore(private val context: Context) : LibraryAccoun
         }
     }
 
+    override suspend fun recordLocalUpload(providerId: String, uploadedAt: Long) {
+        context.libraryDataStore.edit { it[lng(providerId, "local_uploaded_at")] = uploadedAt }
+    }
+
     private fun clear(prefs: androidx.datastore.preferences.core.MutablePreferences, providerId: String) {
         listOf(str(providerId, "account_id"), str(providerId, "display_name")).forEach { prefs.remove(it) }
-        listOf(lng(providerId, "connected_at"), lng(providerId, "last_synced_at")).forEach { prefs.remove(it) }
+        listOf(lng(providerId, "connected_at"), lng(providerId, "last_synced_at"), lng(providerId, "local_uploaded_at")).forEach { prefs.remove(it) }
         listOf(int(providerId, "owned"), int(providerId, "already"), int(providerId, "new")).forEach { prefs.remove(it) }
     }
 }

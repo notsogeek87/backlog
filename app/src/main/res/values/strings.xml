@@ -443,6 +443,10 @@
         <item quantity="one">%1$d titre mis à jour</item>
         <item quantity="other">%1$d titres mis à jour</item>
     </plurals>
+    <plurals name="tmdb_import_uploaded">
+        <item quantity="one">%1$d titre de l\'app envoyé vers ton compte TMDB</item>
+        <item quantity="other">%1$d titres de l\'app envoyés vers ton compte TMDB</item>
+    </plurals>
     <string name="tmdb_import_rated">Notes lues : %1$d</string>
     <string name="tmdb_import_watchlist">Watchlist lue : %1$d</string>
     <string name="whats_new_title">Nouveautés</string>

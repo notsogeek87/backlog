@@ -14,12 +14,19 @@ data class TmdbSyncResult(
     val ratedCount: Int,
     val added: Int,
     val updated: Int,
+    /** Titles of the app sent to the account on its first sync: ratings, then « to watch » ones. */
+    val uploaded: Int = 0,
 )
 
 /**
  * Brings the signed-in user's TMDB account into the app: their ratings (a rated title is a watched
  * one) and their watchlist (to watch). Only ever adds titles and fills what the user hasn't set here —
  * a status, rank or rating changed in the app is never overwritten, and nothing is deleted.
+ *
+ * The first sync of an account also goes the other way: what was added in the app before linking it
+ * (later changes are mirrored one by one by `MovieRepository`) is sent once — ratings TMDB lacks, and
+ * « to watch » titles missing from the watchlist. Only once, so a title the user later removed on
+ * themoviedb.org is not pushed back on every sync.
  */
 class TmdbSyncService(
     private val client: TmdbClient,
@@ -72,6 +79,28 @@ class TmdbSyncService(
 
         val total = ratedIds.size + watchlist.count { it.title.id !in ratedIds }
         accounts.recordSync(LibraryProviders.TMDB, now, total, total - added, added)
-        return TmdbSyncResult(watchlistCount = watchlist.size, ratedCount = rated.size, added = added, updated = updated)
+        val uploaded = if (accounts.get(LibraryProviders.TMDB)?.localUploadedAt == null) {
+            uploadLocal(ratedIds, watchlist.mapTo(HashSet()) { it.title.id }).also { accounts.recordLocalUpload(LibraryProviders.TMDB, now) }
+        } else 0
+        return TmdbSyncResult(watchlistCount = watchlist.size, ratedCount = rated.size, added = added, updated = updated, uploaded = uploaded)
+    }
+
+    /**
+     * Sends the app's titles the account doesn't have yet. A failure stops here without marking the
+     * upload done: the next sync starts it again (rating or adding to the watchlist twice is harmless).
+     */
+    private suspend fun uploadLocal(ratedIds: Set<String>, watchlistIds: Set<String>): Int {
+        var sent = 0
+        dao.allMovies().filterNot { it.isArchived }.forEach { movie ->
+            val rating = movie.userRating
+            when {
+                rating != null && movie.titleKey !in ratedIds -> client.rate(movie.titleKey, rating)
+                rating == null && movie.watchStatus == WatchStatus.TO_WATCH && movie.titleKey !in watchlistIds &&
+                    movie.titleKey !in ratedIds -> client.setWatchlist(movie.titleKey, true)
+                else -> return@forEach
+            }
+            sent++
+        }
+        return sent
     }
 }

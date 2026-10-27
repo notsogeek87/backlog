@@ -143,13 +143,16 @@ fun TmdbImportScreen(
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                if (r.added == 0 && r.updated == 0) stringResource(R.string.tmdb_import_up_to_date)
+                                if (r.added == 0 && r.updated == 0 && r.uploaded == 0) stringResource(R.string.tmdb_import_up_to_date)
                                 else pluralText(R.plurals.tmdb_import_added, r.added, r.added),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Glass.Text,
                             )
                             if (r.updated > 0) {
                                 Text(pluralText(R.plurals.tmdb_import_updated, r.updated, r.updated), color = Glass.TextMuted)
+                            }
+                            if (r.uploaded > 0) {
+                                Text(pluralText(R.plurals.tmdb_import_uploaded, r.uploaded, r.uploaded), color = Glass.TextMuted)
                             }
                             Text(stringResource(R.string.tmdb_import_rated, r.ratedCount), color = Glass.TextMuted)
                             Text(stringResource(R.string.tmdb_import_watchlist, r.watchlistCount), color = Glass.TextMuted)

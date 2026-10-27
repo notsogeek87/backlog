@@ -17,6 +17,7 @@
 1. Réglages → *Mes plateformes* → **TMDB** → *Se connecter à TMDB* (ou, liste vide, *Importer depuis TMDB*).
 2. Connecte-toi sur la page TMDB puis **Approuve** l'accès (l'app ne voit pas ton mot de passe).
 3. L'import démarre : notes → *Vu*, watchlist → *À voir*. Relançable via *Synchroniser*.
+   La **première** synchronisation d'un compte envoie aussi vers TMDB ce qui était déjà dans l'app : les notes que TMDB n'a pas, et les titres *À voir* absents de la watchlist (titres archivés et *En cours* exclus : TMDB n'a pas de liste équivalente). Une seule fois par compte : un titre retiré ensuite sur themoviedb.org n'est pas renvoyé. Si l'envoi échoue (réseau), il est repris à la synchronisation suivante.
 4. Ensuite, noter un titre (ou le passer en/hors *À voir*) met aussi à jour ton compte TMDB.
 5. *Déconnecter* ferme la session sur TMDB et sur l'appareil ; la liste locale est conservée.
 

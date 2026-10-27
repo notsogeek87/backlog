@@ -45,6 +45,9 @@ class FakeAccountStore : LibraryAccountStore {
             ))
         }
     }
+    override suspend fun recordLocalUpload(providerId: String, uploadedAt: Long) {
+        accounts.value[providerId]?.let { accounts.value = accounts.value + (providerId to it.copy(localUploadedAt = uploadedAt)) }
+    }
 }
 
 class FakeLibraryProvider(
