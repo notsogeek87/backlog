@@ -4,6 +4,7 @@ import com.davidgcd.backlog.model.ExternalGame
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameVideo
 import com.davidgcd.backlog.model.SearchHit
+import com.davidgcd.backlog.model.TimeToBeat
 import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -28,6 +29,10 @@ interface IgdbApi {
 
     @POST("v4/game_videos")
     suspend fun gameVideos(@Body apicalypseQuery: RequestBody): List<GameVideo>
+
+    /** Durées de jeu (histoire / extras / complétiste) : l'équivalent officiel de HowLongToBeat. */
+    @POST("v4/game_time_to_beats")
+    suspend fun gameTimeToBeats(@Body apicalypseQuery: RequestBody): List<TimeToBeat>
 
     /** Maps a store's own ids (Steam AppID…) to IGDB game ids. */
     @POST("v4/external_games")

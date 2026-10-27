@@ -79,6 +79,11 @@
     <string name="action_back">Retour</string>
     <string name="game_not_found">Jeu introuvable</string>
     <string name="ratings_title">Notes</string>
+    <string name="time_to_beat_title">Durée de jeu</string>
+    <string name="time_to_beat_hastily">Histoire principale</string>
+    <string name="time_to_beat_normally">Histoire + extras</string>
+    <string name="time_to_beat_completely">Complétiste</string>
+    <string name="time_to_beat_count">D\u2019après %1$d joueurs (IGDB)</string>
     <string name="stores_title">Où l\u2019acheter</string>
     <string name="ratings_metacritic">Metacritic</string>
     <string name="ratings_steam">Steam</string>

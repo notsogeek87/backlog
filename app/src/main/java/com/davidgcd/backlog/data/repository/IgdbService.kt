@@ -5,6 +5,7 @@ import com.davidgcd.backlog.data.remote.IgdbApi
 import com.davidgcd.backlog.model.DiscoverCategory
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameVideo
+import com.davidgcd.backlog.model.TimeToBeat
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.util.RateLimiter
 import okhttp3.MediaType.Companion.toMediaType
@@ -151,6 +152,17 @@ class IgdbService(private val api: IgdbApi) : GameCatalog {
             limit 20;
         """.trimIndent()
         return GameVideo.pickTrailer(api.gameVideos(apicalypse.toRequestBody()))
+    }
+
+    /** How long players take to finish a game; null when IGDB has no figure for it. */
+    suspend fun getTimeToBeat(gameId: Long): TimeToBeat? {
+        RateLimiter.igdb.acquire()
+        val apicalypse = """
+            fields hastily,normally,completely,count;
+            where game_id = $gameId;
+            limit 10;
+        """.trimIndent()
+        return TimeToBeat.best(api.gameTimeToBeats(apicalypse.toRequestBody()))
     }
 
     override suspend fun resolveExternalIds(externalSourceId: Int, externalIds: List<String>): Map<String, Long> {

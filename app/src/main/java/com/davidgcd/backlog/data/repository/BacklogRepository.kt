@@ -8,6 +8,7 @@ import com.davidgcd.backlog.model.CompletionClock
 import com.davidgcd.backlog.model.Ranking
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.model.Game
+import com.davidgcd.backlog.model.TimeToBeat
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.Genre
 import com.davidgcd.backlog.model.Platform
@@ -41,6 +42,8 @@ class BacklogRepository(
 
     /** Live trailer of a game (French when possible); never cached. */
     suspend fun trailer(igdbId: Long): Trailer? = igdbService.getTrailer(igdbId)
+
+    suspend fun timeToBeat(igdbId: Long): TimeToBeat? = igdbService.getTimeToBeat(igdbId)
 
     suspend fun searchGames(query: String): List<Game> = igdbService.searchGames(query, partial = true)
 

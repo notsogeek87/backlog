@@ -103,8 +103,20 @@
   de gestion de précision de date comme `ReleaseDateCategory` côté iOS),
   `TitleSimilarity` (Levenshtein normalisé + seuil 0.8, utilisé par
   `MetacriticService` pour rapprocher un résultat de recherche du jeu —
-  même rôle que `TitleSimilarity` sur iOS, à réutiliser si un futur
-  HowLongToBeat arrive plutôt que d'en réécrire un second), `AppLogger`
+  même rôle que `TitleSimilarity` sur iOS), `PlayTimeFormatting`
+  (« 45 min », « 12 h », « 7 h 30 » pour les durées de jeu), `AppLogger`
   (seul point de logging — jamais de `Log.*` en direct ailleurs).
 - `config/Secrets.kt` — clés API, gitignored.
 
+## Durée de jeu (équivalent HowLongToBeat)
+
+**Pour qui / pourquoi** : savoir d'où viennent les durées affichées sur la fiche d'un jeu.
+
+HowLongToBeat n'a pas d'API publique (le scraping est fragile et bloqué). La fiche jeu utilise donc
+l'endpoint officiel IGDB `game_time_to_beats`, avec le même jeton Twitch que le reste d'IGDB : aucune
+clé supplémentaire.
+
+- `IgdbApi.gameTimeToBeats` → `IgdbService.getTimeToBeat(gameId)` → `BacklogRepository.timeToBeat`.
+- `TimeToBeat` (`hastily` = histoire, `normally` = histoire + extras, `completely` = complétiste, en
+  secondes ; `count` = nombre de joueurs). `TimeToBeat.best` garde la ligne la plus renseignée.
+- Même règle que Metacritic/Steam : pas de chiffre ou service en panne = pas de carte, jamais d'erreur.

@@ -65,6 +65,7 @@ import com.davidgcd.backlog.data.local.GameEntity
 import com.davidgcd.backlog.data.local.GameJsonCache
 import com.davidgcd.backlog.data.local.gameStatus
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.TimeToBeat
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.ui.components.TrailerHero
 import com.davidgcd.backlog.ui.components.DetailBackdrop
@@ -95,6 +96,7 @@ import com.davidgcd.backlog.ui.components.glass
 import com.davidgcd.backlog.util.DetailLink
 import com.davidgcd.backlog.util.DetailPreview
 import com.davidgcd.backlog.util.IgdbImage
+import com.davidgcd.backlog.util.PlayTimeFormatting
 import com.davidgcd.backlog.util.ReleaseDateFormatting
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,6 +105,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val ratings by viewModel.ratings.collectAsState()
     val trailer by viewModel.trailer.collectAsState()
+    val timeToBeat by viewModel.timeToBeat.collectAsState()
     val storeLinks by viewModel.storeLinks.collectAsState()
     val frenchSummary by viewModel.frenchSummary.collectAsState()
     val appSnackbar = LocalAppSnackbar.current
@@ -193,6 +196,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     is GameDetailState.InBacklog -> GameDetailContent(
                         display = current.entity.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
+                        timeToBeat = timeToBeat,
                         trailer = trailer,
                         storeLinks = storeLinks,
                         inBacklog = true,
@@ -218,6 +222,7 @@ fun GameDetailScreen(viewModel: GameDetailViewModel, onBack: () -> Unit) {
                     is GameDetailState.Remote -> GameDetailContent(
                         display = current.game.toDisplay().withSummary(frenchSummary),
                         ratings = ratings,
+                        timeToBeat = timeToBeat,
                         trailer = trailer,
                         storeLinks = storeLinks,
                         inBacklog = false,
@@ -250,6 +255,7 @@ private fun Centered(content: @Composable () -> Unit) {
 private fun GameDetailContent(
     display: GameDisplay,
     ratings: RatingsState,
+    timeToBeat: TimeToBeat?,
     trailer: Trailer?,
     storeLinks: List<StoreLink>,
     inBacklog: Boolean,
@@ -294,7 +300,7 @@ private fun GameDetailContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     trailer?.let { TrailerHero(it, trailerPreview) }
-                    DetailBody(display, ratings, storeLinks, inBacklog, status, userRating, changeStatus, onRate)
+                    DetailBody(display, ratings, timeToBeat, storeLinks, inBacklog, status, userRating, changeStatus, onRate)
                 }
             }
         } else {
@@ -309,7 +315,7 @@ private fun GameDetailContent(
                 trailer?.let { TrailerHero(it, trailerPreview) }
                 DetailHero(display, isArchived, coverWidth = 132.dp, stacked = false)
                 DetailTags(display)
-                DetailBody(display, ratings, storeLinks, inBacklog, status, userRating, changeStatus, onRate)
+                DetailBody(display, ratings, timeToBeat, storeLinks, inBacklog, status, userRating, changeStatus, onRate)
                 DetailActions(inBacklog, isArchived, onArchiveToggle, onRemove)
             }
         }
@@ -395,6 +401,7 @@ private fun DetailTags(display: GameDisplay) {
 private fun DetailBody(
     display: GameDisplay,
     ratings: RatingsState,
+    timeToBeat: TimeToBeat?,
     storeLinks: List<StoreLink>,
     inBacklog: Boolean,
     status: GameStatus,
@@ -432,6 +439,8 @@ private fun DetailBody(
         RatingsCard(display.totalRating, ratings)
     }
 
+    if (timeToBeat != null && timeToBeat.hasData) TimeToBeatCard(timeToBeat)
+
     display.summary?.let { summary ->
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -444,6 +453,34 @@ private fun DetailBody(
     }
 
     if (storeLinks.isNotEmpty()) StoreLinksCard(storeLinks)
+}
+
+/** Durées de jeu (histoire / extras / complétiste) ; chaque chiffre absent est simplement omis. */
+@Composable
+private fun TimeToBeatCard(time: TimeToBeat) {
+    val rows = listOf(
+        R.string.time_to_beat_hastily to time.hastily,
+        R.string.time_to_beat_normally to time.normally,
+        R.string.time_to_beat_completely to time.completely,
+    ).mapNotNull { (label, seconds) -> seconds?.takeIf { it > 0 }?.let { label to it } }
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                stringResource(R.string.time_to_beat_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            rows.forEach { (label, seconds) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = Glass.TextMuted, modifier = Modifier.weight(1f))
+                    Text(PlayTimeFormatting.format(seconds), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+            }
+            time.count?.takeIf { it > 0 }?.let {
+                Text(stringResource(R.string.time_to_beat_count, it), style = MaterialTheme.typography.bodySmall, color = Glass.TextMuted)
+            }
+        }
+    }
 }
 
 /** Store links displayed with icons for better visual identification. */

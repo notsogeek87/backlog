@@ -12,6 +12,7 @@ import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.model.Game
 import com.davidgcd.backlog.model.GameStatus
 import com.davidgcd.backlog.model.StoreLink
+import com.davidgcd.backlog.model.TimeToBeat
 import com.davidgcd.backlog.model.suggestedFor
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.util.DebugLog
@@ -71,6 +72,10 @@ class GameDetailViewModel(
     private val _trailer = MutableStateFlow<Trailer?>(null)
     val trailer: StateFlow<Trailer?> = _trailer
 
+    /** Durées de jeu IGDB ; null pendant le chargement ou quand IGDB n'a aucun chiffre (la carte est alors masquée). */
+    private val _timeToBeat = MutableStateFlow<TimeToBeat?>(null)
+    val timeToBeat: StateFlow<TimeToBeat?> = _timeToBeat
+
     /** Store pages, Steam first; empty while loading or when IGDB lists none (the section is then hidden). */
     private val _storeLinks = MutableStateFlow<List<StoreLink>>(emptyList())
     val storeLinks: StateFlow<List<StoreLink>> = _storeLinks
@@ -100,6 +105,16 @@ class GameDetailViewModel(
                 throw e
             } catch (t: Throwable) {
                 DebugLog.log("GameDetailViewModel: trailer($gameId) failed: ${t::class.simpleName}: ${t.message}")
+                null
+            }
+        }
+        viewModelScope.launch {
+            _timeToBeat.value = try {
+                repository.timeToBeat(gameId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                DebugLog.log("GameDetailViewModel: timeToBeat($gameId) failed: ${t::class.simpleName}: ${t.message}")
                 null
             }
         }
