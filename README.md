@@ -71,6 +71,28 @@ Voir [docs/api/metacritic.md](docs/api/metacritic.md).
 
 Petit serveur Vercel + Neon dans `server/` : voir [docs/api/share-server.md](docs/api/share-server.md).
 
+## Signature
+
+Les APK des GitHub Releases (`main`) sont construits avec le buildType `github`
+(non debuggable, mises à jour intégrées actives) et signés par la **clé de
+publication Backlog** :
+
+- Certificat : `CN=Backlog, O=Lielu, C=FR`
+- Empreinte SHA-256 attendue :
+  `74:36:3E:4E:13:4D:55:88:38:23:CA:AE:B2:9E:09:25:09:13:69:DC:66:EE:23:93:3E:84:22:54:B0:8C:ED:65`
+
+La clé est fournie à la CI par les secrets `KEYSTORE_BASE64`,
+`KEYSTORE_PASSWORD`, `KEY_ALIAS` et `KEY_PASSWORD` ; sans eux,
+`android-build.yml` refuse de publier sur `main`. `app/debug.keystore`
+(public, mot de passe `android`) ne sert qu'aux builds locaux et aux builds
+de test sans secrets. Le build Play Store utilise une autre clé, la clé
+d'upload `PLAY_STORE_*` (voir `play-store-bundle.yml`).
+
+Les releases jusqu'à `v0.1.339` étaient signées par `app/debug.keystore` :
+passer d'une de ces versions à une version signée par la clé de publication
+impose de désinstaller l'app une fois (exporter le CSV avant, Réglages →
+Exporter, puis réimporter).
+
 ## Sauvegarde, localisation, tests
 
 - [Sauvegarde et restauration (Android / Samsung)](docs/guides/backup-restore.md)

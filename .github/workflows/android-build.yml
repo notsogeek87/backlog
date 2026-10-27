@@ -80,11 +80,34 @@ jobs:
           echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
           echo "name=$BASE.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Assemble debug APK
+      # Clé de publication des GitHub Releases (secrets KEYSTORE_*, distincte de la clé d'upload Play Store).
+      # app/debug.keystore est public (versionné, mot de passe "android") : un APK signé avec permettrait à
+      # n'importe qui de publier une fausse mise à jour. Sans secrets (PR de fork), le build reste signé debug,
+      # et l'étape suivante refuse alors de publier sur main.
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          gradle assembleDebug --no-daemon
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" != "pull_request" ] && [ "${{ github.ref_name }}" = "main" ]; then
+            echo "::error::Secret KEYSTORE_BASE64 manquant : refus de publier une release signée par app/debug.keystore."
+            exit 1
+          else
+            echo "::warning::Secrets KEYSTORE_* absents : APK signé avec app/debug.keystore (test uniquement)."
+          fi
 
-      # Gradle nomme toujours sa sortie "app-debug.apk" (nom fixe lié au
+      # buildType "github" (app/build.gradle.kts) : non debuggable, auto-mise à jour active.
+      - name: Assemble APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          gradle assembleGithub --no-daemon
+
+      # Gradle nomme toujours sa sortie "app-github.apk" (nom fixe lié au
       # buildType), quelle que soit la version : on la renomme pour que le
       # fichier téléchargé (artifact ou asset de release) porte la version
       # au lieu d'un nom générique identique à chaque run.
@@ -92,8 +115,8 @@ jobs:
         id: apk
         run: |
           NAME="Backlog-${{ steps.version.outputs.name }}.apk"
-          SRC="app/build/outputs/apk/debug/app-debug.apk"
-          DEST="app/build/outputs/apk/debug/$NAME"
+          SRC="app/build/outputs/apk/github/app-github.apk"
+          DEST="app/build/outputs/apk/github/$NAME"
           mv "$SRC" "$DEST"
           echo "path=$DEST" >> "$GITHUB_OUTPUT"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
@@ -108,9 +131,8 @@ jobs:
       # Vraie release GitHub, versionnée et permanente : seulement pour main (push ou
       # lancement manuel — un build lancé à la main sur main doit aussi laisser une release),
       # jamais écrasée (chaque run a une version unique), pas marquée
-      # "Pre-release". Toujours signée avec la clé debug committée (pas de
-      # clé de production configurée) : à faire évoluer le jour où on distribue
-      # via le Play Store ou en dehors des testeurs internes.
+      # "Pre-release". Signée avec la clé de publication GitHub (secrets KEYSTORE_*),
+      # jamais avec app/debug.keystore (voir "Decode release keystore").
       - name: Publier la release GitHub (main)
         if: github.event_name != 'pull_request' && github.ref_name == 'main'
         env:
@@ -130,7 +152,7 @@ jobs:
           Même clé de signature et même identifiant d'application pour tous les APK : la mise à jour se fait par-dessus l'ancienne version. Si Android refuse (« app non installée »), désinstalle l'ancienne version une fois, puis réinstalle.
 
           ---
-          Run #${{ github.run_number }} (${{ github.sha }}). Signé avec la clé debug committée (pas de clé de production configurée).
+          Run #${{ github.run_number }} (${{ github.sha }}). Signé avec la clé de publication Backlog (empreinte SHA-256 dans le README, section « Signature »).
           EOF
           gh release create "$TAG" \
             "${{ steps.apk.outputs.path }}" \
@@ -162,7 +184,7 @@ jobs:
           gh release delete "$TAG" --yes --cleanup-tag || true
           gh release create "$TAG" \
             "${{ steps.apk.outputs.path }}" \
-            --title "Backlog — APK debug (${{ steps.reltag.outputs.branch }})" \
+            --title "Backlog — APK de test (${{ steps.reltag.outputs.branch }})" \
             --notes "Build de test de la branche, jamais proposé par les mises à jour automatiques (pré-release). Run #${{ github.run_number }} (${{ github.sha }})." \
             --prerelease \
             --target "${{ github.sha }}"

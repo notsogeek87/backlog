@@ -156,8 +156,9 @@ Le projet utilise **GitHub Actions** avec 3 workflows:
 1. **android-build.yml**: Build + tests à chaque push/PR
    - Lint
    - Tests unitaires
-   - Build APK debug
-   - Publication release GitHub (main uniquement)
+   - Build APK `github` (non debuggable), signé par la clé de publication (secrets `KEYSTORE_*`,
+     empreinte dans `README.md` § Signature) ; sans ces secrets, refus de publier sur `main`
+   - Publication release GitHub (main uniquement) ; `app/debug.keystore` ne sert qu'aux builds locaux
 
 2. **docs-links.yml**: Vérification des liens Markdown
    - Exécute `tools/check_docs_links.py`

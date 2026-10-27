@@ -73,6 +73,16 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
+        // APK des GitHub Releases (android-build.yml) : comme release (non debuggable), mais avec
+        // l'auto-mise à jour. La CI fournit la clé de publication GitHub (secrets KEYSTORE_*) via les mêmes
+        // variables ANDROID_KEYSTORE_* : c'est une autre clé que celle d'upload Play Store. Sans secrets (build
+        // local, PR de fork), repli sur debug.keystore ; la CI refuse de publier un tel APK sur main.
+        create("github") {
+            initWith(getByName("release"))
+            buildConfigField("boolean", "SELF_UPDATE", "true")
+            signingConfig = signingConfigs.getByName(if (hasReleaseKeystore) "release" else "debug")
+            matchingFallbacks += "release"
+        }
     }
 
     compileOptions {
