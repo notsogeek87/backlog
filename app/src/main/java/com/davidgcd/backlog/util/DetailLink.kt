@@ -32,13 +32,13 @@ data class DetailPreview(
 ) {
     /** The query string (with its leading `?`), empty parameters left out. */
     fun query(): String = listOf(
-        "t" to title.take(100),
+        "t" to title.take(80),
         "y" to year?.toString(),
         "c" to image,
-        "g" to genres?.take(100),
+        "g" to genres?.take(60),
         "s" to summary?.let(::shorten),
         "r" to rating?.takeIf { it > 0 }?.let { "%.1f".format(java.util.Locale.ROOT, it) },
-        "m" to meta?.take(150),
+        "m" to meta?.take(80),
         "u" to url,
     ).filter { !it.second.isNullOrBlank() }
         .joinToString("&", prefix = "?") { (k, v) -> "$k=" + URLEncoder.encode(v!!, "UTF-8").replace("+", "%20") }
@@ -49,7 +49,7 @@ data class DetailPreview(
     }
 
     companion object {
-        private const val SUMMARY_MAX = 400
+        private const val SUMMARY_MAX = 160
         private val TMDB_POSTER = Regex("""^https://image\.tmdb\.org/t/p/(?:w\d+|original)(/.+)$""")
 
         fun of(game: GameEntity, url: String? = null) = DetailPreview(

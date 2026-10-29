@@ -31,7 +31,7 @@ class DetailPreviewTest {
 
     @Test fun cutsAndCleansTheSynopsis() {
         val q = DetailPreview(title = "X", summary = "a\n\nb ".repeat(300)).query()
-        assertEquals(true, q.length < 1100)
+        assertEquals(true, q.length < 500)
         assertEquals(true, q.contains("%E2%80%A6"))
     }
 

@@ -61,9 +61,20 @@ p{color:#aab;padding:0 .5rem}.card{background:#151b2c;border-radius:16px;padding
 .card h2{margin:.2rem 0;font-size:1.4rem}.kind{opacity:.7;margin:0;padding:0}.meta{margin:.2rem 0;padding:0;opacity:.85}
 .stars{color:#fbbf24;font-weight:600;padding:0;margin:.4rem 0}.sum{color:#d6dbe8;white-space:pre-line}.links{text-align:center}`;
 
+export const APP_PACKAGE = 'com.davidgcd.backlog';
+export const REPO_URL = 'https://github.com/notsogeek87/backlog';
+
+/**
+ * Chrome-on-Android intent link: opens the app when installed, otherwise sends the browser to the repository
+ * (browser_fallback_url). Pure markup, so it works under the page's no-script CSP.
+ */
+export function androidIntent(kind, id) {
+  return `intent://open/${kind}/${encodeURIComponent(id)}#Intent;scheme=backlog;package=${APP_PACKAGE};S.browser_fallback_url=${encodeURIComponent(REPO_URL)};end`;
+}
+
 /** The HTML of /open/<kind>/<id>: the "open in app" button, plus the shared title's details when the link carries them. */
 export function renderOpenPage(kind, id, query = {}) {
-  const appLink = `backlog://open/${kind}/${encodeURIComponent(id)}`;
+  const appLink = androidIntent(kind, id);
   const preview = parsePreview(kind, id, query);
   const details = preview
     ? `<section class="card">${preview.image ? `<img src="${escapeHtml(preview.image)}" alt="">` : ''}
@@ -81,7 +92,7 @@ ${preview.links.length ? `<div class="links">${preview.links.map((l) => `<a clas
 <p>Un ami t'a partagé une fiche. Ouvre-la dans l'app pour l'ajouter à ta liste.</p>
 <a class="b" href="${escapeHtml(appLink)}">Ouvrir dans l'app</a>
 ${details}
-<p>L'app n'est pas installée ? Installe Backlog sur Android, puis reviens sur ce lien.</p></main></body></html>`;
+<p>L'app n'est pas installée ? Le bouton t'envoie sur la page de téléchargement. Sur ordinateur : <a class="l" href="${REPO_URL}" rel="noopener noreferrer">Backlog sur GitHub</a></p></main></body></html>`;
 }
 
 export const OPEN_CSP = CSP;

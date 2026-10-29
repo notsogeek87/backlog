@@ -30,3 +30,9 @@ test('a link without details stays the plain page', () => {
   assert.equal(parsePreview('movie', 'movie:1', {}), null);
   assert.ok(!renderOpenPage('movie', 'movie:1', {}).includes('class="card"'));
 });
+
+test('the open button is an Android intent that falls back to the GitHub repository', () => {
+  const html = renderOpenPage('movie', 'movie:603', {});
+  assert.match(html, /href="intent:\/\/open\/movie\/movie%3A603#Intent;scheme=backlog;package=com\.davidgcd\.backlog;S\.browser_fallback_url=https%3A%2F%2Fgithub\.com%2Fnotsogeek87%2Fbacklog;end"/);
+  assert.match(html, /href="https:\/\/github\.com\/notsogeek87\/backlog"/);
+});
