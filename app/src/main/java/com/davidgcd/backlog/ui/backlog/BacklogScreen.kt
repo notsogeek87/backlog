@@ -155,6 +155,7 @@ fun BacklogScreen(
     var showSheet by remember { mutableStateOf(false) }
     var quickActionsFor by remember { mutableStateOf<GameEntity?>(null) }
     val searchFocus = remember { FocusRequester() }
+    var focusTick by remember { mutableStateOf(0) }
 
     val visibleBacklog by viewModel.visibleBacklog.collectAsState()
     val sort by viewModel.sort.collectAsState()
@@ -184,7 +185,8 @@ fun BacklogScreen(
         }
     }
 
-    fun openSearch(target: SearchScope, initial: String = "") {
+    fun openSearch(target: SearchScope, initial: String = "", focus: Boolean = true) {
+        if (focus) focusTick++
         searchScope = target
         query = initial
         showSearch = true
@@ -201,12 +203,11 @@ fun BacklogScreen(
     }
 
     BackHandler(enabled = showSearch) { closeSearch() }
-    LaunchedEffect(showSearch, searchScope) {
-        if (showSearch) searchFocus.requestFocus()
-    }
+    // Focus seulement à l'ouverture voulue de la recherche, pas au retour d'un résultat (sinon le clavier se rouvre).
+    LaunchedEffect(focusTick) { if (focusTick > 0 && showSearch) searchFocus.requestFocus() }
     LaunchedEffect(Unit) {
         val carried = searchCarry?.scope
-        if (carried != null && searchRequest == null) openSearch(carried, searchCarry?.query.orEmpty())
+        if (carried != null && searchRequest == null) openSearch(carried, searchCarry?.query.orEmpty(), focus = false)
     }
     LaunchedEffect(searchRequest) {
         if (searchRequest != null && searchRequest.media == MediaType.GAMES) {
