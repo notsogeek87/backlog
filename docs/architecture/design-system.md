@@ -40,7 +40,7 @@ Utilisés à la place : nombre de jeux actifs/archivés (tuiles), ajouts récent
 
 ## Écrans
 - **Accueil « Aujourd'hui »** : à continuer, sorties à venir, ajouts récents, « Mon année ».
-- **Bibliothèque** : sélecteur Jeux / Films & séries / Livres ; tuiles stats cliquables, carrousel « Ajouts récents », grille adaptative, recherche « Ma liste / Catalogue », feuille de filtres, balayage et appui long.
+- **Bibliothèque** : sélecteur Films & séries / Jeux / Livres ; tuiles stats cliquables, carrousel « Ajouts récents », grille adaptative, recherche « Ma liste / Catalogue », feuille de filtres, balayage et appui long.
 - **Fiche jeu** : artwork flouté en fond (blur API 31+), grande jaquette, badges, carte de notes, résumé, actions.
 - **Découvrir / Réglages** : mêmes surfaces verre.
 

@@ -175,7 +175,7 @@ class CrossSearch(
     val onBookClick: (String) -> Unit,
 )
 
-/** Appends one section per non-tab category (games, films & séries, books) that has hits. */
+/** Appends one section per non-tab category (films & séries, games, books) that has hits. */
 fun LazyListScope.crossSearchItems(
     state: CrossSearchState,
     primary: MediaType,
@@ -183,6 +183,18 @@ fun LazyListScope.crossSearchItems(
     onAdded: (String) -> Unit,
 ) {
     val vm = crossSearch.viewModel
+    if (primary != MediaType.MOVIES && state.movies.isNotEmpty()) {
+        item(key = "cross-movies-header") { SectionTitle(R.string.tab_movies) }
+        items(state.movies.size, key = { "cross-movie-${state.movies[it].first.id}" }) { i ->
+            val (title, saved) = state.movies[i]
+            MediaTitleListItem(
+                title = title,
+                saved = saved,
+                onAdd = { vm.addMovie(title); onAdded(title.title) },
+                onClick = { crossSearch.onMovieClick(title.id) },
+            )
+        }
+    }
     if (primary != MediaType.GAMES && state.games.isNotEmpty()) {
         item(key = "cross-games-header") { SectionTitle(R.string.tab_games) }
         items(state.games.size, key = { "cross-game-${state.games[it].first.id}" }) { i ->
@@ -208,18 +220,6 @@ fun LazyListScope.crossSearchItems(
                         )
                     }
                 },
-            )
-        }
-    }
-    if (primary != MediaType.MOVIES && state.movies.isNotEmpty()) {
-        item(key = "cross-movies-header") { SectionTitle(R.string.tab_movies) }
-        items(state.movies.size, key = { "cross-movie-${state.movies[it].first.id}" }) { i ->
-            val (title, saved) = state.movies[i]
-            MediaTitleListItem(
-                title = title,
-                saved = saved,
-                onAdd = { vm.addMovie(title); onAdded(title.title) },
-                onClick = { crossSearch.onMovieClick(title.id) },
             )
         }
     }
