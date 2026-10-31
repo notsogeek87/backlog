@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.repository.MovieRepository
+import com.davidgcd.backlog.data.repository.TmdbListsState
 import com.davidgcd.backlog.model.CastMember
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.Trailer
@@ -32,6 +33,19 @@ sealed interface ProvidersState {
     data object Unavailable : ProvidersState
 }
 
+/** The « Mes listes TMDB » card: hidden (no account linked / TMDB unreachable), loading, or the lists with the ticks. */
+sealed interface TmdbListsUi {
+    data object Hidden : TmdbListsUi
+    data object Loading : TmdbListsUi
+    /** [busy] = the rows being written right now ([WATCHLIST_ROW] or [listRow]); they ignore further taps. */
+    data class Loaded(val state: TmdbListsState, val busy: Set<String> = emptySet()) : TmdbListsUi
+
+    companion object {
+        const val WATCHLIST_ROW = "watchlist"
+        fun listRow(id: Long) = "list:$id"
+    }
+}
+
 /** A title on the detail screen may or may not be in the list — same split as the game detail. */
 class MovieDetailViewModel(
     private val titleKey: String,
@@ -52,6 +66,9 @@ class MovieDetailViewModel(
     private val _trailer = MutableStateFlow<Trailer?>(null)
     val trailer: StateFlow<Trailer?> = _trailer
 
+    private val _tmdbLists = MutableStateFlow<TmdbListsUi>(TmdbListsUi.Loading)
+    val tmdbLists: StateFlow<TmdbListsUi> = _tmdbLists
+
     private var refreshed = false
     private var remoteLoadStarted = false
 
@@ -59,6 +76,7 @@ class MovieDetailViewModel(
         loadProviders()
         loadCredits()
         loadTrailer()
+        loadTmdbLists()
         repository.observe(titleKey)
             .onEach { movie ->
                 if (movie != null) {
@@ -83,6 +101,69 @@ class MovieDetailViewModel(
                 throw e
             } catch (t: Throwable) {
                 ProvidersState.Unavailable
+            }
+        }
+    }
+
+    private fun loadTmdbLists() {
+        viewModelScope.launch {
+            val state = try {
+                repository.tmdbLists(titleKey)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                null
+            }
+            _tmdbLists.value = if (state == null) TmdbListsUi.Hidden else TmdbListsUi.Loaded(state)
+        }
+    }
+
+    /** Adds the title to / removes it from the TMDB watchlist; [onError] runs (on the main thread) if TMDB refused. */
+    fun toggleTmdbWatchlist(onError: () -> Unit) = toggleTmdb(
+        row = TmdbListsUi.WATCHLIST_ROW,
+        current = { it.watchlist },
+        apply = { state, on -> state.copy(watchlist = on) },
+        write = { on -> repository.setInTmdbWatchlist(titleKey, on) },
+        onError = onError,
+    )
+
+    /** Same for one of the user's own lists. */
+    fun toggleTmdbList(listId: Long, onError: () -> Unit) = toggleTmdb(
+        row = TmdbListsUi.listRow(listId),
+        current = { state -> state.lists.firstOrNull { it.list.id == listId }?.contains },
+        apply = { state, on -> state.copy(lists = state.lists.map { if (it.list.id == listId) it.copy(contains = on) else it }) },
+        write = { on -> repository.setInTmdbList(listId, titleKey, on) },
+        onError = onError,
+    )
+
+    /** Optimistic: the tick flips at once, and flips back if TMDB can't be written. */
+    private fun toggleTmdb(
+        row: String,
+        current: (TmdbListsState) -> Boolean?,
+        apply: (TmdbListsState, Boolean) -> TmdbListsState,
+        write: suspend (Boolean) -> Unit,
+        onError: () -> Unit,
+    ) {
+        val loaded = _tmdbLists.value as? TmdbListsUi.Loaded ?: return
+        if (row in loaded.busy) return
+        val before = current(loaded.state) ?: return
+        val wanted = !before
+        _tmdbLists.value = loaded.copy(state = apply(loaded.state, wanted), busy = loaded.busy + row)
+
+        fun settle(on: Boolean) {
+            (_tmdbLists.value as? TmdbListsUi.Loaded)?.let { now ->
+                _tmdbLists.value = now.copy(state = apply(now.state, on), busy = now.busy - row)
+            }
+        }
+        viewModelScope.launch {
+            try {
+                write(wanted)
+                settle(wanted)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                settle(before)
+                onError()
             }
         }
     }

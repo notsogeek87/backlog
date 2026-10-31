@@ -203,6 +203,57 @@ class TmdbClient(
         )
     }
 
+    // --- the user's own lists (created on themoviedb.org), next to the watchlist -----------------
+
+    /** The lists the user created, all pages; empty when they have none. */
+    suspend fun userLists(): List<TmdbUserList> {
+        val s = requireSession()
+        val out = mutableListOf<TmdbUserList>()
+        var page = 1
+        var pages = 1
+        while (page <= pages && page <= MAX_PAGES) {
+            val body = call("GET", "/account/${s.accountId}/lists", mapOf("page" to page.toString()), session = s.sessionId)
+            pages = TmdbParsers.totalPages(body)
+            out += TmdbParsers.parseUserLists(body)
+            page++
+        }
+        return out
+    }
+
+    /** Whether [key] is in the user's watchlist. */
+    suspend fun isInWatchlist(key: String): Boolean {
+        val s = requireSession()
+        val (kind, id) = split(key) ?: return false
+        return TmdbParsers.parseInWatchlist(call("GET", "/${TitleKey.prefix(kind)}/$id/account_states", session = s.sessionId))
+    }
+
+    /** Whether [key] is in the list [listId]. */
+    suspend fun isInList(listId: Long, key: String): Boolean {
+        val s = requireSession()
+        val (kind, id) = split(key) ?: return false
+        val body = call("GET", "/list/$listId/item_status", itemQuery(kind, id), session = s.sessionId)
+        return TmdbParsers.parseItemPresent(body)
+    }
+
+    /**
+     * Adds / removes [key] from the list [listId]. Adding something already there (TMDB answers with an error
+     * for a duplicate) counts as done, as does removing something already gone.
+     */
+    suspend fun setInList(listId: Long, key: String, on: Boolean) {
+        val s = requireSession()
+        val (kind, id) = split(key) ?: return
+        val body = JSONObject().put("media_type", TitleKey.prefix(kind)).put("media_id", id)
+        try {
+            call("POST", "/list/$listId/${if (on) "add_item" else "remove_item"}", body = body, session = s.sessionId)
+        } catch (e: TmdbException) {
+            val refused = e.message?.let { it.startsWith("HTTP 403") || it.startsWith("HTTP 412") || it.startsWith("HTTP 404") } == true
+            if (!refused || isInList(listId, key) != on) throw e
+        }
+    }
+
+    private fun itemQuery(kind: TitleKind, id: Long) =
+        mapOf("media_type" to TitleKey.prefix(kind), "media_id" to id.toString()) + if (kind == TitleKind.MOVIE) mapOf("movie_id" to id.toString()) else emptyMap()
+
     private fun split(key: String): Pair<TitleKind, Long>? {
         val kind = TitleKey.kind(key) ?: return null
         return TitleKey.tmdbId(key)?.let { kind to it }

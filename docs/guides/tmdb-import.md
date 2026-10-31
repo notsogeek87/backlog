@@ -11,6 +11,7 @@
 - **Rechercher** (loupe) : recherche TMDB, `+` pour ajouter.
 - **Découvrir** → *Films & séries* : populaires et mieux notés.
 - **Où regarder ?** (fiche d'un titre) : plateformes disponibles **en France**, récupérées en direct chez TMDB à chaque ouverture (`/watch/providers`), avec logos et lignes séparées Abonnement / Location / Achat / Gratuit (avec pub). « Voir toutes les offres » ouvre la page TMDB/JustWatch. Données JustWatch, créditées sous la carte.
+- **Mes listes TMDB** (fiche d'un titre, compte lié) : ta **watchlist** en premier, puis chacune des listes que tu as créées sur themoviedb.org, en pastilles à cocher. Un toucher ajoute le titre à la liste (ou l'en retire) sur TMDB ; la coche passe tout de suite et revient en arrière avec un message si TMDB refuse. Marche aussi pour un titre pas encore dans l'app (trouvé en recherche). Les listes sont relues à chaque ouverture de la fiche ; sans compte lié, la carte n'apparaît pas. Cocher la watchlist ne change pas le statut local du titre.
 - Fiche d'un titre : statut, **ma note /10**, note TMDB, synopsis, réalisateur, distribution, « Ouvrir sur TMDB ».
 
 ## Lier son compte TMDB

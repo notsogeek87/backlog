@@ -1,6 +1,8 @@
 package com.davidgcd.backlog.data.repository
 
 import com.davidgcd.backlog.data.tmdb.TmdbClient
+import com.davidgcd.backlog.data.tmdb.TmdbException
+import com.davidgcd.backlog.data.tmdb.TmdbUserList
 import com.davidgcd.backlog.data.local.MovieDao
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.genreList
@@ -15,8 +17,17 @@ import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.ConcurrentHashMap
+
+/** A list of the user's TMDB account and whether the title being looked at is in it. */
+data class TmdbListEntry(val list: TmdbUserList, val contains: Boolean)
+
+/** The watchlist plus the user's own lists, for one title. */
+data class TmdbListsState(val watchlist: Boolean, val lists: List<TmdbListEntry>)
 
 /**
  * Single source of truth for films & series: Room locally, TMDB for search / discovery / details —
@@ -133,6 +144,34 @@ class MovieRepository(
         )
         if (updated != entity) dao.update(updated)
     }
+
+    /**
+     * Where [titleKey] stands in the user's TMDB account: the watchlist and each list they created, with whether
+     * the title is in it. Null when no account is linked or TMDB can't be read (the card is then hidden).
+     */
+    suspend fun tmdbLists(titleKey: String): TmdbListsState? {
+        if (tmdb.currentSession() == null) return null
+        return try {
+            coroutineScope {
+                val watchlist = async { tmdb.isInWatchlist(titleKey) }
+                val lists = tmdb.userLists().map { list ->
+                    // One list that can't be checked must not hide the others: it shows as « not in it ».
+                    async { TmdbListEntry(list, try { tmdb.isInList(list.id, titleKey) } catch (e: TmdbException) { false }) }
+                }
+                TmdbListsState(watchlist.await(), lists.awaitAll())
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: TmdbException) {
+            null
+        }
+    }
+
+    /** Adds / removes the title from the TMDB watchlist; throws [TmdbException] so the screen can say it failed. */
+    suspend fun setInTmdbWatchlist(titleKey: String, on: Boolean) = tmdb.setWatchlist(titleKey, on)
+
+    /** Adds / removes the title from one of the user's TMDB lists; throws [TmdbException] on failure. */
+    suspend fun setInTmdbList(listId: Long, titleKey: String, on: Boolean) = tmdb.setInList(listId, titleKey, on)
 
     /** Account write-backs never fail the local action: no session, no network or a TMDB hiccup is silently skipped. */
     private suspend fun bestEffort(block: suspend () -> Unit) {

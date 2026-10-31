@@ -14,6 +14,9 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneOffset
 
+/** One of the user's own TMDB lists (the ones they created on themoviedb.org); the watchlist is not among them. */
+data class TmdbUserList(val id: Long, val name: String, val itemCount: Int)
+
 /** A line of a TMDB list: the title, and the user's own rating when the list is "rated" (1–10). */
 data class TmdbListItem(val title: MediaTitle, val userRating: Int?)
 
@@ -207,6 +210,22 @@ object TmdbParsers {
     /** `{"request_token":"…"}` / `{"session_id":"…"}` style single-string fields. */
     fun stringField(json: String, field: String): String? =
         runCatching { JSONObject(json).optString(field).ifEmpty { null } }.getOrNull()
+
+    /** `/account/{id}/lists` → the lists, in TMDB's order; entries without an id or a name are dropped. */
+    fun parseUserLists(json: String): List<TmdbUserList> {
+        val results = runCatching { JSONObject(json).optJSONArray("results") }.getOrNull() ?: return emptyList()
+        return results.objects().mapNotNull { o ->
+            val id = o.optLong("id", -1).takeIf { it > 0 } ?: return@mapNotNull null
+            val name = o.optString("name").trim().ifEmpty { return@mapNotNull null }
+            TmdbUserList(id, name, o.optInt("item_count", 0))
+        }
+    }
+
+    /** `/{movie|tv}/{id}/account_states` → is the title in the user's watchlist? */
+    fun parseInWatchlist(json: String): Boolean = runCatching { JSONObject(json).optBoolean("watchlist", false) }.getOrDefault(false)
+
+    /** `/list/{id}/item_status` → is the title in that list? */
+    fun parseItemPresent(json: String): Boolean = runCatching { JSONObject(json).optBoolean("item_present", false) }.getOrDefault(false)
 
     /** `/account` → id + username. */
     fun parseAccount(json: String): Pair<Long, String?>? {

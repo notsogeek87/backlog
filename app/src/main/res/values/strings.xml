@@ -435,6 +435,10 @@
     <string name="tmdb_error_not_signed_in">Ta session TMDB n\'est pas (ou plus) valide. Reconnecte-toi.</string>
     <string name="tmdb_error_unavailable">TMDB est injoignable ou a répondu autre chose que prévu. Réessaie plus tard.</string>
     <string name="tmdb_error_unknown">Une erreur inattendue est survenue avec TMDB.</string>
+    <string name="tmdb_lists_title">Mes listes TMDB</string>
+    <string name="tmdb_lists_watchlist">Watchlist</string>
+    <string name="tmdb_lists_none">Tu n\'as pas d\'autre liste sur TMDB : crée-en sur themoviedb.org, elles apparaîtront ici.</string>
+    <string name="tmdb_lists_error">TMDB n\'a pas pu être mis à jour. Réessaie.</string>
     <string name="tmdb_attribution">Ce produit utilise l\'API TMDB mais n\'est ni approuvé ni certifié par TMDB.</string>
     <string name="tmdb_reconnect">Me reconnecter</string>
     <string name="welcome_platforms_title">Connecte tes services</string>

@@ -99,6 +99,8 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val providers by viewModel.providers.collectAsState()
     val credits by viewModel.credits.collectAsState()
     val trailer by viewModel.trailer.collectAsState()
+    val tmdbLists by viewModel.tmdbLists.collectAsState()
+    val tmdbListsError = stringResource(R.string.tmdb_lists_error)
     val appSnackbar = LocalAppSnackbar.current
     val trailerPreview by (LocalUiPreferences.current?.trailerPreview ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }).collectAsState()
 
@@ -191,6 +193,9 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                         },
                         trailerPreview = trailerPreview,
                         onPersonClick = onPersonClick,
+                        tmdbLists = tmdbLists,
+                        onToggleWatchlist = { viewModel.toggleTmdbWatchlist { appSnackbar?.show(tmdbListsError) } },
+                        onToggleList = { id -> viewModel.toggleTmdbList(id) { appSnackbar?.show(tmdbListsError) } },
                     )
                     is MovieDetailState.Remote -> MovieContent(
                         providers = providers,
@@ -204,6 +209,9 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                         onRemove = {},
                         trailerPreview = trailerPreview,
                         onPersonClick = onPersonClick,
+                        tmdbLists = tmdbLists,
+                        onToggleWatchlist = { viewModel.toggleTmdbWatchlist { appSnackbar?.show(tmdbListsError) } },
+                        onToggleList = { id -> viewModel.toggleTmdbList(id) { appSnackbar?.show(tmdbListsError) } },
                     )
                 }
             }
@@ -299,6 +307,9 @@ private fun MovieContent(
     onRemove: () -> Unit,
     trailerPreview: Boolean,
     onPersonClick: (Long, Boolean) -> Unit,
+    tmdbLists: TmdbListsUi,
+    onToggleWatchlist: () -> Unit,
+    onToggleList: (Long) -> Unit,
 ) {
     var askRating by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -358,6 +369,8 @@ private fun MovieContent(
                     }
                 }
             }
+
+            TmdbListsCard(tmdbLists, onToggleWatchlist, onToggleList)
 
             title.rating?.let { rating ->
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
