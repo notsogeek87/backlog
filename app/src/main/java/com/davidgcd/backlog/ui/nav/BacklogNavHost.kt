@@ -318,7 +318,7 @@ fun BacklogNavHost(
     val tmdbListsPrompt = remember { TmdbListsPrompt { key, name -> tmdbPromptTarget = key to name } }
     CompositionLocalProvider(LocalAppSnackbar provides appSnackbar, LocalTmdbListsPrompt provides tmdbListsPrompt) {
     tmdbPromptTarget?.let { (key, name) ->
-        TmdbListsSheet(movieRepository, key, name, onDismiss = { tmdbPromptTarget = null })
+        TmdbListsSheet(movieRepository, key, name, scope = appScope, onDismiss = { tmdbPromptTarget = null })
     }
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val useRail = maxWidth >= RAIL_MIN_WIDTH_DP.dp

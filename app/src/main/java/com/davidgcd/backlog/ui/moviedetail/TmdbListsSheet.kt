@@ -18,7 +18,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -28,6 +27,7 @@ import com.davidgcd.backlog.R
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.ui.components.LocalAppSnackbar
 import com.davidgcd.backlog.ui.theme.Glass
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Asks to offer « ajouter aussi à une liste TMDB » for a title that was just added from a list or a search.
@@ -41,8 +41,14 @@ val LocalTmdbListsPrompt = staticCompositionLocalOf<TmdbListsPrompt?> { null }
 /** The sheet itself: only appears once the lists are known and there is at least one to offer. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun TmdbListsSheet(repository: MovieRepository, titleKey: String, name: String, onDismiss: () -> Unit) {
-    val scope = rememberCoroutineScope()
+fun TmdbListsSheet(
+    repository: MovieRepository,
+    titleKey: String,
+    name: String,
+    /** Must outlive the sheet: a tick followed at once by « Terminé » must still reach TMDB. */
+    scope: CoroutineScope,
+    onDismiss: () -> Unit,
+) {
     val model = remember(titleKey) { TmdbListsModel(scope, repository, titleKey) }
     val ui by model.state.collectAsState()
     val appSnackbar = LocalAppSnackbar.current

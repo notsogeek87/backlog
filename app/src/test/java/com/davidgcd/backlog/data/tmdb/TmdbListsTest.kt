@@ -48,6 +48,15 @@ class TmdbListsTest {
     }
 
     @Test
+    fun `a list answer without media_type still tells films from series`() {
+        val json = """{"items":[
+          {"id":603,"title":"Matrix","release_date":"1999-03-30"},
+          {"id":1396,"name":"Breaking Bad","first_air_date":"2008-01-20"},
+          {"id":6193,"name":"Leonardo DiCaprio","known_for_department":"Acting"}]}"""
+        assertEquals(setOf("movie:603", "tv:1396"), TmdbParsers.parseListItemKeys(json))
+    }
+
+    @Test
     fun `lists are read page by page for the signed-in account`() = runTest {
         val http = FakeHttp { url ->
             when {

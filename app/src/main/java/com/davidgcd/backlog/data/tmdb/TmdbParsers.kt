@@ -232,6 +232,12 @@ object TmdbParsers {
             val kind = when (o.optString("media_type")) {
                 "movie" -> TitleKind.MOVIE
                 "tv" -> TitleKind.SERIES
+                // Some list answers omit media_type: a film has a `title`, a series a `name` (a person has neither date).
+                "" -> when {
+                    o.has("title") || o.has("release_date") -> TitleKind.MOVIE
+                    o.has("first_air_date") || (o.has("name") && !o.has("known_for_department")) -> TitleKind.SERIES
+                    else -> return@mapNotNull null
+                }
                 else -> return@mapNotNull null
             }
             "${TitleKey.prefix(kind)}:$id"
