@@ -2,6 +2,8 @@ package com.davidgcd.backlog.data.repository
 
 import com.davidgcd.backlog.data.tmdb.TmdbClient
 import com.davidgcd.backlog.data.tmdb.TmdbException
+import com.davidgcd.backlog.data.tmdb.TmdbListContent
+import com.davidgcd.backlog.data.tmdb.TmdbListsIndexStore
 import com.davidgcd.backlog.data.tmdb.TmdbUserList
 import com.davidgcd.backlog.data.local.MovieDao
 import com.davidgcd.backlog.data.local.MovieEntity
@@ -21,6 +23,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 
 /** A list of the user's TMDB account and whether the title being looked at is in it. */
@@ -36,6 +42,9 @@ data class TmdbListsState(val watchlist: Boolean, val lists: List<TmdbListEntry>
 class MovieRepository(
     private val dao: MovieDao,
     private val tmdb: TmdbClient,
+    /** Last known content of the user's TMDB lists, kept on the device; null in tests that don't need it. */
+    private val listsIndexStore: TmdbListsIndexStore? = null,
+    private val clock: () -> Long = System::currentTimeMillis,
 ) {
     /**
      * Titles seen in a search or a chart, kept for the session: opening one shows what the list
@@ -44,6 +53,66 @@ class MovieRepository(
     private val seen = ConcurrentHashMap<String, MediaTitle>()
 
     private val listKeysCache = ConcurrentHashMap<Long, Pair<Long, Set<String>>>()
+
+    private val _tmdbListsIndex = MutableStateFlow<List<TmdbListContent>>(emptyList())
+
+    /**
+     * The user's TMDB lists — watchlist first, then the lists they created — with the titles in each: what the
+     * library's « Liste TMDB » filter offers. Empty without a linked account.
+     */
+    val tmdbListsIndex: StateFlow<List<TmdbListContent>> = _tmdbListsIndex
+
+    private val indexMutex = Mutex()
+    private var indexLoaded = false
+    private var lastIndexRefresh = 0L
+
+    /**
+     * Reads the watchlist and every list of the account, adds to the library the titles it doesn't have yet (as
+     * « À voir », like the watchlist import — the library shows everything that is in one of the lists) and updates
+     * [tmdbListsIndex]. At most every [LIST_CACHE_MS] unless [force]; offline, the last known index stays.
+     */
+    suspend fun refreshTmdbListsIndex(force: Boolean = false) = indexMutex.withLock {
+        if (!indexLoaded) {
+            indexLoaded = true
+            listsIndexStore?.load()?.takeIf { it.isNotEmpty() && _tmdbListsIndex.value.isEmpty() }?.let { _tmdbListsIndex.value = it }
+        }
+        if (tmdb.currentSession() == null) {
+            if (_tmdbListsIndex.value.isNotEmpty()) {
+                _tmdbListsIndex.value = emptyList()
+                listsIndexStore?.save(emptyList())
+            }
+            return@withLock
+        }
+        val now = clock()
+        if (!force && lastIndexRefresh != 0L && now - lastIndexRefresh < LIST_CACHE_MS) return@withLock
+        val fetched = try {
+            coroutineScope {
+                val watchlist = async { tmdb.watchlist().map { it.title } }
+                val lists = tmdb.userLists().map { list -> async { list to tmdb.listTitles(list.id) } }
+                (TmdbListContent.WATCHLIST_ID to ("" to watchlist.await())) to lists.awaitAll()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: TmdbException) {
+            return@withLock
+        }
+        val (watchlistEntry, lists) = fetched
+        val all = (listOf(watchlistEntry.second.second) + lists.map { it.second }).flatten().distinctBy { it.id }
+        all.forEach { title -> if (dao.findById(title.id) == null) dao.upsert(title.toEntity(WatchStatus.TO_WATCH)) }
+        lists.forEach { (list, titles) -> listKeysCache[list.id] = now to titles.mapTo(HashSet()) { it.id } }
+        val index = listOf(TmdbListContent(TmdbListContent.WATCHLIST_ID, "", watchlistEntry.second.second.mapTo(HashSet()) { it.id })) +
+            lists.map { (list, titles) -> TmdbListContent(list.id, list.name, titles.mapTo(HashSet()) { it.id }) }
+        _tmdbListsIndex.value = index
+        listsIndexStore?.save(index)
+        lastIndexRefresh = now
+    }
+
+    /** Keeps the index in step with a write made here, so the filter shows it at once. */
+    private fun updateIndex(listId: Long, titleKey: String, on: Boolean) {
+        _tmdbListsIndex.value = _tmdbListsIndex.value.map { l ->
+            if (l.id != listId) l else l.copy(keys = if (on) l.keys + titleKey else l.keys - titleKey)
+        }
+    }
 
     fun observeAll(): Flow<List<MovieEntity>> = dao.observeAll()
 
@@ -170,18 +239,22 @@ class MovieRepository(
     }
 
     /** Adds / removes the title from the TMDB watchlist; throws [TmdbException] so the screen can say it failed. */
-    suspend fun setInTmdbWatchlist(titleKey: String, on: Boolean) = tmdb.setWatchlist(titleKey, on)
+    suspend fun setInTmdbWatchlist(titleKey: String, on: Boolean) {
+        tmdb.setWatchlist(titleKey, on)
+        updateIndex(TmdbListContent.WATCHLIST_ID, titleKey, on)
+    }
 
     /** Adds / removes the title from one of the user's TMDB lists; throws [TmdbException] on failure. */
     suspend fun setInTmdbList(listId: Long, titleKey: String, on: Boolean) {
         tmdb.setInList(listId, titleKey, on)
         // Keep the cached content in step, so reopening a page right after shows the change.
         listKeysCache[listId]?.let { (at, keys) -> listKeysCache[listId] = at to if (on) keys + titleKey else keys - titleKey }
+        updateIndex(listId, titleKey, on)
     }
 
     /** What is in a list, read at most once every [LIST_CACHE_MS]: opening several pages in a row must not re-read every list. */
     private suspend fun listKeys(listId: Long): Set<String> {
-        val now = System.currentTimeMillis()
+        val now = clock()
         listKeysCache[listId]?.let { (at, keys) -> if (now - at < LIST_CACHE_MS) return keys }
         return tmdb.listItemKeys(listId).also { listKeysCache[listId] = now to it }
     }

@@ -245,6 +245,22 @@ class TmdbClient(
         return out
     }
 
+    /** Every title of the list [listId] (films and series), all pages — what the library imports and filters on. */
+    suspend fun listTitles(listId: Long): List<MediaTitle> {
+        val s = requireSession()
+        val names = genres()
+        val out = mutableListOf<MediaTitle>()
+        var page = 1
+        var pages = 1
+        while (page <= pages && page <= MAX_PAGES) {
+            val body = call("GET", "/list/$listId", mapOf("page" to page.toString()), session = s.sessionId)
+            pages = TmdbParsers.totalPages(body)
+            out += TmdbParsers.parseListTitles(body, names)
+            page++
+        }
+        return out.distinctBy { it.id }
+    }
+
     /**
      * Adds / removes [key] from the list [listId]. Adding something already there (TMDB answers with an error
      * for a duplicate) counts as done, as does removing something already gone.

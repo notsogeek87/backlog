@@ -66,6 +66,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.data.tmdb.TmdbListContent
 import com.davidgcd.backlog.ui.moviedetail.LocalTmdbListsPrompt
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.titleKind
@@ -151,6 +152,7 @@ fun MoviesScreen(
     val filter by viewModel.filter.collectAsState()
     val libraryQuery by viewModel.libraryQuery.collectAsState()
     val genres by viewModel.availableGenres.collectAsState()
+    val tmdbLists by viewModel.tmdbLists.collectAsState()
     val isEmpty by viewModel.isEmpty.collectAsState()
     val statusCounts by viewModel.statusCounts.collectAsState()
     val recentlyAdded by viewModel.recentlyAdded.collectAsState()
@@ -272,7 +274,7 @@ fun MoviesScreen(
             else -> stringResource(R.string.filter_sheet_show_count, visible.size)
         }
         FilterSortSheet(
-            sections = movieSheetSections(sort, filter, genres, viewModel),
+            sections = movieSheetSections(sort, filter, genres, tmdbLists, viewModel),
             resultLabel = resultLabel,
             onReset = if (filter.isActive) ({ viewModel.setFilter(MovieFilter(kind = filter.kind)) }) else null,
             onDismiss = { showSheet = false },
@@ -411,6 +413,7 @@ fun MoviesScreen(
                 MovieGrid(
                     movies = visible,
                     filter = filter,
+                    tmdbLists = tmdbLists,
                     sort = sort,
                     searchText = libraryQuery,
                     statusCounts = statusCounts,
@@ -430,12 +433,21 @@ fun MoviesScreen(
 }
 
 @Composable
-private fun movieSheetSections(sort: MovieSort, filter: MovieFilter, genres: List<String>, viewModel: MoviesViewModel): List<SheetSection> {
+private fun movieSheetSections(sort: MovieSort, filter: MovieFilter, genres: List<String>, tmdbLists: List<TmdbListContent>, viewModel: MoviesViewModel): List<SheetSection> {
     val any = stringResource(R.string.filter_any)
+    val watchlistName = stringResource(R.string.tmdb_lists_watchlist)
     return buildList {
         add(SheetSection.Choices(stringResource(R.string.filter_sheet_sort), MovieSort.entries.map { option ->
             SheetChoice(stringResource(option.labelRes()), sort == option) { viewModel.setSort(option) }
         }))
+        // « Toutes » = everything in the library (which holds everything in the lists); then one TMDB list at a time.
+        if (tmdbLists.isNotEmpty()) {
+            add(SheetSection.Choices(stringResource(R.string.filter_tmdb_list), listOf<TmdbListContent?>(null).plus(tmdbLists).map { list ->
+                SheetChoice(list?.let { if (it.isWatchlist) watchlistName else it.name } ?: stringResource(R.string.filter_tmdb_list_all), filter.tmdbListId == list?.id) {
+                    viewModel.setFilter(filter.copy(tmdbListId = list?.id))
+                }
+            }))
+        }
         add(SheetSection.Choices(stringResource(R.string.filter_status), listOf<WatchStatus?>(null).plus(WatchStatus.entries).map { status ->
             SheetChoice(status?.label() ?: any, filter.status == status) { viewModel.setFilter(filter.copy(status = status)) }
         }))

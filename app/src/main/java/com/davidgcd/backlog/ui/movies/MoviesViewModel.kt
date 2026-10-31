@@ -11,6 +11,7 @@ import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.data.share.LibrarySharer
 import com.davidgcd.backlog.data.share.ShareLinkService
 import com.davidgcd.backlog.data.share.ShareMovieItem
+import com.davidgcd.backlog.data.tmdb.TmdbListContent
 import com.davidgcd.backlog.model.MediaTitle
 import com.davidgcd.backlog.model.MovieRanking
 import com.davidgcd.backlog.model.TitleKey
@@ -46,9 +47,11 @@ data class MovieFilter(
     val kind: TitleKind? = null,
     val status: WatchStatus? = null,
     val genre: String? = null,
+    /** A TMDB list ([TmdbListContent.id], 0 = watchlist): only the titles in it. */
+    val tmdbListId: Long? = null,
 ) {
     /** Menu filters only — the kind chips are always visible, so they never need a "clear" chip. */
-    val isActive: Boolean get() = showArchived || status != null || genre != null
+    val isActive: Boolean get() = showArchived || status != null || genre != null || tmdbListId != null
 }
 
 /** State of the films & séries tab: the saved list (sorted / filtered) and the TMDB search. */
@@ -100,8 +103,27 @@ class MoviesViewModel(
         _libraryQuery.value = query
     }
 
-    val visible: StateFlow<List<MovieEntity>> = combine(movies, _sort, _filter, _libraryQuery) { list, sort, filter, query ->
+    /** The user's TMDB lists for the filter (watchlist first); empty without a linked account. */
+    val tmdbLists: StateFlow<List<TmdbListContent>> = repository.tmdbListsIndex
+
+    init {
+        // Brings in what was added to the lists on themoviedb.org, and refreshes the filter's content.
+        viewModelScope.launch {
+            try {
+                repository.refreshTmdbListsIndex()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                AppLogger.network.error("TMDB lists refresh failed", t)
+            }
+        }
+    }
+
+    val visible: StateFlow<List<MovieEntity>> = combine(movies, _sort, _filter, _libraryQuery, repository.tmdbListsIndex) { list, sort, filter, query, lists ->
+        // A list that no longer exists (deleted on TMDB) filters nothing rather than emptying the screen.
+        val listKeys = filter.tmdbListId?.let { id -> lists.firstOrNull { it.id == id }?.keys }
         list
+            .filter { listKeys == null || it.titleKey in listKeys }
             .filter { LibraryQuery.matches(query, it.title, it.directors, it.cast) }
             .filter { filter.showArchived || !it.isArchived }
             .filter { filter.kind == null || it.titleKind == filter.kind }

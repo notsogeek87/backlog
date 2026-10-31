@@ -37,6 +37,7 @@ import com.davidgcd.backlog.data.repository.MetacriticService
 import com.davidgcd.backlog.data.repository.MovieRepository
 import com.davidgcd.backlog.data.repository.SteamService
 import com.davidgcd.backlog.data.share.ShareLinkService
+import com.davidgcd.backlog.data.tmdb.FileTmdbListsIndexStore
 import com.davidgcd.backlog.data.tmdb.FileTmdbSessionStore
 import com.davidgcd.backlog.data.tmdb.TmdbClient
 import com.davidgcd.backlog.data.tmdb.TmdbSyncService
@@ -165,7 +166,7 @@ class AppContainer(private val context: Context) {
         TmdbClient(http = http(20), apiKey = Secrets.TMDB_API_KEY, sessions = FileTmdbSessionStore(context))
     }
 
-    val movieRepository: MovieRepository by lazy { MovieRepository(database.movieDao(), tmdbClient) }
+    val movieRepository: MovieRepository by lazy { MovieRepository(database.movieDao(), tmdbClient, FileTmdbListsIndexStore(context.filesDir)) }
     val tmdbSyncService: TmdbSyncService by lazy { TmdbSyncService(tmdbClient, database.movieDao(), libraryAccountStore) }
 
     // --- Livres (Open Library, Google Books en secours ; aucune clé) ---------------------------------------------

@@ -225,23 +225,34 @@ object TmdbParsers {
     fun parseInWatchlist(json: String): Boolean = runCatching { JSONObject(json).optBoolean("watchlist", false) }.getOrDefault(false)
 
     /** `/list/{id}` → the keys (`movie:603`, `tv:1396`) of the titles on one page of that list; people and junk are skipped. */
-    fun parseListItemKeys(json: String): Set<String> {
-        val items = runCatching { JSONObject(json).optJSONArray("items") }.getOrNull() ?: return emptySet()
+    fun parseListItemKeys(json: String): Set<String> = listItems(json).mapNotNull { o ->
+        val id = o.optLong("id", -1).takeIf { it > 0 } ?: return@mapNotNull null
+        "${TitleKey.prefix(if (o.optString("media_type") == "tv") TitleKind.SERIES else TitleKind.MOVIE)}:$id"
+    }.toSet()
+
+    /** `/list/{id}` → the titles of one page of that list, films and series alike. */
+    fun parseListTitles(json: String, genreNames: Map<Int, String>): List<MediaTitle> =
+        parseList(JSONObject().put("results", JSONArray(listItems(json))).toString(), forcedKind = null, genreNames = genreNames).map { it.title }
+
+    /**
+     * The `items` of a list page, each with a `media_type` (`movie` / `tv`). Some answers omit it: a film has a `title`
+     * or a `release_date`, a series a `first_air_date` or a `name`; people and unreadable entries are dropped.
+     */
+    private fun listItems(json: String): List<JSONObject> {
+        val items = runCatching { JSONObject(json).optJSONArray("items") }.getOrNull() ?: return emptyList()
         return items.objects().mapNotNull { o ->
-            val id = o.optLong("id", -1).takeIf { it > 0 } ?: return@mapNotNull null
-            val kind = when (o.optString("media_type")) {
-                "movie" -> TitleKind.MOVIE
-                "tv" -> TitleKind.SERIES
-                // Some list answers omit media_type: a film has a `title`, a series a `name` (a person has neither date).
+            if (o.optLong("id", -1) <= 0) return@mapNotNull null
+            val type = when (o.optString("media_type")) {
+                "movie", "tv" -> o.optString("media_type")
                 "" -> when {
-                    o.has("title") || o.has("release_date") -> TitleKind.MOVIE
-                    o.has("first_air_date") || (o.has("name") && !o.has("known_for_department")) -> TitleKind.SERIES
+                    o.has("title") || o.has("release_date") -> "movie"
+                    o.has("first_air_date") || (o.has("name") && !o.has("known_for_department")) -> "tv"
                     else -> return@mapNotNull null
                 }
                 else -> return@mapNotNull null
             }
-            "${TitleKey.prefix(kind)}:$id"
-        }.toSet()
+            o.put("media_type", type)
+        }
     }
 
     /** `/account` → id + username. */

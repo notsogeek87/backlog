@@ -440,6 +440,8 @@
     <string name="tmdb_lists_watchlist">Watchlist</string>
     <string name="tmdb_lists_sheet_title">Ajouter « %1$s » à une liste TMDB ?</string>
     <string name="tmdb_lists_sheet_hint">C\'est déjà dans ta watchlist. Coche les autres listes où le ranger.</string>
+    <string name="filter_tmdb_list">Liste TMDB</string>
+    <string name="filter_tmdb_list_all">Toutes</string>
     <string name="tmdb_lists_none">Tu n\'as pas d\'autre liste sur TMDB : crée-en sur themoviedb.org, elles apparaîtront ici.</string>
     <string name="tmdb_lists_error">TMDB n\'a pas pu être mis à jour. Réessaie.</string>
     <string name="tmdb_attribution">Ce produit utilise l\'API TMDB mais n\'est ni approuvé ni certifié par TMDB.</string>

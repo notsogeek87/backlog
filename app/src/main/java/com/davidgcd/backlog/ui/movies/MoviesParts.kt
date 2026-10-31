@@ -66,6 +66,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.data.tmdb.TmdbListContent
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.local.watchStatus
@@ -124,6 +125,7 @@ import kotlinx.coroutines.launch
 internal fun MovieGrid(
     movies: List<MovieEntity>,
     filter: MovieFilter,
+    tmdbLists: List<TmdbListContent> = emptyList(),
     sort: MovieSort,
     searchText: String,
     statusCounts: Map<WatchStatus, Int>,
@@ -191,7 +193,7 @@ internal fun MovieGrid(
                 }
             }
             if (filter.isActive) {
-                item(span = { GridItemSpan(maxLineSpan) }) { ActiveFilterChips(filter, onFilterChange) }
+                item(span = { GridItemSpan(maxLineSpan) }) { ActiveFilterChips(filter, onFilterChange, tmdbLists) }
             }
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -290,8 +292,13 @@ fun MovieListItem(
 }
 
 @Composable
-internal fun ActiveFilterChips(filter: MovieFilter, onChange: (MovieFilter) -> Unit) {
+internal fun ActiveFilterChips(filter: MovieFilter, onChange: (MovieFilter) -> Unit, tmdbLists: List<TmdbListContent> = emptyList()) {
     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        filter.tmdbListId?.let { id ->
+            val list = tmdbLists.firstOrNull { it.id == id }
+            val name = if (list == null || list.isWatchlist) stringResource(R.string.tmdb_lists_watchlist) else list.name
+            RemovableChip(name) { onChange(filter.copy(tmdbListId = null)) }
+        }
         filter.status?.let { RemovableChip(it.label()) { onChange(filter.copy(status = null)) } }
         filter.genre?.let { RemovableChip(it) { onChange(filter.copy(genre = null)) } }
         if (filter.showArchived) RemovableChip(stringResource(R.string.filter_show_archived)) { onChange(filter.copy(showArchived = false)) }

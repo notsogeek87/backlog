@@ -30,6 +30,7 @@ object Changelog {
         ChangelogEntry(18, "Tes films envoyés vers TMDB", "En liant ton compte TMDB (Réglages → Mes plateformes), les films et séries déjà dans l'app y sont envoyés une fois : tes notes, et tes titres « À voir » dans la watchlist."),
         ChangelogEntry(19, "Durée de jeu", "Les fiches jeux affichent le temps pour finir l'histoire, avec les extras ou à 100 %, quand IGDB le connaît."),
         ChangelogEntry(20, "Tes listes TMDB", "Sur la fiche d'un film ou d'une série, ajoute-le à ta watchlist TMDB ou à l'une de tes autres listes d'un toucher (compte TMDB lié dans Réglages → Mes plateformes). Après un « + », l'app te propose aussi de le ranger dans une de tes listes."),
+        ChangelogEntry(21, "Filtrer par liste TMDB", "Dans Films & séries, le filtre « Liste TMDB » montre seulement ta watchlist ou une de tes listes. Les titres de tes listes TMDB arrivent aussi tout seuls dans ta bibliothèque."),
     )
 
     /** Dernière entrée connue des versions d'avant ce journal : une mise à jour depuis celles-ci présente la suite. */
