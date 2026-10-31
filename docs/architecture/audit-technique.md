@@ -4,6 +4,29 @@
 
 Audit fait **sur le code** de `main` au 31/10/2026 (commit `e11b4ce`) : lecture du code Android, du serveur `server/`, de la CI et de la doc. Tests serveur lancés (`npm test` : 22/22 OK), liens de doc vérifiés (`tools/check_docs_links.py` : OK). Le build Android n'a pas été relancé pour cet audit (pas de SDK Android dans l'environnement de l'audit) : la CI reste la référence.
 
+## Suivi des corrections (31/10/2026)
+
+Décision : les liens de partage **restent valables 24 h** (pas d'option de lien durable).
+
+| # | État | Ce qui a été fait |
+|---|------|-------------------|
+| S1 | Fait (code) | `server/api/igdb-token.js` + `lib/igdbToken.js` : le serveur détient le secret et sert le jeton (partagé via la table `app_tokens`). L'app (`IgdbTokenApi`, `IgdbTokenProvider`) ne contient plus aucun identifiant Twitch ; `Secrets.kt.example` et la CI non plus. **Reste à faire par le mainteneur** : renseigner `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` dans Vercel, puis régénérer le secret sur dev.twitch.tv (l'ancien est sorti dans les APK publiés). |
+| S2 | Partiel | Steam et TMDB inchangés (clés dédiées et révocables, documentées). Le proxy Steam reste possible via `STEAM_API_BASE_URL`. |
+| S3 | Fait | `lib/rateLimit.js` (20 créations/h, 30 jetons/h par client), plafond de 5 000 liens vivants, corps limité à 2 Mo. Tables créées sur Neon. |
+| S4 | Fait | `ValidationError` : seul un défaut de la charge utile renvoie son message. |
+| S5 | Fait | `CRON_SECRET` obligatoire pour `/api/purge` (à vérifier dans Vercel, sinon le cron reçoit 401 ; la purge tourne aussi à chaque création de lien). |
+| A1 | Fait | Un seul `OkHttpClient` de base, dérivé par `newBuilder()` (pool partagé). Pas de cache disque : les réponses de compte TMDB ne doivent pas être servies périmées. |
+| A2 | Fait | `AppContainer` (services `lazy`) ; `BacklogApplication` réduit à l'exposition des services. |
+| A3 | Fait | Les quatre plus gros écrans sont scindés en `…Screen.kt` (l'écran) et `…Parts.kt` / `SettingsRows.kt` (grilles, lignes, dialogues). |
+| A4 | Fait | `model/PersonalRanking` porte les règles communes ; `Ranking`, `MovieRanking`, `BookTop` y délèguent. |
+| A5 | Fait | `IgdbAuthenticator` : sur 401, jeton invalidé, signalé au serveur, requête rejouée une fois. |
+| A6 | Fait | `exportSchema = true` (schémas dans `app/schemas/`) et `MigrationChainTest` : une base version 1 migrée jusqu'à la version actuelle, schéma validé par Room, données conservées. |
+| B1 | Fait | R8 actif pour `release` et `github`, en mode prudent : le code de l'app est gardé tel quel, seules les bibliothèques sont réduites (`proguard-rules.pro`). **À essayer sur un téléphone** avant de fusionner sur `main`. |
+| B2–B4 | Reporté | Moshi codegen, montée de versions groupée et Baseline Profile : chacun mérite sa propre branche testée sur appareil. |
+| C1 | Fait | Workflow `server-tests.yml`. |
+| C2 | Fait | Chemins `../scripts/…` dans `server/package.json`. |
+| C3–C4 | Reporté | Nettoyage des pré-releases et couverture : confort, sans risque. |
+
 ## Points forts
 
 - **Une vraie discipline de migrations Room** : 11 versions, une migration par saut, plus jamais de `fallbackToDestructiveMigration` (`data/local/Migrations.kt`).
@@ -62,11 +85,10 @@ Classées par rapport utilité/effort, en s'appuyant sur ce qui existe déjà :
 
 1. **Scanner un code-barres ISBN** (Google Code Scanner de ML Kit, qui ne demande même pas la permission caméra) : la recherche par ISBN existe déjà, il ne manque que la saisie. Gros gain pour ajouter une pile de livres.
 2. **Imports CSV d'autres services** : Goodreads / StoryGraph (livres) et Letterboxd (films), qui exportent tous en CSV. Le moteur d'import CSV et la détection de doublons sont déjà là.
-3. **Liens de partage durables, en option** : 24 h est court pour un lien posté sur un forum ou un profil. Proposer « 24 h / 30 jours / permanent (republier met à jour) », avec la limite de débit de S3 en contrepartie.
-4. **Synchronisation entre appareils** (tablette + téléphone) : le serveur Neon existe déjà ; une sync « dernier écrit gagne » par élément, liée à un compte anonyme (jeton), est réaliste parce que `BacklogRepository` est la seule source de vérité.
-5. **Autres bibliothèques de jeux** : GOG, PlayStation ou Xbox (API à vérifier pour chacun, sinon import CSV) ; le modèle `LibraryProvider` est prévu pour.
-6. **Suivi des séries épisode par épisode** (ou import Trakt) : les alertes de nouveaux épisodes existent, l'état « saison/épisode vu » serait la suite naturelle.
-7. **Statistiques de temps** : avec la durée de jeu IGDB (`game_time_to_beats`) désormais affichée, estimer « temps pour finir mon backlog » et l'ajouter à « Mon année ».
+3. **Synchronisation entre appareils** (tablette + téléphone) : le serveur Neon existe déjà ; une sync « dernier écrit gagne » par élément, liée à un compte anonyme (jeton), est réaliste parce que `BacklogRepository` est la seule source de vérité.
+4. **Autres bibliothèques de jeux** : GOG, PlayStation ou Xbox (API à vérifier pour chacun, sinon import CSV) ; le modèle `LibraryProvider` est prévu pour.
+5. **Suivi des séries épisode par épisode** (ou import Trakt) : les alertes de nouveaux épisodes existent, l'état « saison/épisode vu » serait la suite naturelle.
+6. **Statistiques de temps** : avec la durée de jeu IGDB (`game_time_to_beats`) désormais affichée, estimer « temps pour finir mon backlog » et l'ajouter à « Mon année ».
 
 ## Plan conseillé
 

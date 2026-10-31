@@ -1,0 +1,28 @@
+name: Server tests
+
+# Le serveur de partage (server/) est déployé automatiquement par Vercel à chaque push :
+# ses tests doivent donc passer en CI avant tout merge.
+on:
+  push:
+    branches: ["**"]
+    paths: ["server/**", ".github/workflows/server-tests.yml"]
+  pull_request:
+    paths: ["server/**", ".github/workflows/server-tests.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci --no-audit --no-fund
+      - run: npm test

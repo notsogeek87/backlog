@@ -122,7 +122,7 @@ server/
 # Setup
 1. Copier app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example
    vers Secrets.kt
-2. Remplir les clés API (Twitch, Steam, TMDB)
+2. Remplir les clés API (Steam, TMDB) ; IGDB n'en demande aucune : le secret Twitch reste sur le serveur (`server/api/igdb-token.js`)
 3. Lancer dans Android Studio ou via ./gradlew
 
 # Commandes utiles

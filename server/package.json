@@ -5,8 +5,8 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "vibe:analyze": "node scripts/vibe-analyze.js",
-    "vibe:check": "node scripts/vibe-check.js"
+    "vibe:analyze": "node ../scripts/vibe-analyze.js",
+    "vibe:check": "node ../scripts/vibe-check.js"
   },
   "dependencies": { "@neondatabase/serverless": "^1.0.0" }
 }

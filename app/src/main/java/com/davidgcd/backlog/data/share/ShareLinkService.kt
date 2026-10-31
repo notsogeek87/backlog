@@ -168,7 +168,7 @@ class ShareLinkService(
     }
 
     companion object {
-        const val DEFAULT_BASE_URL = "https://library.lielu.eu"
+        const val DEFAULT_BASE_URL = com.davidgcd.backlog.config.Backend.BASE_URL
         const val MAX_OWNER_LENGTH = 40
         private val JSON = "application/json; charset=utf-8".toMediaType()
 

@@ -3,6 +3,9 @@
 **Pour qui / pourquoi** : contributeurs qui doivent savoir dans quel package vit chaque responsabilité (données, repository, UI, notifications, partage). Extrait de l'ancien README.
 
 
+- Racine — `AppContainer` : tous les services, créés au premier usage (`lazy`), avec un seul client
+  OkHttp de base (`newBuilder()` par service : un pool de connexions partagé). `BacklogApplication` ne fait
+  que l'exposer aux écrans et aux workers.
 - `model/` — `Game` (réponse IGDB), jamais persisté tel quel.
 - `data/local/` — `GameEntity` (ligne Room persistée), `GameDao`,
   `AppDatabase`, `GameJsonCache` (décode `genresJson`/`platformsJson` —
@@ -10,8 +13,9 @@
   `GameEntity`; les filtres du backlog et l'écran de détail passent par lui,
   jamais par un décodage ad hoc).
 - `data/remote/` — `IgdbApi` (requêtes Apicalypse en POST, jamais du
-  REST classique), `TwitchAuthApi` + `IgdbTokenProvider` (jeton
-  client-credentials mis en cache mémoire), `IgdbAuthInterceptor`,
+  REST classique), `IgdbTokenApi` + `IgdbTokenProvider` (jeton
+  Twitch demandé au serveur de l'app — le secret n'est jamais dans l'APK —, mis en cache mémoire),
+  `IgdbAuthInterceptor` + `IgdbAuthenticator` (sur un 401, jeton renouvelé et requête rejouée une fois),
   `SteamApi` (endpoint public `appreviews`, `purchase_type=all` forcé —
   voir `docs Steam` dans `SteamApi.kt`), `MetacriticApi` (scaffold, voir
   plus bas).
@@ -57,8 +61,8 @@
   Réglages, en erreur si le dossier n'est plus accessible). Désactiver libère la permission.
 - Classement personnel (`GameEntity.userRank`, migration 4→5, 1 = le plus aimé) : écran
   `ui/ranking/` (jeux seulement : glisser-déposer + tout en haut / tout en bas + « placer à la position N », ouvert depuis le menu « ⋮ » de la Bibliothèque), tri « Mon classement »,
-  colonne CSV `rank`. `model/Ranking` est le seul endroit qui ordonne (classés d'abord, puis non
-  classés par date d'ajout, archivés exclus). Le partage en tient compte : liste numérotée « Mon
+  colonne CSV `rank`. `model/Ranking` est le seul endroit qui ordonne les jeux (classés d'abord, puis non
+  classés par date d'ajout, archivés exclus) ; ces règles, communes à `MovieRanking` et `BookTop`, sont écrites une seule fois dans `model/PersonalRanking`. Le partage en tient compte : liste numérotée « Mon
   classement » en tête, sur la page publique comme dans le texte de repli ; les autres jeux restent
   groupés par statut. La synchro IGDB conserve le rang (`refreshAndDetectDrift`).
 - Lien public du backlog : `data/share/ShareLinkService` envoie un instantané (nom, statut,
@@ -113,7 +117,7 @@
 **Pour qui / pourquoi** : savoir d'où viennent les durées affichées sur la fiche d'un jeu.
 
 HowLongToBeat n'a pas d'API publique (le scraping est fragile et bloqué). La fiche jeu utilise donc
-l'endpoint officiel IGDB `game_time_to_beats`, avec le même jeton Twitch que le reste d'IGDB : aucune
+l'endpoint officiel IGDB `game_time_to_beats`, avec le même jeton IGDB (fourni par le serveur) que le reste d'IGDB : aucune
 clé supplémentaire.
 
 - `IgdbApi.gameTimeToBeats` → `IgdbService.getTimeToBeat(gameId)` → `BacklogRepository.timeToBeat`.

@@ -13,7 +13,7 @@ sur Android avec des briques Android natives.
 - **Room** pour la persistance locale (équivalent SwiftData) — `GameEntity`
   est la ligne persistée, `Game` est le modèle brut de réponse IGDB, comme
   sur l'app iOS (`GameEntity` vs `Game`)
-- **Retrofit + Moshi** pour IGDB (via l'API Twitch, client-credentials)
+- **Retrofit + Moshi** pour IGDB (via l'API Twitch ; le jeton est fourni par le serveur de l'app, le secret Twitch n'est jamais dans l'APK)
 - **Coil** pour le chargement/cache d'images de jaquettes
 - Pas de couche cloud/sync pour l'instant (choix du premier jet) : tout est
   local via Room. Un ajout futur type Firebase/backend perso pourra brancher
@@ -26,9 +26,9 @@ sur Android avec des briques Android natives.
    — il régénère automatiquement le wrapper Gradle (`gradlew`) au premier
    sync, pas besoin de l'installer à la main.
 2. Copier `app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example`
-   vers `Secrets.kt` (même dossier) et renseigner un client ID/secret Twitch
-   Developer (IGDB tourne sur l'API Twitch : https://api-docs.igdb.com).
-   Ce fichier est gitignored. Les notes Steam marchent sans rien remplir
+   vers `Secrets.kt` (même dossier). Ce fichier est gitignored. IGDB n'y demande
+   **rien** : le jeton Twitch vient du serveur de l'app (`/api/igdb-token`, voir
+   [serveur de partage](docs/api/share-server.md)), qui seul détient le secret. Les notes Steam marchent sans rien remplir
    (API publique) ; les notes Metacritic restent absentes tant que
    `METACRITIC_RAPIDAPI_HOST`/`_KEY` ne pointent pas vers un vrai
    fournisseur RapidAPI (voir le commentaire dans `Secrets.kt.example`).
