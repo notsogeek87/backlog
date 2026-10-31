@@ -13,7 +13,8 @@ import java.io.IOException
  * body (200), a status code, or throws to simulate being offline. Records every URL it was asked.
  */
 class FakeHttp(private val handler: (url: String) -> Any) {
-    val requests = mutableListOf<String>()
+    /** Thread-safe: a screen under test may fire several requests at once on IO threads while the test reads this. */
+    val requests: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
 
     val client: OkHttpClient = OkHttpClient.Builder().addInterceptor(Interceptor { chain ->
         val url = chain.request().url.toString()

@@ -63,11 +63,11 @@ class MovieDetailViewModelListsTest {
                 else -> "{}"
             }
         }
-        val repository = MovieRepository(FakeDao(), TmdbClient(http.client, "key", Sessions(signedIn)))
+        val repository = MovieRepository(FakeDao(), TmdbClient(http.client, "key", Sessions(signedIn), io = dispatcher))
         return MovieDetailViewModel("movie:603", repository) to http
     }
 
-    /** Drains the test scheduler until [done] holds; the fake network answers on real IO threads, so this polls briefly. */
+    /** Drains the test scheduler until [done] holds (the client runs on [dispatcher], so this settles at the first pass). */
     private fun TestScope.settle(done: () -> Boolean) {
         repeat(1000) {
             advanceUntilIdle()

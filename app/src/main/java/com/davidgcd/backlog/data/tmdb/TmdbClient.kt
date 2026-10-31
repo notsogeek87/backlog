@@ -8,6 +8,7 @@ import com.davidgcd.backlog.model.TitleKey
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -41,6 +42,8 @@ class TmdbClient(
     private val http: OkHttpClient,
     private val apiKey: String,
     private val sessions: TmdbSessionStore,
+    /** Where the blocking HTTP calls run; tests pass their own dispatcher so nothing outlives a test. */
+    private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val isConfigured: Boolean get() = apiKey.isNotBlank() && !apiKey.startsWith("YOUR_")
 
@@ -292,7 +295,7 @@ class TmdbClient(
         query: Map<String, String> = emptyMap(),
         body: JSONObject? = null,
         session: String? = null,
-    ): String = withContext(Dispatchers.IO) {
+    ): String = withContext(io) {
         if (!isConfigured) throw TmdbException(TmdbError.NOT_CONFIGURED)
         val url = "$HOST$path".toHttpUrl().newBuilder().apply {
             addQueryParameter("api_key", apiKey)
