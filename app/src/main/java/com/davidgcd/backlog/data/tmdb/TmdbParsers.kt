@@ -224,8 +224,19 @@ object TmdbParsers {
     /** `/{movie|tv}/{id}/account_states` → is the title in the user's watchlist? */
     fun parseInWatchlist(json: String): Boolean = runCatching { JSONObject(json).optBoolean("watchlist", false) }.getOrDefault(false)
 
-    /** `/list/{id}/item_status` → is the title in that list? */
-    fun parseItemPresent(json: String): Boolean = runCatching { JSONObject(json).optBoolean("item_present", false) }.getOrDefault(false)
+    /** `/list/{id}` → the keys (`movie:603`, `tv:1396`) of the titles on one page of that list; people and junk are skipped. */
+    fun parseListItemKeys(json: String): Set<String> {
+        val items = runCatching { JSONObject(json).optJSONArray("items") }.getOrNull() ?: return emptySet()
+        return items.objects().mapNotNull { o ->
+            val id = o.optLong("id", -1).takeIf { it > 0 } ?: return@mapNotNull null
+            val kind = when (o.optString("media_type")) {
+                "movie" -> TitleKind.MOVIE
+                "tv" -> TitleKind.SERIES
+                else -> return@mapNotNull null
+            }
+            "${TitleKey.prefix(kind)}:$id"
+        }.toSet()
+    }
 
     /** `/account` → id + username. */
     fun parseAccount(json: String): Pair<Long, String?>? {

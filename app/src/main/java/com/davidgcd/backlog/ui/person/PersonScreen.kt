@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.ui.moviedetail.LocalTmdbListsPrompt
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.glassTopAppBarColors
 import com.davidgcd.backlog.ui.movies.MediaTitleListItem
@@ -63,6 +64,7 @@ fun PersonScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val tmdbListsPrompt = LocalTmdbListsPrompt.current
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -147,6 +149,7 @@ fun PersonScreen(
                             saved = title.id in savedIds,
                             onAdd = {
                                 viewModel.add(title)
+                                tmdbListsPrompt?.show(title.id, title.title)
                                 scope.launch {
                                     snackbarHostState.currentSnackbarData?.dismiss()
                                     snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, title.title))

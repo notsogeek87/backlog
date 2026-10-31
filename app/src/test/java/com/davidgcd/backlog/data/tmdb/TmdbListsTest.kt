@@ -32,12 +32,19 @@ class TmdbListsTest {
     }
 
     @Test
-    fun `watchlist and list membership flags`() {
+    fun `watchlist flag`() {
         assertTrue(TmdbParsers.parseInWatchlist("""{"id":603,"watchlist":true,"rated":false}"""))
         assertFalse(TmdbParsers.parseInWatchlist("""{"id":603}"""))
         assertFalse(TmdbParsers.parseInWatchlist("garbage"))
-        assertTrue(TmdbParsers.parseItemPresent("""{"item_present":true}"""))
-        assertFalse(TmdbParsers.parseItemPresent("""{"item_present":false}"""))
+    }
+
+    @Test
+    fun `a list's content is read as film and series keys, people skipped`() {
+        val json = """{"id":8001,"page":1,"total_pages":1,"items":[
+          {"id":603,"media_type":"movie"},{"id":1396,"media_type":"tv"},
+          {"id":6193,"media_type":"person"},{"id":0,"media_type":"movie"},{"media_type":"tv"}]}"""
+        assertEquals(setOf("movie:603", "tv:1396"), TmdbParsers.parseListItemKeys(json))
+        assertTrue(TmdbParsers.parseListItemKeys("nope").isEmpty())
     }
 
     @Test
@@ -54,17 +61,19 @@ class TmdbListsTest {
     }
 
     @Test
-    fun `membership of a film and of a series asks TMDB with the right ids`() = runTest {
-        val http = FakeHttp { url -> if ("/account_states" in url) """{"watchlist":true}""" else """{"item_present":true}""" }
+    fun `a series in a list is found, which item_status could never say`() = runTest {
+        val http = FakeHttp { url ->
+            when {
+                "/account_states" in url -> """{"watchlist":true}"""
+                "page=2" in url -> """{"page":2,"total_pages":2,"items":[{"id":1396,"media_type":"tv"}]}"""
+                else -> """{"page":1,"total_pages":2,"items":[{"id":603,"media_type":"movie"}]}"""
+            }
+        }
         val c = client(http)
-        assertTrue(c.isInWatchlist("movie:603"))
-        assertTrue(c.isInList(8001, "tv:1396"))
-        assertTrue(http.requests[0].contains("/movie/603/account_states"))
-        val status = http.requests[1]
-        assertTrue(status, "/list/8001/item_status" in status && "media_id=1396" in status && "media_type=tv" in status)
-        assertFalse(status, "movie_id" in status)
-        client(http).isInList(8001, "movie:603")
-        assertTrue(http.requests[2].contains("movie_id=603"))
+        assertTrue(c.isInWatchlist("tv:1396"))
+        assertTrue(http.requests[0].contains("/tv/1396/account_states"))
+        assertEquals(setOf("movie:603", "tv:1396"), c.listItemKeys(8001))
+        assertTrue(http.requests.drop(1).all { "/list/8001?" in it && "session_id=s3ss10n" in it })
     }
 
     @Test
@@ -79,14 +88,14 @@ class TmdbListsTest {
 
     @Test
     fun `adding something already in the list counts as done`() = runTest {
-        val http = FakeHttp { url -> if ("/add_item" in url) 403 else """{"item_present":true}""" }
+        val http = FakeHttp { url -> if ("/add_item" in url) 403 else """{"page":1,"total_pages":1,"items":[{"id":603,"media_type":"movie"}]}""" }
         client(http).setInList(8001, "movie:603", true)
-        assertTrue(http.requests.any { "/item_status" in it })
+        assertTrue(http.requests.any { "/list/8001?" in it })
     }
 
     @Test
     fun `a refusal on a list the title is not in is still an error`() = runTest {
-        val http = FakeHttp { url -> if ("/add_item" in url) 403 else """{"item_present":false}""" }
+        val http = FakeHttp { url -> if ("/add_item" in url) 403 else """{"page":1,"total_pages":1,"items":[]}""" }
         try {
             client(http).setInList(8001, "movie:603", true)
             fail("expected a TmdbException")

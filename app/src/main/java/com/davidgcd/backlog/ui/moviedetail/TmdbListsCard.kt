@@ -80,7 +80,7 @@ fun TmdbListsCard(
 
 /** A pill that is a checkbox: ticked = the title is in that list. Ignores taps while its write is in flight. */
 @Composable
-private fun ListChip(text: String, checked: Boolean, busy: Boolean, onClick: () -> Unit) {
+internal fun ListChip(text: String, checked: Boolean, busy: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     Row(
         modifier = Modifier

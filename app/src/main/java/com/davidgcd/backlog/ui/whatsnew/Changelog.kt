@@ -29,7 +29,7 @@ object Changelog {
         ChangelogEntry(17, "Réviser mes notes", "Repasse un par un les jeux de ta bibliothèque, les films et séries vus et les livres lus pour remettre tes notes à jour, de la plus ancienne à la plus récente (carte « Réviser mes notes » sur l'accueil)."),
         ChangelogEntry(18, "Tes films envoyés vers TMDB", "En liant ton compte TMDB (Réglages → Mes plateformes), les films et séries déjà dans l'app y sont envoyés une fois : tes notes, et tes titres « À voir » dans la watchlist."),
         ChangelogEntry(19, "Durée de jeu", "Les fiches jeux affichent le temps pour finir l'histoire, avec les extras ou à 100 %, quand IGDB le connaît."),
-        ChangelogEntry(20, "Tes listes TMDB", "Sur la fiche d'un film ou d'une série, ajoute-le à ta watchlist TMDB ou à l'une de tes autres listes d'un toucher (compte TMDB lié dans Réglages → Mes plateformes)."),
+        ChangelogEntry(20, "Tes listes TMDB", "Sur la fiche d'un film ou d'une série, ajoute-le à ta watchlist TMDB ou à l'une de tes autres listes d'un toucher (compte TMDB lié dans Réglages → Mes plateformes). Après un « + », l'app te propose aussi de le ranger dans une de tes listes."),
     )
 
     /** Dernière entrée connue des versions d'avant ce journal : une mise à jour depuis celles-ci présente la suite. */

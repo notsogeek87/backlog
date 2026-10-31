@@ -227,12 +227,22 @@ class TmdbClient(
         return TmdbParsers.parseInWatchlist(call("GET", "/${TitleKey.prefix(kind)}/$id/account_states", session = s.sessionId))
     }
 
-    /** Whether [key] is in the list [listId]. */
-    suspend fun isInList(listId: Long, key: String): Boolean {
+    /**
+     * Every title of the list [listId], as keys (`movie:603`, `tv:1396`). Read from the list itself, page by page:
+     * TMDB's `item_status` only knows films, so it would never tick a series that is in the list.
+     */
+    suspend fun listItemKeys(listId: Long): Set<String> {
         val s = requireSession()
-        val (kind, id) = split(key) ?: return false
-        val body = call("GET", "/list/$listId/item_status", itemQuery(kind, id), session = s.sessionId)
-        return TmdbParsers.parseItemPresent(body)
+        val out = HashSet<String>()
+        var page = 1
+        var pages = 1
+        while (page <= pages && page <= MAX_PAGES) {
+            val body = call("GET", "/list/$listId", mapOf("page" to page.toString()), session = s.sessionId)
+            pages = TmdbParsers.totalPages(body)
+            out += TmdbParsers.parseListItemKeys(body)
+            page++
+        }
+        return out
     }
 
     /**
@@ -247,12 +257,9 @@ class TmdbClient(
             call("POST", "/list/$listId/${if (on) "add_item" else "remove_item"}", body = body, session = s.sessionId)
         } catch (e: TmdbException) {
             val refused = e.message?.let { it.startsWith("HTTP 403") || it.startsWith("HTTP 412") || it.startsWith("HTTP 404") } == true
-            if (!refused || isInList(listId, key) != on) throw e
+            if (!refused || (key in listItemKeys(listId)) != on) throw e
         }
     }
-
-    private fun itemQuery(kind: TitleKind, id: Long) =
-        mapOf("media_type" to TitleKey.prefix(kind), "media_id" to id.toString()) + if (kind == TitleKind.MOVIE) mapOf("movie_id" to id.toString()) else emptyMap()
 
     private fun split(key: String): Pair<TitleKind, Long>? {
         val kind = TitleKey.kind(key) ?: return null

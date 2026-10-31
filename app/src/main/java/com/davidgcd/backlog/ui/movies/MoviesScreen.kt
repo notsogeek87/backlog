@@ -66,6 +66,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.ui.moviedetail.LocalTmdbListsPrompt
 import com.davidgcd.backlog.data.local.MovieEntity
 import com.davidgcd.backlog.data.local.titleKind
 import com.davidgcd.backlog.data.local.watchStatus
@@ -134,6 +135,7 @@ fun MoviesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val tmdbListsPrompt = LocalTmdbListsPrompt.current
     val undoLabel = stringResource(R.string.action_undo)
 
     var query by remember { mutableStateOf("") }
@@ -392,6 +394,7 @@ fun MoviesScreen(
                     onAdd = { title ->
                         viewModel.add(title)
                         snack(context.getString(R.string.snackbar_added, title.title))
+                        tmdbListsPrompt?.show(title.id, title.title)
                     },
                     onClick = { onMovieClick(it.id) },
                     extra = { if (crossSearch != null && !isSearching) crossSearchItems(crossState, MediaType.MOVIES, crossSearch, onCrossAdded) },

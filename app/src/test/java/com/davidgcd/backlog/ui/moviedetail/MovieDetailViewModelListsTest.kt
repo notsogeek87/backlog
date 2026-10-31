@@ -50,16 +50,16 @@ class MovieDetailViewModelListsTest {
     @Before fun setMain() = Dispatchers.setMain(dispatcher)
     @After fun resetMain() = Dispatchers.resetMain()
 
-    /** Lists A (8001, already holds the film) and B (8002, empty); the watchlist is empty. [failWrites] makes TMDB refuse writes. */
+    /** Lists A (8001, already holds the film) and B (8002, empty), read from their content; the watchlist is empty. [failWrites] makes TMDB refuse writes. */
     private fun viewModel(signedIn: Boolean = true, failWrites: Boolean = false): Pair<MovieDetailViewModel, FakeHttp> {
         val http = FakeHttp { url ->
             when {
                 "/genre/" in url -> """{"genres":[]}"""
                 "/account/42/lists" in url -> """{"page":1,"total_pages":1,"results":[{"id":8001,"name":"A","item_count":1},{"id":8002,"name":"B","item_count":0}]}"""
                 "/account_states" in url -> """{"watchlist":false}"""
-                "/list/8001/item_status" in url -> """{"item_present":true}"""
-                "/list/8002/item_status" in url -> """{"item_present":false}"""
                 failWrites && ("/add_item" in url || "/remove_item" in url || "/watchlist" in url) -> 500
+                "/list/8001?" in url -> """{"page":1,"total_pages":1,"items":[{"id":603,"media_type":"movie"}]}"""
+                "/list/8002?" in url -> """{"page":1,"total_pages":1,"items":[]}"""
                 else -> "{}"
             }
         }

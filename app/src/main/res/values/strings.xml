@@ -142,6 +142,7 @@
     <string name="action_cancel">Annuler</string>
     <string name="action_save">Enregistrer</string>
     <string name="action_ok">OK</string>
+    <string name="action_done">Terminé</string>
     <string name="action_clear">Effacer</string>
     <string name="action_scroll_to_top">Retour en haut</string>
     <string name="action_copy">Copier</string>
@@ -437,6 +438,8 @@
     <string name="tmdb_error_unknown">Une erreur inattendue est survenue avec TMDB.</string>
     <string name="tmdb_lists_title">Mes listes TMDB</string>
     <string name="tmdb_lists_watchlist">Watchlist</string>
+    <string name="tmdb_lists_sheet_title">Ajouter « %1$s » à une liste TMDB ?</string>
+    <string name="tmdb_lists_sheet_hint">C\'est déjà dans ta watchlist. Coche les autres listes où le ranger.</string>
     <string name="tmdb_lists_none">Tu n\'as pas d\'autre liste sur TMDB : crée-en sur themoviedb.org, elles apparaîtront ici.</string>
     <string name="tmdb_lists_error">TMDB n\'a pas pu être mis à jour. Réessaie.</string>
     <string name="tmdb_attribution">Ce produit utilise l\'API TMDB mais n\'est ni approuvé ni certifié par TMDB.</string>

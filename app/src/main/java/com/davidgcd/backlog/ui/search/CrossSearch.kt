@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.ui.moviedetail.LocalTmdbListsPrompt
 import com.davidgcd.backlog.model.suggestedFor
 import com.davidgcd.backlog.ui.components.AddButton
 import com.davidgcd.backlog.data.repository.BacklogRepository
@@ -187,10 +188,11 @@ fun LazyListScope.crossSearchItems(
         item(key = "cross-movies-header") { SectionTitle(R.string.tab_movies) }
         items(state.movies.size, key = { "cross-movie-${state.movies[it].first.id}" }) { i ->
             val (title, saved) = state.movies[i]
+            val tmdbListsPrompt = LocalTmdbListsPrompt.current
             MediaTitleListItem(
                 title = title,
                 saved = saved,
-                onAdd = { vm.addMovie(title); onAdded(title.title) },
+                onAdd = { vm.addMovie(title); onAdded(title.title); tmdbListsPrompt?.show(title.id, title.title) },
                 onClick = { crossSearch.onMovieClick(title.id) },
             )
         }

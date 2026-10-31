@@ -43,6 +43,8 @@ class MovieRepository(
      */
     private val seen = ConcurrentHashMap<String, MediaTitle>()
 
+    private val listKeysCache = ConcurrentHashMap<Long, Pair<Long, Set<String>>>()
+
     fun observeAll(): Flow<List<MovieEntity>> = dao.observeAll()
 
     suspend fun allMovies(): List<MovieEntity> = dao.allMovies()
@@ -156,7 +158,7 @@ class MovieRepository(
                 val watchlist = async { tmdb.isInWatchlist(titleKey) }
                 val lists = tmdb.userLists().map { list ->
                     // One list that can't be checked must not hide the others: it shows as « not in it ».
-                    async { TmdbListEntry(list, try { tmdb.isInList(list.id, titleKey) } catch (e: TmdbException) { false }) }
+                    async { TmdbListEntry(list, try { titleKey in listKeys(list.id) } catch (e: TmdbException) { false }) }
                 }
                 TmdbListsState(watchlist.await(), lists.awaitAll())
             }
@@ -171,7 +173,18 @@ class MovieRepository(
     suspend fun setInTmdbWatchlist(titleKey: String, on: Boolean) = tmdb.setWatchlist(titleKey, on)
 
     /** Adds / removes the title from one of the user's TMDB lists; throws [TmdbException] on failure. */
-    suspend fun setInTmdbList(listId: Long, titleKey: String, on: Boolean) = tmdb.setInList(listId, titleKey, on)
+    suspend fun setInTmdbList(listId: Long, titleKey: String, on: Boolean) {
+        tmdb.setInList(listId, titleKey, on)
+        // Keep the cached content in step, so reopening a page right after shows the change.
+        listKeysCache[listId]?.let { (at, keys) -> listKeysCache[listId] = at to if (on) keys + titleKey else keys - titleKey }
+    }
+
+    /** What is in a list, read at most once every [LIST_CACHE_MS]: opening several pages in a row must not re-read every list. */
+    private suspend fun listKeys(listId: Long): Set<String> {
+        val now = System.currentTimeMillis()
+        listKeysCache[listId]?.let { (at, keys) -> if (now - at < LIST_CACHE_MS) return keys }
+        return tmdb.listItemKeys(listId).also { listKeysCache[listId] = now to it }
+    }
 
     /** Account write-backs never fail the local action: no session, no network or a TMDB hiccup is silently skipped. */
     private suspend fun bestEffort(block: suspend () -> Unit) {
@@ -221,3 +234,5 @@ fun MovieEntity.toMediaTitle() = MediaTitle(
     directors = directors,
     cast = cast,
 )
+
+private const val LIST_CACHE_MS = 2 * 60_000L

@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.davidgcd.backlog.R
+import com.davidgcd.backlog.ui.moviedetail.LocalTmdbListsPrompt
 import com.davidgcd.backlog.model.MovieChart
 import com.davidgcd.backlog.ui.components.GlassButton
 import com.davidgcd.backlog.ui.components.GlassPill
@@ -50,6 +51,7 @@ fun MovieDiscoverScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val tmdbListsPrompt = LocalTmdbListsPrompt.current
     val state by viewModel.state.collectAsState()
     val savedIds by viewModel.savedIds.collectAsState()
     val chart by viewModel.chart.collectAsState()
@@ -104,6 +106,7 @@ fun MovieDiscoverScreen(
                                 saved = title.id in savedIds,
                                 onAdd = {
                                     viewModel.add(title)
+                                    tmdbListsPrompt?.show(title.id, title.title)
                                     scope.launch {
                                         snackbarHostState.currentSnackbarData?.dismiss()
                                         snackbarHostState.showSnackbar(context.getString(R.string.snackbar_added, title.title))

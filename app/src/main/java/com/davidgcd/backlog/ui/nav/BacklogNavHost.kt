@@ -20,6 +20,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.davidgcd.backlog.model.Medium
 import com.davidgcd.backlog.ui.components.AppSnackbar
 import com.davidgcd.backlog.ui.components.LocalAppSnackbar
+import com.davidgcd.backlog.ui.moviedetail.LocalTmdbListsPrompt
+import com.davidgcd.backlog.ui.moviedetail.TmdbListsPrompt
+import com.davidgcd.backlog.ui.moviedetail.TmdbListsSheet
 import com.davidgcd.backlog.ui.components.SearchCarry
 import com.davidgcd.backlog.ui.components.SearchRequest
 import com.davidgcd.backlog.ui.home.HomeScreen
@@ -310,7 +313,13 @@ fun BacklogNavHost(
 
     // Wide windows (unfolded foldable, tablet, landscape) get a side rail; phones keep the bottom bar.
     // Measured from the real window width: LocalConfiguration goes stale since the activity handles its own configChanges.
-    CompositionLocalProvider(LocalAppSnackbar provides appSnackbar) {
+    // « Ajouter aussi à une liste TMDB » : any screen that adds a film / série asks for it through this prompt.
+    var tmdbPromptTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val tmdbListsPrompt = remember { TmdbListsPrompt { key, name -> tmdbPromptTarget = key to name } }
+    CompositionLocalProvider(LocalAppSnackbar provides appSnackbar, LocalTmdbListsPrompt provides tmdbListsPrompt) {
+    tmdbPromptTarget?.let { (key, name) ->
+        TmdbListsSheet(movieRepository, key, name, onDismiss = { tmdbPromptTarget = null })
+    }
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val useRail = maxWidth >= RAIL_MIN_WIDTH_DP.dp
     Row(modifier = Modifier.fillMaxSize()) {
