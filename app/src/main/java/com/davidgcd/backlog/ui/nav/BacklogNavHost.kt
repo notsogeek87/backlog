@@ -253,7 +253,7 @@ fun BacklogNavHost(
         LibrarySharer(repository, movieRepository, bookRepository, shareLinkService)
     }
     // Library and Discover share the media being browsed (games / films & séries / books); it survives rotation and tab switches.
-    var libraryMedia by rememberSaveable { mutableStateOf(MediaType.GAMES) }
+    var libraryMedia by rememberSaveable { mutableStateOf(MediaType.MOVIES) }
     // A search asked from outside a list (home, app shortcut, shared text); the list of that media consumes it once.
     var searchRequest by remember { mutableStateOf<SearchRequest?>(null) }
     val searchCarry = remember { SearchCarry() }
