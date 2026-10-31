@@ -2,29 +2,14 @@ package com.davidgcd.backlog.model
 
 import com.davidgcd.backlog.data.local.GameEntity
 
-/**
- * The personal ranking, first = most loved. Ranked games come first ordered by rank, then the
- * not-yet-ranked ones in the order they were added — so a game added later simply joins the end.
- * Archived games never take part.
- */
+/** The personal ranking of games ([PersonalRanking] rules). Archived games never take part. */
 object Ranking {
-    fun order(games: List<GameEntity>): List<GameEntity> {
-        val active = games.filter { !it.isArchived }
-        val ranked = active.filter { it.userRank != null }.sortedWith(compareBy({ it.userRank }, { it.addedAt }))
-        val unranked = active.filter { it.userRank == null }.sortedBy { it.addedAt }
-        return ranked + unranked
-    }
+    fun order(games: List<GameEntity>): List<GameEntity> =
+        PersonalRanking.order(games.filter { !it.isArchived }, { it.userRank }, { it.addedAt })
 
-    /** Moves the game at [index] by [delta] places (-1 = up), or returns the list unchanged at either end. */
-    fun move(ordered: List<GameEntity>, index: Int, delta: Int): List<GameEntity> = moveTo(ordered, index, index + delta)
+    fun move(ordered: List<GameEntity>, index: Int, delta: Int): List<GameEntity> = PersonalRanking.move(ordered, index, delta)
 
-    /** Puts the game at [index] at position [target] (0 = first), or returns the list unchanged if nothing moves. */
-    fun moveTo(ordered: List<GameEntity>, index: Int, target: Int): List<GameEntity> {
-        if (index !in ordered.indices || target !in ordered.indices || index == target) return ordered
-        return ordered.toMutableList().also { list -> list.add(target, list.removeAt(index)) }
-    }
+    fun moveTo(ordered: List<GameEntity>, index: Int, target: Int): List<GameEntity> = PersonalRanking.moveTo(ordered, index, target)
 
-    /** Ranks 1..n for the new order, only for the games whose rank actually changes. */
-    fun changes(newOrder: List<GameEntity>): Map<Long, Int> =
-        newOrder.mapIndexedNotNull { i, game -> (i + 1).takeIf { it != game.userRank }?.let { game.igdbId to it } }.toMap()
+    fun changes(newOrder: List<GameEntity>): Map<Long, Int> = PersonalRanking.changes(newOrder, { it.userRank }, { it.igdbId })
 }

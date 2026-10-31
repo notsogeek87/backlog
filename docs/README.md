@@ -18,6 +18,7 @@
 - [Architecture de l'app (MVVM)](architecture/overview.md)
 - [Design system « Glass night »](architecture/design-system.md)
 - [Audit UX/UI (octobre 2026)](architecture/ux-audit.md)
+- [Audit technique (octobre 2026)](architecture/audit-technique.md)
 - ADR : [import de bibliothèques de jeux](architecture/2026-09-29-library-providers.md) · [films et séries TMDB](architecture/2026-09-30-films-series-tmdb.md) · [livres Open Library](architecture/2026-10-01-livres-open-library.md)
 
 ### API

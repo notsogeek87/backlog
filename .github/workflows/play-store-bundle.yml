@@ -43,13 +43,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Provide placeholder API secrets (CI has none — Twitch calls are not exercised at build time)
+      - name: Provide placeholder API secrets (CI has none; IGDB needs no app-side secret)
         run: |
           mkdir -p app/src/main/java/com/davidgcd/backlog/config
           if [ ! -f app/src/main/java/com/davidgcd/backlog/config/Secrets.kt ]; then
-            sed 's/YOUR_TWITCH_CLIENT_ID/ci-placeholder/; s/YOUR_TWITCH_CLIENT_SECRET/ci-placeholder/' \
-              app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example \
-              > app/src/main/java/com/davidgcd/backlog/config/Secrets.kt
+            cp app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example \
+              app/src/main/java/com/davidgcd/backlog/config/Secrets.kt
           fi
 
       - name: Set up Gradle

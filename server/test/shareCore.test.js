@@ -189,3 +189,9 @@ test('book pages may link to an Open Library edition by ISBN, but not to anythin
   assert.equal(urlOf('https://openlibrary.org/isbn/978220?x=1'), null);
   assert.equal(urlOf('https://evil.example/isbn/9782070368228'), null);
 });
+
+test('validation failures are ValidationError, safe to send back to the client', async () => {
+  const { ValidationError } = await import('../lib/shareCore.js');
+  assert.throws(() => validatePayload(null), ValidationError);
+  assert.throws(() => validatePayload({ items: [{ name: '' }] }), ValidationError);
+});

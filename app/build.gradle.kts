@@ -16,6 +16,12 @@ val appVersionBase = providers.gradleProperty("appVersionBase").get()
 val releaseKeystore = System.getenv("ANDROID_KEYSTORE_FILE")
 val hasReleaseKeystore = releaseKeystore != null && file(releaseKeystore).exists()
 
+// Room écrit le schéma JSON de chaque version dans app/schemas/ (versionné) : trace de chaque migration,
+// et base des tests de migration à venir (MigrationChainTest joue déjà la chaîne 1 → actuelle).
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
     namespace = "com.davidgcd.backlog"
     compileSdk = 35
@@ -67,7 +73,10 @@ android {
             // Build Play Store : Google Play gère les mises à jour (et REQUEST_INSTALL_PACKAGES y est retiré,
             // voir src/release/AndroidManifest.xml).
             buildConfigField("boolean", "SELF_UPDATE", "false")
-            isMinifyEnabled = false
+            // R8 : réduit les bibliothèques (icônes étendues, kotlin-reflect…) ; le code de l'app est gardé
+            // intact (voir proguard-rules.pro). Le buildType github hérite de ce réglage (initWith).
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasReleaseKeystore) {
                 signingConfig = signingConfigs.getByName("release")

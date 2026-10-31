@@ -1,5 +1,13 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
+/** A client mistake in the payload: its message is safe to send back (400). Anything else is a server error. */
+export class ValidationError extends Error {}
+
+/** Live links (all owners) above which new ones are refused, so a flood cannot fill the database. */
+export const MAX_LIVE_SHARES = 5000;
+/** Largest accepted JSON body (2 000 titles × 3 tabs fit well below). */
+export const MAX_BODY_BYTES = 2_000_000;
+
 export const STATUSES = ['BACKLOG', 'PLAYED', 'COMPLETED'];
 export const STATUS_LABELS = { BACKLOG: 'Backlog', PLAYED: 'Joué', COMPLETED: 'Terminé' };
 export const MAX_ITEMS = 2000;
@@ -39,7 +47,7 @@ export const IMAGE_ID = /^[a-z0-9]{1,40}$/i;
 function validateMovieItems(rawItems) {
   return rawItems.map((raw) => {
     const name = typeof raw?.name === 'string' ? raw.name.trim().slice(0, 200) : '';
-    if (!name) throw new Error('titre manquant');
+    if (!name) throw new ValidationError('titre manquant');
     const poster = typeof raw.posterUrl === 'string' ? TMDB_POSTER.exec(raw.posterUrl) : null;
     return {
       name,
@@ -56,7 +64,7 @@ function validateMovieItems(rawItems) {
 function validateBookItems(rawItems) {
   return rawItems.map((raw) => {
     const name = typeof raw?.name === 'string' ? raw.name.trim().slice(0, 200) : '';
-    if (!name) throw new Error('titre manquant');
+    if (!name) throw new ValidationError('titre manquant');
     return {
       name,
       authors: typeof raw.authors === 'string' ? raw.authors.trim().slice(0, 200) : '',
@@ -73,7 +81,7 @@ function validateBookItems(rawItems) {
 function validateGameItems(rawItems) {
   return rawItems.map((raw) => {
     const name = typeof raw?.name === 'string' ? raw.name.trim().slice(0, 200) : '';
-    if (!name) throw new Error('nom de jeu manquant');
+    if (!name) throw new ValidationError('nom de jeu manquant');
     return {
       name,
       status: STATUSES.includes(raw.status) ? raw.status : 'BACKLOG',
@@ -97,7 +105,7 @@ function validateLibrary(body) {
   const movies = section(body.movies);
   // Older app versions send no books section: it is simply empty.
   const books = section(body.books);
-  if (games.length > MAX_ITEMS || movies.length > MAX_ITEMS || books.length > MAX_ITEMS) throw new Error('trop de titres');
+  if (games.length > MAX_ITEMS || movies.length > MAX_ITEMS || books.length > MAX_ITEMS) throw new ValidationError('trop de titres');
   return {
     kind: 'library',
     title: cleanTitle(body, 'Ma librairie'),
@@ -108,18 +116,18 @@ function validateLibrary(body) {
   };
 }
 
-/** Returns a cleaned payload, or throws Error(message) — never trusts anything the client sent. */
+/** Returns a cleaned payload, or throws ValidationError(message) — never trusts anything the client sent. */
 export function validatePayload(body) {
-  if (!body || typeof body !== 'object') throw new Error('items manquant');
+  if (!body || typeof body !== 'object') throw new ValidationError('items manquant');
   if (body.kind === 'library') return validateLibrary(body);
-  if (!Array.isArray(body.items)) throw new Error('items manquant');
-  if (body.items.length > MAX_ITEMS) throw new Error('trop de titres');
+  if (!Array.isArray(body.items)) throw new ValidationError('items manquant');
+  if (body.items.length > MAX_ITEMS) throw new ValidationError('trop de titres');
   if (body.kind === 'books') {
     return { kind: 'books', title: cleanTitle(body, 'Mes livres'), owner: cleanOwner(body), items: validateBookItems(body.items) };
   }
   if (body.kind === 'book') {
     // One book to show off: a page of its own, never a list.
-    if (body.items.length !== 1) throw new Error('un seul livre attendu');
+    if (body.items.length !== 1) throw new ValidationError('un seul livre attendu');
     return { kind: 'book', title: cleanTitle(body, 'Un livre'), owner: cleanOwner(body), items: validateBookItems(body.items) };
   }
   if (body.kind === 'movies') {

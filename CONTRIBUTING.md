@@ -4,7 +4,7 @@
 
 ## Démarrer
 1. Ouvrir le dossier dans Android Studio (JDK 17), laisser Gradle synchroniser.
-2. Copier `app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example` vers `Secrets.kt` (gitignored) et renseigner les clés (Twitch/IGDB obligatoire, `STEAM_API_KEY`, TMDB…). Détails dans le [README](README.md#démarrer).
+2. Copier `app/src/main/java/com/davidgcd/backlog/config/Secrets.kt.example` vers `Secrets.kt` (gitignored) et renseigner les clés (`STEAM_API_KEY`, TMDB… ; IGDB n'en demande aucune, son jeton vient du serveur). Détails dans le [README](README.md#démarrer).
 3. Lancer sur un émulateur ou un appareil (minSdk 26).
 
 ## Vérifier avant de pousser
