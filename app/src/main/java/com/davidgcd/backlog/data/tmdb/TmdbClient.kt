@@ -34,9 +34,14 @@ class TmdbException(val error: TmdbError, message: String? = null, cause: Throwa
     Exception(message ?: error.name, cause)
 
 /**
- * The official TMDB v3 API (https://developer.themoviedb.org): search, details, popular / top-rated
- * lists, and — with the session a user grants through TMDB's own approval page — their watchlist and
- * ratings, read and written. Parsing lives in [TmdbParsers]; this class only fetches.
+ * The official TMDB API (https://developer.themoviedb.org): search, details, popular / top-rated
+ * lists, and — with the access a user grants through TMDB's own approval page — their watchlist,
+ * ratings and lists, read and written. Parsing lives in [TmdbParsers]; this class only fetches.
+ *
+ * Almost everything goes through v3. Writing to the user's own lists goes through v4: v3's
+ * `/list/{id}/add_item` only knows films and would put the film with the same number in the list
+ * instead of a series (`tv:74415` → `movie:74415`). With a [readAccessToken], the sign-in uses v4 (one
+ * approval gives a v4 access token, converted into the v3 session for the rest).
  */
 class TmdbClient(
     private val http: OkHttpClient,
@@ -44,8 +49,13 @@ class TmdbClient(
     private val sessions: TmdbSessionStore,
     /** Where the blocking HTTP calls run; tests pass their own dispatcher so nothing outlives a test. */
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    /** TMDB's « API Read Access Token » (v4 auth); empty or the placeholder = v3 sign-in, no series in lists. */
+    private val readAccessToken: String = "",
 ) {
     val isConfigured: Boolean get() = apiKey.isNotBlank() && !apiKey.startsWith("YOUR_")
+
+    /** Whether the sign-in can use v4, the only way to put a series in one of the user's lists. */
+    val usesV4: Boolean get() = readAccessToken.isNotBlank() && !readAccessToken.startsWith("YOUR_")
 
     @Volatile private var genreCache: Map<Int, String>? = null
 
@@ -130,23 +140,43 @@ class TmdbClient(
 
     // --- sign-in (TMDB's request-token flow: the user approves on themoviedb.org) --------------
 
-    /** Step 1: a token to send the user to [approvalUrl] with. */
-    suspend fun newRequestToken(): String =
-        TmdbParsers.stringField(call("GET", "/authentication/token/new"), "request_token")
-            ?: throw TmdbException(TmdbError.UNAVAILABLE, "no request_token")
+    /** Step 1: a token to send the user to [approvalUrl] with; v4 already needs [redirectTo] here. */
+    suspend fun newRequestToken(redirectTo: String): String {
+        val body = if (usesV4) {
+            call("POST", "/auth/request_token", body = JSONObject().put("redirect_to", redirectTo), bearer = readAccessToken)
+        } else {
+            call("GET", "/authentication/token/new")
+        }
+        return TmdbParsers.stringField(body, "request_token") ?: throw TmdbException(TmdbError.UNAVAILABLE, "no request_token")
+    }
 
     fun approvalUrl(requestToken: String, redirectTo: String): String =
-        "https://www.themoviedb.org/authenticate/$requestToken?redirect_to=${java.net.URLEncoder.encode(redirectTo, "UTF-8")}"
+        if (usesV4) {
+            "https://www.themoviedb.org/auth/access?request_token=${java.net.URLEncoder.encode(requestToken, "UTF-8")}"
+        } else {
+            "https://www.themoviedb.org/authenticate/$requestToken?redirect_to=${java.net.URLEncoder.encode(redirectTo, "UTF-8")}"
+        }
 
-    /** Step 3, once the user approved: trades the token for a session and remembers it. */
+    /** Step 3, once the user approved: trades the token for a session (and, in v4, an access token) and remembers it. */
     suspend fun createSession(requestToken: String): TmdbSession {
-        val sessionId = TmdbParsers.stringField(
-            call("POST", "/authentication/session/new", body = JSONObject().put("request_token", requestToken)),
-            "session_id",
-        ) ?: throw TmdbException(TmdbError.NOT_SIGNED_IN, "no session_id")
+        val accessToken = if (usesV4) {
+            TmdbParsers.stringField(
+                call("POST", "/auth/access_token", body = JSONObject().put("request_token", requestToken), bearer = readAccessToken),
+                "access_token",
+            ) ?: throw TmdbException(TmdbError.NOT_SIGNED_IN, "no access_token")
+        } else {
+            null
+        }
+        val sessionBody = if (accessToken != null) {
+            call("POST", "/authentication/session/convert/4", body = JSONObject().put("access_token", accessToken))
+        } else {
+            call("POST", "/authentication/session/new", body = JSONObject().put("request_token", requestToken))
+        }
+        val sessionId = TmdbParsers.stringField(sessionBody, "session_id")
+            ?: throw TmdbException(TmdbError.NOT_SIGNED_IN, "no session_id")
         val (accountId, username) = TmdbParsers.parseAccount(call("GET", "/account", session = sessionId))
             ?: throw TmdbException(TmdbError.UNAVAILABLE, "no account")
-        return TmdbSession(sessionId, accountId, username).also { sessions.save(it) }
+        return TmdbSession(sessionId, accountId, username, accessToken).also { sessions.save(it) }
     }
 
     suspend fun currentSession(): TmdbSession? = sessions.get()
@@ -158,6 +188,13 @@ class TmdbClient(
                 call("DELETE", "/authentication/session", body = JSONObject().put("session_id", s.sessionId))
             } catch (e: TmdbException) {
                 // Forgetting it locally is what matters.
+            }
+            if (s.accessToken != null && usesV4) {
+                try {
+                    call("DELETE", "/auth/access_token", body = JSONObject().put("access_token", s.accessToken), bearer = readAccessToken)
+                } catch (e: TmdbException) {
+                    // Same.
+                }
             }
         }
         sessions.clear()
@@ -267,13 +304,26 @@ class TmdbClient(
     /**
      * Adds / removes [key] from the list [listId]. Adding something already there (TMDB answers with an error
      * for a duplicate) counts as done, as does removing something already gone.
+     *
+     * Through v4 when the session has an access token: v3 only knows films and would write the film with the
+     * same number. Without one (signed in before v4, or a build without the read token), a series is refused
+     * with [TmdbError.NOT_SIGNED_IN] — signing in again fixes it — rather than writing the wrong title.
      */
     suspend fun setInList(listId: Long, key: String, on: Boolean) {
         val s = requireSession()
         val (kind, id) = split(key) ?: return
-        val body = JSONObject().put("media_type", TitleKey.prefix(kind)).put("media_id", id)
+        val accessToken = s.accessToken
+        if (accessToken == null && kind == TitleKind.SERIES) throw TmdbException(TmdbError.NOT_SIGNED_IN, "series in a list needs v4")
         try {
-            call("POST", "/list/$listId/${if (on) "add_item" else "remove_item"}", body = body, session = s.sessionId)
+            if (accessToken != null) {
+                val item = JSONObject().put("media_type", TitleKey.prefix(kind)).put("media_id", id)
+                val body = JSONObject().put("items", org.json.JSONArray().put(item))
+                val answer = call(if (on) "POST" else "DELETE", "/list/$listId/items", body = body, bearer = accessToken)
+                // v4 answers 200 even when an item failed; its own `success` says whether this one was written.
+                if (!TmdbParsers.parseV4ItemsSuccess(answer)) throw TmdbException(TmdbError.UNAVAILABLE, "HTTP 412 v4 item refused")
+            } else {
+                call("POST", "/list/$listId/${if (on) "add_item" else "remove_item"}", body = JSONObject().put("media_id", id), session = s.sessionId)
+            }
         } catch (e: TmdbException) {
             val refused = e.message?.let { it.startsWith("HTTP 403") || it.startsWith("HTTP 412") || it.startsWith("HTTP 404") } == true
             if (!refused || (key in listItemKeys(listId)) != on) throw e
@@ -295,25 +345,32 @@ class TmdbClient(
         query: Map<String, String> = emptyMap(),
         body: JSONObject? = null,
         session: String? = null,
+        /** Set for a v4 call: the token sent as `Authorization: Bearer` (read token, or the user's access token). */
+        bearer: String? = null,
     ): String = withContext(io) {
         if (!isConfigured) throw TmdbException(TmdbError.NOT_CONFIGURED)
-        val url = "$HOST$path".toHttpUrl().newBuilder().apply {
-            addQueryParameter("api_key", apiKey)
-            addQueryParameter("language", "fr-FR")
+        val url = "${if (bearer != null) HOST_V4 else HOST}$path".toHttpUrl().newBuilder().apply {
+            if (bearer == null) {
+                addQueryParameter("api_key", apiKey)
+                addQueryParameter("language", "fr-FR")
+            }
             session?.let { addQueryParameter("session_id", it) }
             query.forEach { (k, v) -> addQueryParameter(k, v) }
         }.build()
         val request = Request.Builder().url(url).method(
             method,
             if (method == "GET") null else (body ?: JSONObject()).toString().toRequestBody(JSON),
-        ).build()
+        ).apply { bearer?.let { header("Authorization", "Bearer $it") } }.build()
         try {
             http.newCall(request).execute().use { response ->
                 val text = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
                     throw when {
-                        // 401 = invalid key, or (with a session) a session the user revoked.
-                        response.code == 401 -> TmdbException(if (session != null) TmdbError.NOT_SIGNED_IN else TmdbError.NOT_CONFIGURED, "HTTP 401")
+                        // 401 = invalid key / read token, or (with a session or a user's v4 token) access the user revoked.
+                        response.code == 401 -> {
+                            val userCredential = session != null || (bearer != null && bearer != readAccessToken)
+                            TmdbException(if (userCredential) TmdbError.NOT_SIGNED_IN else TmdbError.NOT_CONFIGURED, "HTTP 401")
+                        }
                         else -> TmdbException(TmdbError.UNAVAILABLE, "HTTP ${response.code} $path")
                     }
                 }
@@ -328,6 +385,7 @@ class TmdbClient(
 
     private companion object {
         const val HOST = "https://api.themoviedb.org/3"
+        const val HOST_V4 = "https://api.themoviedb.org/4"
         const val MAX_PAGES = 25
         val JSON = "application/json; charset=utf-8".toMediaType()
     }

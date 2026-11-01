@@ -206,7 +206,8 @@ private fun TmdbWebView(url: String, onRedirect: (approved: Boolean) -> Unit) {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         val target = request.url
                         if (target.toString().startsWith(TmdbLoginViewModel.REDIRECT_URL)) {
-                            onRedirect(target.getQueryParameter("approved") == "true")
+                            // v3 adds approved=true / denied=true; v4 just comes back, and the token exchange then says whether it was approved.
+                            onRedirect(target.getQueryParameter("denied") != "true" && target.getQueryParameter("approved") != "false")
                             return true // never actually load the return address
                         }
                         return false

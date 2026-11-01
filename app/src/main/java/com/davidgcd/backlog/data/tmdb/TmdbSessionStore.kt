@@ -6,8 +6,11 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 
-/** The signed-in TMDB user: [sessionId] is the credential every account call needs, so it never leaves the device. */
-data class TmdbSession(val sessionId: String, val accountId: Long, val username: String?)
+/**
+ * The signed-in TMDB user: [sessionId] is the credential every v3 account call needs, so it never leaves the device.
+ * [accessToken] is the v4 one (writing a series to a list); null for a session opened before v4 sign-in.
+ */
+data class TmdbSession(val sessionId: String, val accountId: Long, val username: String?, val accessToken: String? = null)
 
 interface TmdbSessionStore {
     suspend fun get(): TmdbSession?
@@ -26,7 +29,12 @@ class FileTmdbSessionStore(context: Context) : TmdbSessionStore {
     override suspend fun get(): TmdbSession? = withContext(Dispatchers.IO) {
         runCatching {
             val o = JSONObject(file.readText())
-            TmdbSession(o.getString("session_id"), o.getLong("account_id"), o.optString("username").ifEmpty { null })
+            TmdbSession(
+                o.getString("session_id"),
+                o.getLong("account_id"),
+                o.optString("username").ifEmpty { null },
+                o.optString("access_token").ifEmpty { null },
+            )
         }.getOrNull()
     }
 
@@ -36,6 +44,7 @@ class FileTmdbSessionStore(context: Context) : TmdbSessionStore {
                 .put("session_id", session.sessionId)
                 .put("account_id", session.accountId)
                 .put("username", session.username ?: "")
+                .put("access_token", session.accessToken ?: "")
                 .toString(),
         )
     }

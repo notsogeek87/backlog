@@ -31,6 +31,7 @@ object Changelog {
         ChangelogEntry(19, "Durée de jeu", "Les fiches jeux affichent le temps pour finir l'histoire, avec les extras ou à 100 %, quand IGDB le connaît."),
         ChangelogEntry(20, "Tes listes TMDB", "Sur la fiche d'un film ou d'une série, ajoute-le à ta watchlist TMDB ou à l'une de tes autres listes d'un toucher (compte TMDB lié dans Réglages → Mes plateformes). Après un « + », l'app te propose aussi de le ranger dans une de tes listes."),
         ChangelogEntry(21, "Filtrer par liste TMDB", "Dans Films & séries, le filtre « Liste TMDB » montre seulement ta watchlist ou une de tes listes. Les titres de tes listes TMDB arrivent aussi tout seuls dans ta bibliothèque."),
+        ChangelogEntry(22, "Séries dans tes listes TMDB", "Ranger une série dans une de tes listes TMDB ajoutait par erreur un film qui porte le même numéro. C'est corrigé : déconnecte puis reconnecte ton compte TMDB (Réglages → Mes plateformes) pour en profiter, et retire de tes listes les films ajoutés par erreur."),
     )
 
     /** Dernière entrée connue des versions d'avant ce journal : une mise à jour depuis celles-ci présente la suite. */

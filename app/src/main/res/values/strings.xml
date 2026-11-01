@@ -447,7 +447,7 @@
     <string name="filter_tmdb_list">Liste TMDB</string>
     <string name="filter_tmdb_list_all">Toutes</string>
     <string name="tmdb_lists_none">Tu n\'as pas d\'autre liste sur TMDB : crée-en sur themoviedb.org, elles apparaîtront ici.</string>
-    <string name="tmdb_lists_error">TMDB n\'a pas pu être mis à jour. Réessaie.</string>
+    <string name="tmdb_lists_error">TMDB n\'a pas pu être mis à jour. Réessaie, ou reconnecte ton compte TMDB (Réglages → Mes plateformes).</string>
     <string name="tmdb_attribution">Ce produit utilise l\'API TMDB mais n\'est ni approuvé ni certifié par TMDB.</string>
     <string name="tmdb_reconnect">Me reconnecter</string>
     <string name="welcome_platforms_title">Connecte tes services</string>

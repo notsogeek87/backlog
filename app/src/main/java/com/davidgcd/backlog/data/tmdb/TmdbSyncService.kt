@@ -37,7 +37,7 @@ class TmdbSyncService(
 
     /** Step 1 of the sign-in: the TMDB approval page to open, and the token to finish with afterwards. */
     suspend fun startLogin(redirectTo: String): Pair<String, String> {
-        val token = client.newRequestToken()
+        val token = client.newRequestToken(redirectTo)
         return token to client.approvalUrl(token, redirectTo)
     }
 

@@ -211,6 +211,17 @@ object TmdbParsers {
             ?.let { Trailer(it.optString("key"), isFrench = it.optString("iso_639_1") == "fr") }
     }
 
+    /**
+     * A v4 `/list/{id}/items` answer: `{"success":true,"results":[{"media_type":"tv","media_id":1,"success":false}]}`.
+     * True only when the call and every item went through; an answer without `results` relies on `success` alone.
+     */
+    fun parseV4ItemsSuccess(json: String): Boolean {
+        val o = runCatching { JSONObject(json) }.getOrNull() ?: return false
+        if (!o.optBoolean("success", false)) return false
+        val results = o.optJSONArray("results") ?: return true
+        return results.objects().all { it.optBoolean("success", false) }
+    }
+
     /** `{"request_token":"…"}` / `{"session_id":"…"}` style single-string fields. */
     fun stringField(json: String, field: String): String? =
         runCatching { JSONObject(json).optString(field).ifEmpty { null } }.getOrNull()

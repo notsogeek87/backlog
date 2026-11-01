@@ -113,6 +113,83 @@ class TmdbListsTest {
         }
     }
 
+    private val v4Session = TmdbSession("s3ss10n", accountId = 42, username = "lea", accessToken = "us3r-v4")
+
+    @Test
+    fun `with a v4 token a series goes to the list as a series, through v4`() = runTest {
+        val http = FakeHttp { """{"success":true,"results":[{"media_type":"tv","media_id":74415,"success":true}]}""" }
+        val c = client(http, FakeSessions(v4Session))
+        c.setInList(8001, "tv:74415", true)
+        c.setInList(8001, "tv:74415", false)
+        assertEquals(2, http.requests.size)
+        assertTrue(http.requests.all { it.startsWith("https://api.themoviedb.org/4/list/8001/items") })
+        assertTrue(http.requests.none { "add_item" in it || "remove_item" in it || "api_key=" in it })
+    }
+
+    @Test
+    fun `without a v4 token a series is refused before anything is written`() = runTest {
+        val http = FakeHttp { "{}" }
+        try {
+            client(http).setInList(8001, "tv:74415", true)
+            fail("expected a TmdbException")
+        } catch (e: TmdbException) {
+            assertEquals(TmdbError.NOT_SIGNED_IN, e.error)
+        }
+        assertTrue(http.requests.isEmpty())
+    }
+
+    @Test
+    fun `a v4 item already in the list counts as done`() = runTest {
+        val http = FakeHttp { url ->
+            if ("/4/list/" in url) """{"success":true,"results":[{"media_type":"tv","media_id":1396,"success":false}]}"""
+            else """{"page":1,"total_pages":1,"items":[{"id":1396,"media_type":"tv"}]}"""
+        }
+        client(http, FakeSessions(v4Session)).setInList(8001, "tv:1396", true)
+        assertTrue(http.requests.any { "/3/list/8001?" in it })
+    }
+
+    @Test
+    fun `v4 items answer`() {
+        assertTrue(TmdbParsers.parseV4ItemsSuccess("""{"success":true,"results":[{"success":true}]}"""))
+        assertTrue(TmdbParsers.parseV4ItemsSuccess("""{"success":true}"""))
+        assertFalse(TmdbParsers.parseV4ItemsSuccess("""{"success":true,"results":[{"success":false}]}"""))
+        assertFalse(TmdbParsers.parseV4ItemsSuccess("""{"success":false}"""))
+        assertFalse(TmdbParsers.parseV4ItemsSuccess("nope"))
+    }
+
+    @Test
+    fun `the v4 sign-in turns the access token into the v3 session and keeps both`() = runTest {
+        var saved: TmdbSession? = null
+        val store = object : TmdbSessionStore {
+            override suspend fun get() = saved
+            override suspend fun save(session: TmdbSession) { saved = session }
+            override suspend fun clear() { saved = null }
+        }
+        val http = FakeHttp { url ->
+            when {
+                "/4/auth/request_token" in url -> """{"success":true,"request_token":"rq"}"""
+                "/4/auth/access_token" in url -> """{"success":true,"access_token":"us3r-v4","account_id":"abc"}"""
+                "/session/convert/4" in url -> """{"success":true,"session_id":"s3ss10n"}"""
+                "/3/account?" in url -> """{"id":42,"username":"lea"}"""
+                else -> 500
+            }
+        }
+        val c = TmdbClient(http.client, "key", store, readAccessToken = "r3ad")
+        assertTrue(c.usesV4)
+        assertEquals("rq", c.newRequestToken("https://backlog.invalid/tmdb-approved"))
+        assertEquals("https://www.themoviedb.org/auth/access?request_token=rq", c.approvalUrl("rq", "https://backlog.invalid/tmdb-approved"))
+        val session = c.createSession("rq")
+        assertEquals(TmdbSession("s3ss10n", 42, "lea", "us3r-v4"), session)
+        assertEquals(session, saved)
+        assertTrue(http.requests.none { "/authentication/session/new" in it })
+    }
+
+    @Test
+    fun `without the read token the sign-in stays v3`() {
+        assertFalse(TmdbClient(FakeHttp { "{}" }.client, "key", FakeSessions(), readAccessToken = "YOUR_TMDB_READ_ACCESS_TOKEN").usesV4)
+        assertFalse(client(FakeHttp { "{}" }).usesV4)
+    }
+
     @Test
     fun `without a session every list call says to sign in`() = runTest {
         val c = client(FakeHttp { "{}" }, FakeSessions(session = null))

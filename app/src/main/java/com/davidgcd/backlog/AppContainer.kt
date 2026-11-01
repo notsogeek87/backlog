@@ -163,7 +163,12 @@ class AppContainer(private val context: Context) {
 
     /** The key ships in the APK like the other keys; a user's session lives in no-backup storage, never in it. */
     private val tmdbClient: TmdbClient by lazy {
-        TmdbClient(http = http(20), apiKey = Secrets.TMDB_API_KEY, sessions = FileTmdbSessionStore(context))
+        TmdbClient(
+            http = http(20),
+            apiKey = Secrets.TMDB_API_KEY,
+            sessions = FileTmdbSessionStore(context),
+            readAccessToken = Secrets.TMDB_READ_ACCESS_TOKEN,
+        )
     }
 
     val movieRepository: MovieRepository by lazy { MovieRepository(database.movieDao(), tmdbClient, FileTmdbListsIndexStore(context.filesDir)) }
