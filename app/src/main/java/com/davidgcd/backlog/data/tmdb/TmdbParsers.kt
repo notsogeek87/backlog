@@ -81,7 +81,11 @@ object TmdbParsers {
             val number = optInt("episode_number", -1).takeIf { it >= 1 } ?: return null
             return EpisodeInfo(season, number, parseDate(optString("air_date").ifEmpty { null }), optString("name").ifEmpty { null })
         }
-        return SeriesEpisodes(o.optJSONObject("last_episode_to_air")?.episode(), o.optJSONObject("next_episode_to_air")?.episode())
+        return SeriesEpisodes(
+            o.optJSONObject("last_episode_to_air")?.episode(),
+            o.optJSONObject("next_episode_to_air")?.episode(),
+            o.optInt("number_of_seasons", 0).takeIf { it > 0 },
+        )
     }
 
     fun parseDetails(json: String, kind: TitleKind): MediaTitle? {
@@ -285,7 +289,7 @@ data class EpisodeInfo(val season: Int, val number: Int, val airDate: Long?, val
     val label: String get() = "S%02dE%02d".format(season, number)
 }
 
-data class SeriesEpisodes(val last: EpisodeInfo?, val next: EpisodeInfo?)
+data class SeriesEpisodes(val last: EpisodeInfo?, val next: EpisodeInfo?, val seasons: Int? = null)
 
 /** Quand prévenir d'un nouvel épisode : diffusé tout récemment, et pas déjà annoncé. */
 object EpisodeRules {

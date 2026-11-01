@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -99,6 +100,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
     val providers by viewModel.providers.collectAsState()
     val credits by viewModel.credits.collectAsState()
     val trailer by viewModel.trailer.collectAsState()
+    val seasons by viewModel.seasons.collectAsState()
     val tmdbLists by viewModel.tmdbLists.collectAsState()
     val tmdbListsError = stringResource(R.string.tmdb_lists_error)
     val appSnackbar = LocalAppSnackbar.current
@@ -174,6 +176,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                     is MovieDetailState.Saved -> MovieContent(
                         providers = providers,
                         trailer = trailer,
+                        seasons = seasons,
                         credits = credits,
                         title = current.movie.toMediaTitle(),
                         saved = current.movie,
@@ -200,6 +203,7 @@ fun MovieDetailScreen(viewModel: MovieDetailViewModel, onBack: () -> Unit, onPer
                     is MovieDetailState.Remote -> MovieContent(
                         providers = providers,
                         trailer = trailer,
+                        seasons = seasons,
                         credits = credits,
                         title = current.title,
                         saved = null,
@@ -298,6 +302,7 @@ private fun Centered(content: @Composable () -> Unit) {
 private fun MovieContent(
     providers: ProvidersState,
     trailer: Trailer?,
+    seasons: Int?,
     credits: List<CastMember>,
     title: MediaTitle,
     saved: MovieEntity?,
@@ -336,6 +341,7 @@ private fun MovieContent(
                     val facts = listOfNotNull(
                         title.kind.label(),
                         (ReleaseDateFormatting.format(title.releaseDate) ?: title.year?.toString()),
+                        seasons?.takeIf { title.kind == TitleKind.SERIES }?.let { pluralStringResource(R.plurals.series_seasons, it, it) },
                         title.runtimeMinutes?.let { stringResource(R.string.movie_runtime_minutes, it) },
                     ).joinToString(" · ")
                     Text(facts, style = MaterialTheme.typography.bodyMedium, color = Glass.TextMuted)

@@ -52,6 +52,10 @@ class MovieDetailViewModel(
     private val _trailer = MutableStateFlow<Trailer?>(null)
     val trailer: StateFlow<Trailer?> = _trailer
 
+    /** Number of seasons of a series; null for a film, while loading, or when TMDB can't say. */
+    private val _seasons = MutableStateFlow<Int?>(null)
+    val seasons: StateFlow<Int?> = _seasons
+
     private val listsModel = TmdbListsModel(viewModelScope, repository, titleKey)
     val tmdbLists: StateFlow<TmdbListsUi> = listsModel.state
 
@@ -62,6 +66,7 @@ class MovieDetailViewModel(
         loadProviders()
         loadCredits()
         loadTrailer()
+        loadSeasons()
         repository.observe(titleKey)
             .onEach { movie ->
                 if (movie != null) {
@@ -95,6 +100,18 @@ class MovieDetailViewModel(
 
     /** Same for one of the user's own lists. */
     fun toggleTmdbList(listId: Long, onError: () -> Unit) = listsModel.toggleList(listId, onError)
+
+    private fun loadSeasons() {
+        viewModelScope.launch {
+            _seasons.value = try {
+                repository.episodes(titleKey)?.seasons
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                null
+            }
+        }
+    }
 
     private fun loadTrailer() {
         viewModelScope.launch {

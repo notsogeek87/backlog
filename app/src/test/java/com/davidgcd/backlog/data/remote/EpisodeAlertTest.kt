@@ -26,6 +26,13 @@ class EpisodeAlertTest {
     }
 
     @Test
+    fun `reads the number of seasons, null when absent or zero`() {
+        assertEquals(5, TmdbParsers.parseEpisodes("""{"number_of_seasons":5}""")!!.seasons)
+        assertNull(TmdbParsers.parseEpisodes("""{"number_of_seasons":0}""")!!.seasons)
+        assertNull(TmdbParsers.parseEpisodes("""{}""")!!.seasons)
+    }
+
+    @Test
     fun `a series with no episode data gives nulls, garbage gives nothing`() {
         val episodes = TmdbParsers.parseEpisodes("""{"last_episode_to_air":null}""")!!
         assertNull(episodes.last)

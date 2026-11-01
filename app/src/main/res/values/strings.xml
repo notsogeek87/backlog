@@ -396,6 +396,10 @@
     <string name="sort_tmdb_rating">Note TMDB</string>
     <string name="sort_my_rating">Ma note</string>
     <string name="movie_runtime_minutes">%1$d min</string>
+    <plurals name="series_seasons">
+        <item quantity="one">%1$d saison</item>
+        <item quantity="other">%1$d saisons</item>
+    </plurals>
     <string name="movie_not_found">Titre introuvable</string>
     <string name="movie_my_rating">Ma note (sur 10)</string>
     <string name="movie_my_rating_badge">★ %1$d/10</string>
