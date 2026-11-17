@@ -442,8 +442,8 @@
     <string name="tmdb_error_unknown">Une erreur inattendue est survenue avec TMDB.</string>
     <string name="tmdb_lists_title">Mes listes TMDB</string>
     <string name="tmdb_lists_watchlist">Watchlist</string>
-    <string name="tmdb_lists_sheet_title">Ajouter « %1$s » à une liste TMDB ?</string>
-    <string name="tmdb_lists_sheet_hint">C\'est déjà dans ta watchlist. Coche les autres listes où le ranger.</string>
+    <string name="tmdb_lists_sheet_title">« %1$s » est dans ta watchlist TMDB</string>
+    <string name="tmdb_lists_sheet_hint">Tu veux aussi le ranger dans une de tes listes ? Touche-la pour l\'y ajouter.</string>
     <string name="filter_tmdb_list">Liste TMDB</string>
     <string name="filter_tmdb_list_all">Toutes</string>
     <string name="tmdb_lists_none">Tu n\'as pas d\'autre liste sur TMDB : crée-en sur themoviedb.org, elles apparaîtront ici.</string>
