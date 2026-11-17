@@ -19,12 +19,16 @@ import com.davidgcd.backlog.model.Trailer
 import com.davidgcd.backlog.model.WatchProviders
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
@@ -44,8 +48,16 @@ class MovieRepository(
     private val tmdb: TmdbClient,
     /** Last known content of the user's TMDB lists, kept on the device; null in tests that don't need it. */
     private val listsIndexStore: TmdbListsIndexStore? = null,
+    /** Runs the TMDB write-backs of a removal, which must outlive the screen that asked for it. */
+    private val backgroundScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
+    /** TMDB lists ([TmdbListContent.id]) each removed title was in, so « Annuler » puts it back in them. */
+    private val removedFrom = ConcurrentHashMap<String, Set<Long>>()
+
+    /** Removal and undo write to TMDB one after the other, never interleaved. */
+    private val membershipMutex = Mutex()
+
     /**
      * Titles seen in a search or a chart, kept for the session: opening one shows what the list
      * already knew even if TMDB's title page can't be read.
@@ -193,10 +205,41 @@ class MovieRepository(
         MovieRanking.changes(newOrder).forEach { (id, rank) -> dao.setRank(id, rank) }
     }
 
-    suspend fun remove(entity: MovieEntity) = dao.delete(entity)
+    /**
+     * Deletes the title, and takes it out of the user's TMDB watchlist and lists: the library shows everything that is
+     * in one of them, so a title left there would come back at the next sync (or show « in the watchlist » but « not in
+     * my list » on its page). The TMDB part runs in the background, best effort.
+     */
+    suspend fun remove(entity: MovieEntity) {
+        dao.delete(entity)
+        val lists = membershipsToClear(entity, _tmdbListsIndex.value)
+        removedFrom[entity.titleKey] = lists
+        if (lists.isEmpty()) return
+        backgroundScope.launch {
+            membershipMutex.withLock { lists.forEach { id -> bestEffort { setMembership(id, entity.titleKey, false) } } }
+        }
+    }
 
-    /** Puts back a title removed a moment ago (the « Annuler » of a deletion), exactly as it was. */
-    suspend fun restore(entity: MovieEntity) = dao.upsert(entity)
+    /** Puts back a title removed a moment ago (the « Annuler » of a deletion), exactly as it was, in the same TMDB lists. */
+    suspend fun restore(entity: MovieEntity) {
+        dao.upsert(entity)
+        val lists = removedFrom.remove(entity.titleKey).orEmpty()
+        if (lists.isEmpty()) return
+        backgroundScope.launch {
+            membershipMutex.withLock { lists.forEach { id -> bestEffort { setMembership(id, entity.titleKey, true) } } }
+        }
+    }
+
+    /**
+     * Adds to the library, as « À voir » and without writing to TMDB, a title found in one of the user's TMDB lists
+     * (what the next sync would do anyway): its page then says « dans ma liste » like the watchlist tick does.
+     */
+    suspend fun adopt(title: MediaTitle) {
+        if (dao.findById(title.id) == null) dao.upsert(title.toEntity(WatchStatus.TO_WATCH))
+    }
+
+    private suspend fun setMembership(listId: Long, titleKey: String, on: Boolean) =
+        if (listId == TmdbListContent.WATCHLIST_ID) setInTmdbWatchlist(titleKey, on) else setInTmdbList(listId, titleKey, on)
 
     /** Pulls the latest rating / plot / poster of one saved title, keeping everything the user set. */
     suspend fun refresh(entity: MovieEntity) {
@@ -309,3 +352,12 @@ fun MovieEntity.toMediaTitle() = MediaTitle(
 )
 
 private const val LIST_CACHE_MS = 2 * 60_000L
+
+/**
+ * The TMDB lists to take [entity] out of when it leaves the library: those the [index] says hold it, plus the
+ * watchlist for a « À voir » title (it mirrors that status, even before the index is known).
+ */
+internal fun membershipsToClear(entity: MovieEntity, index: List<TmdbListContent>): Set<Long> =
+    index.filter { entity.titleKey in it.keys }.mapTo(LinkedHashSet()) { it.id }.apply {
+        if (entity.status == WatchStatus.TO_WATCH.name) add(TmdbListContent.WATCHLIST_ID)
+    }

@@ -13,6 +13,7 @@ import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -78,6 +79,15 @@ class MovieDetailViewModel(
                     // Removed while open: nothing left to show.
                     _state.value = MovieDetailState.NotFound
                 }
+            }
+            .launchIn(viewModelScope)
+        // A title already in the TMDB watchlist or one of the user's lists belongs to the library (the sync adds
+        // those): seen from a search, it joins it as « À voir » instead of showing « Ajouter à ma liste » under a tick.
+        combine(_state, listsModel.state) { state, lists -> state to lists }
+            .onEach { (state, lists) ->
+                val title = (state as? MovieDetailState.Remote)?.title ?: return@onEach
+                val loaded = lists as? TmdbListsUi.Loaded ?: return@onEach
+                if (loaded.busy.isEmpty() && (loaded.state.watchlist || loaded.state.lists.any { it.contains })) repository.adopt(title)
             }
             .launchIn(viewModelScope)
     }

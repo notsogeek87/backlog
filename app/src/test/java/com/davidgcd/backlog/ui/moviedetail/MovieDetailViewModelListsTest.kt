@@ -51,7 +51,7 @@ class MovieDetailViewModelListsTest {
     @After fun resetMain() = Dispatchers.resetMain()
 
     /** Lists A (8001, already holds the film) and B (8002, empty), read from their content; the watchlist is empty. [failWrites] makes TMDB refuse writes. */
-    private fun viewModel(signedIn: Boolean = true, failWrites: Boolean = false): Pair<MovieDetailViewModel, FakeHttp> {
+    private fun viewModel(signedIn: Boolean = true, failWrites: Boolean = false, known: Boolean = false): Triple<MovieDetailViewModel, FakeHttp, FakeDao> {
         val http = FakeHttp { url ->
             when {
                 "/genre/" in url -> """{"genres":[]}"""
@@ -60,11 +60,13 @@ class MovieDetailViewModelListsTest {
                 failWrites && ("/add_item" in url || "/remove_item" in url || "/watchlist" in url) -> 500
                 "/list/8001?" in url -> """{"page":1,"total_pages":1,"items":[{"id":603,"media_type":"movie"}]}"""
                 "/list/8002?" in url -> """{"page":1,"total_pages":1,"items":[]}"""
+                known && "/movie/603?" in url -> """{"id":603,"title":"Matrix","release_date":"1999-03-31"}"""
                 else -> "{}"
             }
         }
-        val repository = MovieRepository(FakeDao(), TmdbClient(http.client, "key", Sessions(signedIn), io = dispatcher))
-        return MovieDetailViewModel("movie:603", repository) to http
+        val dao = FakeDao()
+        val repository = MovieRepository(dao, TmdbClient(http.client, "key", Sessions(signedIn), io = dispatcher))
+        return Triple(MovieDetailViewModel("movie:603", repository), http, dao)
     }
 
     /** Drains the test scheduler until [done] holds (the client runs on [dispatcher], so this settles at the first pass). */
@@ -157,5 +159,14 @@ class MovieDetailViewModelListsTest {
         settle { vm.idle() }
         assertEquals(1, http.requests.count { "/list/8002/add_item" in it })
         assertTrue(vm.loaded().state.lists[1].contains)
+    }
+
+    @Test
+    fun `a title already in a TMDB list joins the library as to watch, without writing to TMDB`() = runTest(dispatcher) {
+        val (vm, http, dao) = viewModel(known = true)
+        settle { dao.rows.value.isNotEmpty() && vm.state.value is MovieDetailState.Saved }
+        assertTrue(vm.state.value is MovieDetailState.Saved)
+        assertEquals("TO_WATCH", dao.rows.value.single().status)
+        assertTrue(http.requests.none { "/add_item" in it || "/account/42/watchlist" in it })
     }
 }
