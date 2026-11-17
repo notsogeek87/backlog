@@ -5,11 +5,12 @@ import { parsePreview, renderOpenPage } from '../lib/openPage.js';
 test('a film link shows its details, TMDB and IMDb links and keeps the open-in-app button', () => {
   const html = renderOpenPage('movie', 'movie:603', { t: 'Matrix', y: '1999', c: '/abc.jpg', g: 'Action, SF', s: 'Un hacker.', r: '8.2', m: 'Wachowski' });
   assert.match(html, /Ouvrir dans l'app/);
-  assert.match(html, /<h2>Matrix<\/h2>/);
+  assert.match(html, /<h1>Matrix<\/h1>/);
+  assert.match(html, /On te recommande ce film/);
   assert.match(html, /image\.tmdb\.org\/t\/p\/w342\/abc\.jpg/);
   assert.match(html, /https:\/\/www\.themoviedb\.org\/movie\/603/);
   assert.match(html, /imdb\.com\/find\/\?s=tt&amp;q=Matrix/);
-  assert.match(html, /★ 8\.2\/10/);
+  assert.match(html, /aria-label="Note 8,2 sur 10"/);
 });
 
 test('a game links to IGDB, by its page when valid and by search otherwise', () => {
@@ -31,8 +32,19 @@ test('a link without details stays the plain page', () => {
   assert.ok(!renderOpenPage('movie', 'movie:1', {}).includes('class="card"'));
 });
 
-test('the open button is an Android intent that falls back to the GitHub repository', () => {
+test('the open button is an Android intent that falls back to the latest release', () => {
   const html = renderOpenPage('movie', 'movie:603', {});
-  assert.match(html, /href="intent:\/\/open\/movie\/movie%3A603#Intent;scheme=backlog;package=com\.davidgcd\.backlog;S\.browser_fallback_url=https%3A%2F%2Fgithub\.com%2Fnotsogeek87%2Fbacklog;end"/);
-  assert.match(html, /href="https:\/\/github\.com\/notsogeek87\/backlog"/);
+  assert.match(html, /href="intent:\/\/open\/movie\/movie%3A603#Intent;scheme=backlog;package=com\.davidgcd\.backlog;S\.browser_fallback_url=https%3A%2F%2Fgithub\.com%2Fnotsogeek87%2Fbacklog%2Freleases%2Flatest;end"/);
+  assert.match(html, /href="https:\/\/github\.com\/notsogeek87\/backlog\/releases\/latest"/);
+});
+
+test('a series is called a series', () => {
+  assert.match(renderOpenPage('movie', 'tv:1396', { t: 'Breaking Bad' }), /On te recommande cette série/);
+});
+
+test('the emblem is inlined and allowed by the page CSP', async () => {
+  const { OPEN_CSP } = await import('../lib/openPage.js');
+  assert.match(renderOpenPage('movie', 'movie:1', {}), /src="data:image\/png;base64,/);
+  assert.match(OPEN_CSP, /img-src data: https:\/\/images\.igdb\.com/);
+  assert.doesNotMatch(OPEN_CSP, /script-src/);
 });

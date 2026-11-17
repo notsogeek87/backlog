@@ -67,7 +67,7 @@ test('a book is read from Open Library: edition, then its work and authors', asy
     t: '1984', y: '2008', c: 'https://covers.openlibrary.org/b/id/42-L.jpg', g: 'Dystopie, Politique', s: 'Big Brother.',
     m: 'George Orwell', u: 'https://openlibrary.org/isbn/9780141036144',
   });
-  assert.match(renderOpenPage('book', 'isbn:9780141036144', p), /<h2>1984<\/h2>/);
+  assert.match(renderOpenPage('book', 'isbn:9780141036144', p), /<h1>1984<\/h1>/);
 });
 
 test('a game is read from IGDB with the server token', async () => {
