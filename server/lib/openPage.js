@@ -84,8 +84,14 @@ ${preview.rating ? `<p class="stars">★ ${preview.rating}/10</p>` : ''}${previe
 ${preview.links.length ? `<div class="links">${preview.links.map((l) => `<a class="l" href="${escapeHtml(l.url)}" rel="noopener noreferrer">${escapeHtml(l.label)}</a>`).join('')}</div>` : ''}</section>`
     : '';
   const title = preview ? `${preview.title} — Backlog` : 'Ouvrir dans Backlog';
+  // Link card in chat apps (WhatsApp, Signal…): title, one line and the poster.
+  const card = preview ? [
+    ['og:title', title],
+    ['og:description', [preview.year, preview.meta].filter(Boolean).join(' · ') || KIND_LABELS[kind]],
+    ...(preview.image ? [['og:image', preview.image]] : []),
+  ].map(([p, v]) => `<meta property="${p}" content="${escapeHtml(String(v))}">`).join('') : '';
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">${card}
 <title>${escapeHtml(title)}</title>
 <style>${STYLE}</style></head>
 <body><main><h1>Backlog</h1>

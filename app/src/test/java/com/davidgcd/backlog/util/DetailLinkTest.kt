@@ -1,6 +1,8 @@
 package com.davidgcd.backlog.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -20,6 +22,15 @@ class DetailLinkTest {
         assertNull(DetailLink.parse("movie", "person:603"))
         assertNull(DetailLink.parse("book", ""))
         assertNull(DetailLink.parse("settings", "1"))
+    }
+
+    @Test fun catalogueIdsAreLeftToTheServer() {
+        assertTrue(DetailLink.serverLooksUp(DetailLink.Movie("movie:1668499")))
+        assertTrue(DetailLink.serverLooksUp(DetailLink.Game(1942)))
+        assertTrue(DetailLink.serverLooksUp(DetailLink.Book("isbn:9780141036144")))
+        assertTrue(DetailLink.serverLooksUp(DetailLink.Book("ol:OL7353617M")))
+        assertTrue(DetailLink.serverLooksUp(DetailLink.Book("work:OL45804W")))
+        assertFalse(DetailLink.serverLooksUp(DetailLink.Book("ta:0123456789ab")))
     }
 }
 

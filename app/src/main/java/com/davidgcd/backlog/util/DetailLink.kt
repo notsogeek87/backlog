@@ -12,9 +12,9 @@ import com.davidgcd.backlog.model.MediaTitle
 import java.net.URLEncoder
 
 /**
- * What the https link carries about the title so that someone without the app sees its details on the
- * web page (see server/lib/openPage.js): title, year, image, genres, synopsis, rating and a catalogue link.
- * Everything is optional and shortened to keep the link easy to send.
+ * What the https link carries about a book the web page can't look up by itself (no ISBN nor Open Library id),
+ * so that someone without the app still sees its details (see server/lib/openPage.js). Everything is optional
+ * and shortened to keep the link easy to send.
  */
 data class DetailPreview(
     val title: String,
@@ -136,10 +136,21 @@ sealed interface DetailLink {
         /**
          * The https link sent to a contact: a chat app makes it tappable, and the page behind it
          * offers to open the app (or says where to get it) when the phone doesn't do it by itself.
+         * Kept short: the page reads the title's details from the catalogue by its id (server/lib/catalogLookup.js),
+         * so [preview] only travels in the link for a book without a catalogue id.
          */
         fun url(link: DetailLink, preview: DetailPreview? = null): String {
             val (kind, id) = parts(link)
-            return "https://$HOST/$PATH/$kind/${Uri.encode(id)}${preview?.query().orEmpty()}"
+            val query = if (serverLooksUp(link)) "" else preview?.query().orEmpty()
+            return "https://$HOST/$PATH/$kind/${Uri.encode(id)}$query"
+        }
+
+        /** Mirrors `isLookupable` of server/lib/catalogLookup.js. */
+        private val BOOK_CATALOG_KEY = Regex("""^(isbn:[0-9X]{10,13}|ol:OL\d{1,12}M|work:OL\d{1,12}W)$""")
+
+        internal fun serverLooksUp(link: DetailLink): Boolean = when (link) {
+            is Game, is Movie -> true
+            is Book -> BOOK_CATALOG_KEY.matches(link.bookKey)
         }
 
         /** Reads a link built by [url], or its `backlog://open/<kind>/<id>` twin; null for anything else. */
