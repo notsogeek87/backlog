@@ -618,6 +618,13 @@
     <string name="notification_channel_deal">Promotions Steam</string>
     <string name="notification_channel_episode">Nouveaux épisodes</string>
     <string name="notification_deal_text">En promotion sur Steam : -%1$d %% (%2$s)</string>
+    <string name="notification_history_title">Notifications</string>
+    <string name="notification_history_open">Historique des notifications</string>
+    <string name="notification_history_open_unread">Historique des notifications, %1$d nouvelle(s)</string>
+    <string name="notification_history_empty">Aucune notification pour l\'instant.\nLes sorties, promotions et nouveaux épisodes s\'afficheront ici, même si tu effaces la notification.</string>
+    <string name="notification_history_clear">Tout effacer</string>
+    <string name="notification_history_clear_title">Effacer l\'historique ?</string>
+    <string name="notification_history_clear_text">Toutes les notifications passées seront retirées de cette liste.</string>
     <string name="notification_episode_text">Nouvel épisode %1$s %2$s</string>
     <string name="settings_deal_alerts_title">Promotions Steam</string>
     <string name="settings_deal_alerts_subtitle">Me notifier quand un jeu souhaité est en promotion (−20 % ou plus)</string>

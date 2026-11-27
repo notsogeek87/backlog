@@ -36,6 +36,7 @@
 - [Bandes-annonces](guides/trailers.md)
 - [Fenêtre « Nouveautés »](guides/whats-new.md)
 - [Réviser mes notes](guides/reviser-notes.md)
+- [Historique des notifications (la cloche)](guides/historique-notifications.md)
 - [Premier lancement : connecter ses services](guides/premier-lancement.md)
 
 ## Écrire de la doc

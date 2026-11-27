@@ -27,10 +27,13 @@ import androidx.compose.material.icons.filled.Games
 import androidx.compose.material.icons.filled.LocalMovies
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -103,6 +106,8 @@ fun HomeScreen(
     onSearch: () -> Unit,
     onOpenRecap: () -> Unit,
     onOpenReview: () -> Unit,
+    unreadNotifications: Int = 0,
+    onOpenNotifications: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val nudge = rememberNudgeState()
@@ -123,6 +128,23 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    // La cloche garde l'historique des alertes, même effacées du volet système.
+                    IconButton(onClick = onOpenNotifications) {
+                        val label = if (unreadNotifications > 0) {
+                            stringResource(R.string.notification_history_open_unread, unreadNotifications)
+                        } else {
+                            stringResource(R.string.notification_history_open)
+                        }
+                        BadgedBox(
+                            badge = {
+                                if (unreadNotifications > 0) {
+                                    Badge { Text(if (unreadNotifications > 99) "99+" else unreadNotifications.toString()) }
+                                }
+                            },
+                        ) {
+                            Icon(Icons.Filled.Notifications, contentDescription = label)
+                        }
+                    }
                     IconButton(onClick = onSearch) {
                         Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.action_search))
                     }

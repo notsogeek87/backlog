@@ -15,6 +15,7 @@ import com.davidgcd.backlog.data.local.watchStatus
 import com.davidgcd.backlog.data.remote.DealRules
 import com.davidgcd.backlog.data.tmdb.EpisodeRules
 import com.davidgcd.backlog.model.GameStatus
+import com.davidgcd.backlog.model.Medium
 import com.davidgcd.backlog.model.TitleKind
 import com.davidgcd.backlog.model.WatchStatus
 import kotlinx.coroutines.CancellationException
@@ -42,9 +43,27 @@ class ReleaseReminderWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
 
+    private lateinit var history: NotificationHistoryStore
+
+    /** Garde l'alerte dans l'historique de la cloche, même si l'utilisateur efface la notification système. */
+    private fun remember(kind: NotificationKind, medium: Medium, itemKey: String, detail: String, title: String, text: String) {
+        history.record(
+            NotificationEntry(
+                id = NotificationHistory.entryId(kind, itemKey, detail),
+                kind = kind,
+                medium = medium,
+                itemKey = itemKey,
+                title = title,
+                text = text,
+                postedAtMillis = System.currentTimeMillis(),
+            ),
+        )
+    }
+
     override suspend fun doWork(): Result {
         val app = applicationContext as BacklogApplication
         val preferences = NotificationPreferences(applicationContext)
+        history = NotificationHistoryStore(applicationContext)
         ensureChannels()
 
         val notificationsAllowed = ActivityCompat.checkSelfPermission(
@@ -80,14 +99,20 @@ class ReleaseReminderWorker(
         val due = app.repository.activeGamesWithReleaseDate()
             .filter { ReleaseDateFormatting.isReminderDueToday(it.firstReleaseDate, leadDays) }
 
-        if (due.isEmpty() || !notificationsAllowed) return
+        if (due.isEmpty()) return
 
-        val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
         val body = when (leadDays) {
             0 -> applicationContext.getString(R.string.notification_out_today)
             1 -> applicationContext.getString(R.string.notification_out_tomorrow)
             else -> applicationContext.getString(R.string.notification_out_in_days, leadDays)
         }
+        // L'historique garde le rappel même quand les notifications système sont refusées.
+        due.forEach { game ->
+            remember(NotificationKind.RELEASE, Medium.GAME, game.igdbId.toString(), "${game.firstReleaseDate}", game.name, body)
+        }
+        if (!notificationsAllowed) return
+
+        val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
         due.forEach { game ->
             val notification = NotificationCompat.Builder(applicationContext, NotificationIds.RELEASE_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -111,20 +136,29 @@ class ReleaseReminderWorker(
 
         app.repository.activeGames().take(DRIFT_CHECK_BATCH_SIZE).forEach { entity ->
             val drift = app.repository.refreshAndDetectDrift(entity) ?: return@forEach
-            if (!notificationsAllowed) return@forEach
+            val key = entity.igdbId.toString()
 
+            // L'entité est déjà mise à jour : sans l'historique, une alerte refusée par le système serait perdue.
             if (drift.dateChanged && dateAlertsEnabled) {
-                notificationManager.notify(
-                    NotificationIds.dateChangeNotificationId(entity.igdbId),
-                    driftNotification(entity.igdbId, entity.name, applicationContext.getString(R.string.notification_date_changed)),
-                )
+                val text = applicationContext.getString(R.string.notification_date_changed)
+                remember(NotificationKind.DATE_CHANGE, Medium.GAME, key, "${System.currentTimeMillis() / DAY_MILLIS}", entity.name, text)
+                if (notificationsAllowed) {
+                    notificationManager.notify(
+                        NotificationIds.dateChangeNotificationId(entity.igdbId),
+                        driftNotification(entity.igdbId, entity.name, text),
+                    )
+                }
             }
             if (drift.newPlatforms.isNotEmpty() && platformAlertsEnabled) {
                 val platforms = drift.newPlatforms.joinToString(", ")
-                notificationManager.notify(
-                    NotificationIds.newPlatformNotificationId(entity.igdbId),
-                    driftNotification(entity.igdbId, entity.name, applicationContext.getString(R.string.notification_new_platforms, platforms)),
-                )
+                val text = applicationContext.getString(R.string.notification_new_platforms, platforms)
+                remember(NotificationKind.NEW_PLATFORM, Medium.GAME, key, platforms, entity.name, text)
+                if (notificationsAllowed) {
+                    notificationManager.notify(
+                        NotificationIds.newPlatformNotificationId(entity.igdbId),
+                        driftNotification(entity.igdbId, entity.name, text),
+                    )
+                }
             }
         }
     }
@@ -166,6 +200,7 @@ class ReleaseReminderWorker(
                         .setAutoCancel(true)
                         .build(),
                 )
+                remember(NotificationKind.DEAL, Medium.GAME, game.igdbId.toString(), "${price.finalCents}", game.name, text)
                 memory.rememberDeal(appId, price.finalCents)
             }
             delay(POLITE_DELAY_MS)
@@ -191,16 +226,18 @@ class ReleaseReminderWorker(
             } ?: return@forEach
             val last = episodes.last
             if (EpisodeRules.shouldNotify(last, memory.episode(show.titleKey), nowSeconds) && last != null) {
+                val text = applicationContext.getString(R.string.notification_episode_text, last.label, last.name.orEmpty()).trim()
                 manager.notify(
                     NotificationIds.episodeNotificationId(show.titleKey),
                     NotificationCompat.Builder(applicationContext, NotificationIds.EPISODE_CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_notification)
                         .setContentTitle(show.title)
-                        .setContentText(applicationContext.getString(R.string.notification_episode_text, last.label, last.name.orEmpty()).trim())
+                        .setContentText(text)
                         .setContentIntent(openTitleIntent(show.titleKey))
                         .setAutoCancel(true)
                         .build(),
                 )
+                remember(NotificationKind.EPISODE, Medium.MOVIE, show.titleKey, last.label, show.title, text)
                 memory.rememberEpisode(show.titleKey, last.label)
             }
             delay(POLITE_DELAY_MS)
@@ -283,5 +320,6 @@ class ReleaseReminderWorker(
         /** Games / series asked of Steam / TMDB per run; the batch rotates daily so the whole list is covered over a few days. */
         const val BATCH_SIZE = 25
         const val POLITE_DELAY_MS = 300L
+        const val DAY_MILLIS = 24L * 60 * 60 * 1000
     }
 }

@@ -5,7 +5,7 @@
 ## Les quatre onglets
 | Onglet | Contenu |
 |--------|---------|
-| **Accueil** | À continuer (jeux joués, films/séries en cours, livres en cours), sorties des 30 prochains jours, ajouts récents, « Mon année » |
+| **Accueil** | À continuer (jeux joués, films/séries en cours, livres en cours), sorties des 30 prochains jours, ajouts récents, « Mon année » ; la cloche ouvre l'[historique des notifications](historique-notifications.md) |
 | **Bibliothèque** | Films & séries (ouverts par défaut) · Jeux · Livres (un sélecteur sous la barre du haut ; le choix est partagé avec Découvrir) |
 | **Découvrir** | Listes IGDB / TMDB / Open Library, gardées 10 minutes en mémoire (affichées tout de suite, rafraîchies en arrière-plan) |
 | **Réglages** | Plateformes, apparence, notifications, données, mises à jour, à propos |

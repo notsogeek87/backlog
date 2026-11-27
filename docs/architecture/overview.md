@@ -99,7 +99,9 @@
   fait le travail de données, le worker celui de la notification, même
   séparation que `SyncDriftDispatcher` côté iOS), `NotificationIds`
   (fabrique d'identifiants, jamais construits à la main ailleurs — même
-  règle que `NotificationIdentifier` côté iOS).
+  règle que `NotificationIdentifier` côté iOS), `NotificationHistory` +
+  `NotificationHistoryStore` (historique de la cloche, voir
+  [le guide](../guides/historique-notifications.md)).
 - `util/` — `RateLimiter` (fenêtre glissante, 4 req/s sur IGDB, slot réservé
   avant l'appel — même règle que l'app iOS), `IgdbImage` (seul constructeur
   d'URL d'images IGDB, jamais construit à la main ailleurs),

@@ -26,6 +26,10 @@ import com.davidgcd.backlog.ui.moviedetail.TmdbListsSheet
 import com.davidgcd.backlog.ui.components.SearchCarry
 import com.davidgcd.backlog.ui.components.SearchRequest
 import com.davidgcd.backlog.ui.home.HomeScreen
+import com.davidgcd.backlog.notifications.NotificationHistoryStore
+import com.davidgcd.backlog.ui.notifications.NotificationHistoryScreen
+import com.davidgcd.backlog.ui.notifications.NotificationHistoryViewModel
+import com.davidgcd.backlog.ui.notifications.NotificationHistoryViewModelFactory
 import com.davidgcd.backlog.ui.home.HomeViewModel
 import com.davidgcd.backlog.ui.home.HomeViewModelFactory
 import com.davidgcd.backlog.ui.prefs.UiPreferences
@@ -157,6 +161,7 @@ private object Routes {
     fun ranking(media: MediaType) = "ranking/${media.name}"
     const val RECAP = "recap"
     const val REVIEW = "review"
+    const val NOTIFICATIONS = "notifications"
     const val STEAM_LOGIN = "platforms/steam/login"
     const val LIBRARY_IMPORT = "platforms/{provider}/import"
     fun libraryImport(provider: String) = "platforms/$provider/import"
@@ -218,6 +223,8 @@ fun BacklogNavHost(
     openLink: DetailLink? = null,
     onOpenLinkHandled: () -> Unit = {},
 ) {
+    val appContext = LocalContext.current.applicationContext
+    val notificationHistoryStore = remember(appContext) { NotificationHistoryStore(appContext) }
     val navController = rememberNavController()
     // "Mes plateformes", shared by Settings and the first-launch screen; its view model lives with the current screen.
     val platformsContent: @Composable () -> Unit = {
@@ -372,13 +379,21 @@ fun BacklogNavHost(
                 if (welcomeStore?.takeFirstLaunch() == true) navController.navigate(Routes.WELCOME) { launchSingleTop = true }
             }
             val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(repository, movieRepository, bookRepository))
+            val historyViewModel: NotificationHistoryViewModel = viewModel(factory = NotificationHistoryViewModelFactory(notificationHistoryStore))
+            val history by historyViewModel.state.collectAsState()
             HomeScreen(
                 viewModel = viewModel,
                 onOpen = openItem,
                 onSearch = { requestSearch(libraryMedia, null) },
                 onOpenRecap = { navController.navigate(Routes.RECAP) },
                 onOpenReview = { navController.navigate(Routes.REVIEW) },
+                unreadNotifications = history.unreadCount,
+                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
             )
+        }
+        composable(Routes.NOTIFICATIONS) {
+            val viewModel: NotificationHistoryViewModel = viewModel(factory = NotificationHistoryViewModelFactory(notificationHistoryStore))
+            NotificationHistoryScreen(viewModel = viewModel, onOpen = openItem, onBack = { navController.popBackStack() })
         }
         composable(Routes.LIBRARY) {
             val mediaSwitch: @Composable () -> Unit = { MediaSwitch(selected = libraryMedia, onSelect = { libraryMedia = it }) }
